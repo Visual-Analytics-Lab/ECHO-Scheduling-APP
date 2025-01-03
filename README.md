@@ -1,7 +1,7 @@
 ## Components beign used:
-Frame Work : Meteor, React
-CSS : TailWind
-Database : MongoDB
+Frame Work : Meteor, React <br/>
+CSS : TailWind <br/>
+Database : MongoDB <br/>
 
 ### Test User
 For testing purposes use `test@example.com` and `testpassword`.
