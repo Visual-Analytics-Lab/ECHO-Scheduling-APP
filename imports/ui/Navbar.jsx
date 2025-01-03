@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SignInPopup from './SignInPopup';
+import SignInPopup from './dashboard/SignInPopup';
 
 const Navbar = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);

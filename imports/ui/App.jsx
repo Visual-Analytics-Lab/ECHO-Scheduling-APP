@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { Dashboard } from "./dashboard/Dashboard";
+import AdminDashboard from "./admin/AdminDashboard";
 import { NotFound } from "./page_not_found/PageNotFound";
 
 export const App = () => (
@@ -11,6 +12,7 @@ export const App = () => (
             </nav>
             <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} /> {/* Admin Dashboard */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </div>
