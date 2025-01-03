@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
+import { Meteor } from 'meteor/meteor';
 
 const SignInPopup = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle sign in logic here
+    Meteor.loginWithPassword(email, password, (err) => {
+      if (err) {
+        setError(err.reason)
+      } else {
+        setError('')
+      }
+  });
     console.log('Signing in with:', email, password);
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -17,6 +24,7 @@ const SignInPopup = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 w-96">
         <div className="flex flex-col space-y-4">
+        {error && <p style={{color: 'red'}}>{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
