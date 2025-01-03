@@ -15,12 +15,12 @@ export const App = () => (
                 </nav>
                 <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/admin" element={<Admin />} />
                     <Route path="*" element={<NotFound />} />
                     <Route 
-                        path="/protected" 
+                        path="/admin" 
                         element={
                             <PrivateRoute>
+                                <Admin />
                             </PrivateRoute>
                         } 
                         />

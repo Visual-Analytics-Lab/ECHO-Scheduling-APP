@@ -35,7 +35,6 @@ const Navbar = () => {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
               <span>{user.emails?.[0]?.address || 'User'}</span>
-              {/* Optional dropdown arrow */}
               <svg 
                 className={`w-4 h-4 ml-1 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
                 fill="none" 
