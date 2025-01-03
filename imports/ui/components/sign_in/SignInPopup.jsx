@@ -10,9 +10,9 @@ const SignInPopup = ({ isOpen, onClose }) => {
     e.preventDefault();
     Meteor.loginWithPassword(email, password, (err) => {
       if (err) {
-        setError(err.reason)
+        setError(err.reason);
       } else {
-        setError('')
+        setError('');
       }
   });
     console.log('Signing in with:', email, password);
