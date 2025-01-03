@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import Navbar from '../Navbar'
+import Navbar from '../navbar/Navbar';
 import AdminSidebar from "./AdminSidebar";
 import AdminTable from "./AdminTable";
 
-const AdminDashboard = () => {
+const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
 
   const data = {
@@ -62,4 +62,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default Admin;

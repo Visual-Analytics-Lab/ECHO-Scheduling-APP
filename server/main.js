@@ -1,37 +1,24 @@
 import { Meteor } from 'meteor/meteor';
-import { LinksCollection } from '/imports/api/links';
+import { Accounts } from 'meteor/accounts-base';
 
-async function insertLink({ title, url }) {
-  await LinksCollection.insertAsync({ title, url, createdAt: new Date() });
-}
+if (Meteor.isServer) {
+  process.env.MONGO_URL="mongodb://127.0.0.1:27017/Echo-Database"
+  Meteor.startup(async () => {
+    try {
+      const user = await Meteor.users.findOneAsync({ username: 'testuser' });
 
-Meteor.startup(async () => {
-  // If the Links collection is empty, add some data.
-  if (await LinksCollection.find().countAsync() === 0) {
-    await insertLink({
-      title: 'Do the Tutorial',
-      url: 'https://www.meteor.com/tutorials/react/creating-an-app',
-    });
-
-    await insertLink({
-      title: 'Follow the Guide',
-      url: 'https://guide.meteor.com',
-    });
-
-    await insertLink({
-      title: 'Read the Docs',
-      url: 'https://docs.meteor.com',
-    });
-
-    await insertLink({
-      title: 'Discussions',
-      url: 'https://forums.meteor.com',
-    });
-  }
-
-  // We publish the entire Links collection to all clients.
-  // In order to be fetched in real-time to the clients
-  Meteor.publish("links", function () {
-    return LinksCollection.find();
+      if (!user) {
+        Accounts.createUser({
+          username: 'testuser',
+          email: 'test@example.com',
+          password: 'testpassword',
+        });
+        console.log('Test user created');
+      } else {
+        console.log('Test user already exists');
+      }
+    } catch (error) {
+      console.error('Error checking or creating user:', error);
+    }
   });
-});
+}
