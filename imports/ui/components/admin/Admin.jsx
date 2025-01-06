@@ -16,23 +16,30 @@ const Admin = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   useEffect(() => {
+    const sub0 = Meteor.subscribe('users');
     const sub1 = Meteor.subscribe('specialists');
     const sub2 = Meteor.subscribe('participantGroups');
     const sub3 = Meteor.subscribe('cohortGroups');
     const sub4 = Meteor.subscribe('topics');
     return () => {
+      sub0.stop();
       sub1.stop();
       sub2.stop();
       sub3.stop();
       sub4.stop();
     };
   }, []);
+  const users = useTracker(()=> Meteor.users.find().fetch());
   const specialists = useTracker(()=>SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const cohortGroups = useTracker(() => CohortGroupsCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const getFieldsForSection = () => {
     switch (activeSection) {
+      case 'Users':
+        return [
+          {email: 'email', label:'Email'}
+        ];
       case 'Specialists':
         return [
           {name: 'name', label: 'Name'},
@@ -65,6 +72,7 @@ const Admin = () => {
   };
   const getCollectionName = () => {
     switch(activeSection) {
+      case 'Users': return 'users';
       case 'Specialists': return 'specialists';
       case 'Participant Groups': return 'participantGroups';
       case 'Cohort Groups': return 'cohortGroups';
@@ -74,7 +82,7 @@ const Admin = () => {
   };
 
   const data = {
-    Users: [],
+    Users: users,
     Specialists: specialists,
     "Participant Groups": participantGroups,
     "Cohort Groups": cohortGroups,

@@ -6,6 +6,20 @@ import {
     TopicsCollection,
 } from '../imports/api/collections';
 
+Meteor.publish('users', function () {
+    const currentUser = Meteor.users.findOne(this.userId);
+    if (currentUser && currentUser.isAdmin) {
+      return Meteor.users.find({}, {
+        fields: {
+          username: 1,
+          emails: 1,
+          createdAt: 1,
+        }
+      });
+    }
+    return this.ready();
+  });
+  
 Meteor.publish('specialists', function () {
     return SpecialistsCollection.find();
 });
