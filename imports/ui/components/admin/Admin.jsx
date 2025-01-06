@@ -17,11 +17,20 @@ const Admin = () => {
 
   useEffect(() => {
     const sub1 = Meteor.subscribe('specialists');
+    const sub2 = Meteor.subscribe('participantGroups');
+    const sub3 = Meteor.subscribe('cohortGroups');
+    const sub4 = Meteor.subscribe('topics');
     return () => {
       sub1.stop();
+      sub2.stop();
+      sub3.stop();
+      sub4.stop();
     };
   }, []);
   const specialists = useTracker(()=>SpecialistsCollection.find().fetch());
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const cohortGroups = useTracker(() => CohortGroupsCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
   const getFieldsForSection = () => {
     switch (activeSection) {
       case 'Specialists':
@@ -32,13 +41,34 @@ const Admin = () => {
           { name: 'phone', label: 'Phone' },
           { name: 'institute', label: 'Institute' }
         ];
-        default:
-          return [];
+      case 'Participant Groups':
+        return [
+          {name: 'name', label: 'Name'},
+          { name: 'agency', label: 'Agency' },
+          { name: 'email', label: 'Email' },
+          { name: 'phone', label: 'Phone' },
+          { name: 'families', label: 'Families' }
+        ];
+      case 'Cohort Groups':
+        return [
+          {name: 'title', label: 'Title'},
+          { name: 'description', label: 'Description' },
+        ];
+      case 'Topics':
+        return [
+          {name: 'title', label: 'Title'},
+          { name: 'description', label: 'Description' },
+        ];
+      default:
+        return [];
     }
   };
   const getCollectionName = () => {
     switch(activeSection) {
       case 'Specialists': return 'specialists';
+      case 'Participant Groups': return 'participantGroups';
+      case 'Cohort Groups': return 'cohortGroups';
+      case 'Topics': return 'topics';
       default: return '';
     }
   };
@@ -46,9 +76,9 @@ const Admin = () => {
   const data = {
     Users: [],
     Specialists: specialists,
-    "Participant Groups": [],
-    "Cohort Groups": [],
-    Topics: [],
+    "Participant Groups": participantGroups,
+    "Cohort Groups": cohortGroups,
+    Topics: topics,
   };
 
   return (

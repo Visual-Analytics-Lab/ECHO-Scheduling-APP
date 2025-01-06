@@ -9,3 +9,12 @@ import {
 Meteor.publish('specialists', function () {
     return SpecialistsCollection.find();
 });
+Meteor.publish('participantGroups', function() {
+    return ParticipantGroupsCollection.find();
+});
+Meteor.publish('cohortGroups', function() {
+    return CohortGroupsCollection.find();
+});
+Meteor.publish('topics', function() {
+    return TopicsCollection.find();
+});
