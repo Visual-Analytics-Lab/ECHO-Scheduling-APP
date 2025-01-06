@@ -1,7 +1,21 @@
 import React from "react";
 
 const AdminTable = ({ data, sectionTitle }) => {
-  // Get the keys of the first object in the data to dynamically create table headers, excluding 'id'
+
+  const formatCellValue = (value) => {
+    if (value instanceof Date) {
+      return value.toLocaleDateString();
+    }
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
+
   const headers = data.length > 0 ? Object.keys(data[0]).filter(key => key !== 'id') : [];
 
   return (
@@ -9,35 +23,41 @@ const AdminTable = ({ data, sectionTitle }) => {
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-gray-200">
-            {/* Render the table headers dynamically, excluding 'id' */}
             {headers.map((header) => (
               <th key={header} className="p-3">
-                {header.charAt(0).toUpperCase() + header.slice(1)} {/* Capitalize header */}
+                {header.charAt(0).toUpperCase() + header.slice(1)} 
               </th>
             ))}
-            <th className="p-3">Actions</th> {/* Add Actions column */}
+            <th className="p-3">Actions</th> 
           </tr>
         </thead>
         <tbody>
           {data.map((item, index) => (
             <tr
-              key={item.id}
+              key={item.id || index}
               className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
             >
-              {/* Render the data rows dynamically, excluding 'id' */}
+
               {headers.map((header) => (
                 <td key={header} className="p-3">
-                  {item[header]} {/* Display the corresponding value */}
+                  {formatCellValue(item[header])} 
                 </td>
               ))}
-              <td className="p-3 flex space-x-2">
-                <button className="text-blue-500 hover:underline">Edit</button>
-                <button className="text-red-500 hover:underline">Delete</button>
+              <td className="p-3">
+                <div className="flex space-x-2">
+                  <button className="text-blue-500 hover:underline">Edit</button>
+                  <button className="text-red-500 hover:underline">Delete</button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {data.length === 0 && (
+        <div className="text-center py-4 text-gray-500">
+          No data available
+        </div>
+      )}
     </section>
   );
 };

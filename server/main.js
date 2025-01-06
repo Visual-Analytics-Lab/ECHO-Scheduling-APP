@@ -1,5 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import { Accounts } from 'meteor/accounts-base';
+import '../imports/api/collections';
+import './methods'
+import './publications';
 
 if (Meteor.isServer) {
   process.env.MONGO_URL="mongodb://127.0.0.1:27017/Echo-Database"
