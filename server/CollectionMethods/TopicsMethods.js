@@ -8,6 +8,7 @@ Meteor.methods({
         check(data, {
             title: String,
             description: String,
+            category: String,
         });
         
         const topicsId = await TopicsCollection.insertAsync({
@@ -17,17 +18,18 @@ Meteor.methods({
         //console.log('Inserted specialist with ID:', topicsId);
         return topicsId;
     },
-    'topics.remove'(topicsId) {
+    async 'topics.remove'(topicsId) {
         check(topicsId, String);
-        return TopicsCollection.remove(topicsId);
+        return await TopicsCollection.removeAsync(topicsId);
     },
-    'topics.update'(topicsId, data) {
+    async 'topics.update'(topicsId, data) {
         check(topicsId, String);
         check(data, {
             title: String,
-            description: String
+            description: String,
+            category: String,
         });
-        return TopicsCollection.update(topicsId, {
+        return await TopicsCollection.updateAsync(topicsId, {
             $set: data
         });
     }
