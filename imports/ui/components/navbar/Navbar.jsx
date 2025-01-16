@@ -12,7 +12,7 @@ const Navbar = () => {
     <nav className="bg-[#721D35] h-16 flex items-center justify-between px-4">
       <div className="flex items-center space-x-2">
         <img
-          src="/path-to-your-logo.png"
+          src="/assets/images/Echo Logo.png"
           alt="Echo Logo"
           className="h-8"
         />
