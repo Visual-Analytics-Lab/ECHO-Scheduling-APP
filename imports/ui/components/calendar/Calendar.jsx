@@ -1,17 +1,35 @@
 import React, { useState } from "react";
+import { useTracker } from 'meteor/react-meteor-data';
+import CreateSessionModal from "./CreateSessionModal";
 import Navbar from "../navbar/Navbar";
-import CalendarSidebar from "./CalendarSidebar"; // Create a new Sidebar for Calendar
-import FullCalendar from "@fullcalendar/react"; // Import FullCalendar
-import dayGridPlugin from "@fullcalendar/daygrid"; // Import plugins
+import CalendarSidebar from "./CalendarSidebar";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { SessionsCollection } from "../../../api/collections";
 
 const Calendar = () => {
   const [activeOption, setActiveOption] = useState("Print Option 1");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const sessions = useTracker(() => SessionsCollection.find().fetch());
 
   const handleSidebarClick = (option) => {
     setActiveOption(option);
-    console.log(`Selected: ${option}`);
+  };
+
+  const handleDateClick = (info) => {
+    setSelectedDate(info.dateStr);
+    setIsModalOpen(true);
+  };
+
+  const handleCreateSession = (formData) => {
+    SessionsCollection.insert({
+      ...formData,
+      createdAt: new Date(),
+    });
   };
 
   return (
@@ -47,18 +65,19 @@ const Calendar = () => {
                     height="100%"
                     editable={true}
                     selectable={true}
-                    events={[
-                        {
-                            title: "Event 1",
-                            start: "2025-01-20",
-                            end: "2025-01-22",
-                        },
-                        {
-                            title: "Event 2",
-                            start: "2025-01-25",
-                        },
-                    ]}
+                    select={handleDateClick}
+                    events={sessions.map(session => ({
+                      title: session.title,
+                      start: new Date(session.dateTime).toISOString(),
+                      end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
+                    }))}
                 />
+              <CreateSessionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreate={handleCreateSession}
+                selectedDate={selectedDate}
+              />
             </div>
         </main>
       </div>

@@ -1,0 +1,242 @@
+import React, { useState } from 'react';
+import { useTracker } from 'meteor/react-meteor-data';
+import {
+  UsersCollection,
+  SpecialistsCollection,
+  ParticipantGroupsCollection,
+  TopicsCollection,
+} from '../../../api/collections';
+
+const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
+  // Subscribe to collections
+  const users = useTracker(() => Meteor.users.find().fetch());
+  const specialists = useTracker(() => SpecialistsCollection.find().fetch());
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
+
+  const [formData, setFormData] = useState({
+    casePresenter: '',
+    facilitator: '',
+    coordinator: '',
+    presentingSpecialist: '',
+    supportingSpecialist1: '',
+    supportingSpecialist2: '',
+    participantGroup: '',
+    dateTime: selectedDate,
+    presentationsDue: '',
+    newMaterial: false,
+    color: '',
+    topic: '',
+    notes: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+  const handleSubmit = () => {
+    onCreate(formData);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
+        <button
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+          onClick={onClose}
+        >
+          ✕
+        </button>
+        <h2 className="text-xl font-bold mb-4">Create Session</h2>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="form-group">
+              <label className="block font-medium">Case Presenter</label>
+              <input
+                type="text"
+                name="casePresenter"
+                value={formData.casePresenter}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            <div className="form-group">
+              <label className="block font-medium">Facilitator</label>
+              <select
+                name="facilitator"
+                value={formData.facilitator}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Facilitator</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="block font-medium">Coodinator</label>
+              <select
+                name="coordinator"
+                value={formData.coordinator}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Coordinator</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+                
+          <div className="form-group">
+            <label>Coordinator</label>
+            <select name="coordinator" value={formData.coordinator} onChange={handleChange} required>
+              <option value="">Select Coordinator</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>{user.username}</option>
+              ))}
+            </select>
+          </div>
+{/* 
+
+          <div className="form-group">
+            <label>Presenting Specialist</label>
+            <select name="presentingSpecialist" value={formData.presentingSpecialist} onChange={handleChange} required>
+              <option value="">Select Presenting Specialist</option>
+              {specialists.map(spec => (
+                <option key={spec._id} value={spec._id}>{spec.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Supporting Specialist 1</label>
+            <select name="supportingSpecialist1" value={formData.supportingSpecialist1} onChange={handleChange}>
+              <option value="">Select Supporting Specialist 1</option>
+              {specialists.map(spec => (
+                <option key={spec._id} value={spec._id}>{spec.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Supporting Specialist 2</label>
+            <select name="supportingSpecialist2" value={formData.supportingSpecialist2} onChange={handleChange}>
+              <option value="">Select Supporting Specialist 2</option>
+              {specialists.map(spec => (
+                <option key={spec._id} value={spec._id}>{spec.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Participant Group</label>
+            <select name="participantGroup" value={formData.participantGroup} onChange={handleChange} required>
+              <option value="">Select Participant Group</option>
+              {participantGroups.map(group => (
+                <option key={group._id} value={group._id}>{group.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Date & Time</label>
+            <input
+              type="datetime-local"
+              name="dateTime"
+              value={formData.dateTime}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Presentations Due</label>
+            <input
+              type="date"
+              name="presentationsDue"
+              value={formData.presentationsDue}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>New Material</label>
+            <input
+              type="checkbox"
+              name="newMaterial"
+              checked={formData.newMaterial}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Color</label>
+            <input
+              type="color"
+              name="color"
+              value={formData.color}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Topic</label>
+            <select name="topic" value={formData.topic} onChange={handleChange} required>
+              <option value="">Select Topic</option>
+              {topics.map(topic => (
+                <option key={topic._id} value={topic._id}>{topic.name}</option>
+              ))}
+            </select>
+          </div> */}
+
+          </div>
+          <div className="form-group mt-4">
+            <label className="block font-medium">Notes</label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows="4"
+              className="border border-gray-300 rounded w-full p-2"
+            ></textarea>
+          </div>
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={handleSubmit}
+            >
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateSessionModal;

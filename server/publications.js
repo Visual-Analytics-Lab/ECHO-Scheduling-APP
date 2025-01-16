@@ -4,6 +4,7 @@ import {
     ParticipantGroupsCollection,
     CohortGroupsCollection,
     TopicsCollection,
+    SessionsCollection,
 } from '../imports/api/collections';
 
 Meteor.publish('users', function () {
@@ -31,4 +32,7 @@ Meteor.publish('cohortGroups', function() {
 });
 Meteor.publish('topics', function() {
     return TopicsCollection.find();
+});
+Meteor.publish('sessions', function() {
+  return SessionsCollection.find();
 });
