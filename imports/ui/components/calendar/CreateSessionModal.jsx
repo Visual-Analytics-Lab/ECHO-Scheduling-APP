@@ -11,6 +11,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
   // Subscribe to collections
   const users = useTracker(() => Meteor.users.find().fetch());
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
+  // console.log(specialists);
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
@@ -57,6 +58,20 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
         <h2 className="text-xl font-bold mb-4">Create Session</h2>
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Session Title */}
+            <div className="form-group">
+              <label className="block font-medium">Session Title</label>
+              <input
+                type="text"
+                name="sessionTitle"
+                value={formData.sessionTitle}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            {/* Case Presenter */}
             <div className="form-group">
               <label className="block font-medium">Case Presenter</label>
               <input
@@ -68,6 +83,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               />
             </div>
+            {/* Facilitator */}
             <div className="form-group">
               <label className="block font-medium">Facilitator</label>
               <select
@@ -85,6 +101,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 ))}
               </select>
             </div>
+            {/* Coordinator */}
             <div className="form-group">
               <label className="block font-medium">Coodinator</label>
               <select
@@ -102,109 +119,131 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 ))}
               </select>
             </div>
-                
-          <div className="form-group">
-            <label>Coordinator</label>
-            <select name="coordinator" value={formData.coordinator} onChange={handleChange} required>
-              <option value="">Select Coordinator</option>
-              {users.map(user => (
-                <option key={user._id} value={user._id}>{user.username}</option>
-              ))}
-            </select>
-          </div>
-{/* 
-
-          <div className="form-group">
-            <label>Presenting Specialist</label>
-            <select name="presentingSpecialist" value={formData.presentingSpecialist} onChange={handleChange} required>
-              <option value="">Select Presenting Specialist</option>
-              {specialists.map(spec => (
-                <option key={spec._id} value={spec._id}>{spec.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Supporting Specialist 1</label>
-            <select name="supportingSpecialist1" value={formData.supportingSpecialist1} onChange={handleChange}>
-              <option value="">Select Supporting Specialist 1</option>
-              {specialists.map(spec => (
-                <option key={spec._id} value={spec._id}>{spec.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Supporting Specialist 2</label>
-            <select name="supportingSpecialist2" value={formData.supportingSpecialist2} onChange={handleChange}>
-              <option value="">Select Supporting Specialist 2</option>
-              {specialists.map(spec => (
-                <option key={spec._id} value={spec._id}>{spec.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Participant Group</label>
-            <select name="participantGroup" value={formData.participantGroup} onChange={handleChange} required>
-              <option value="">Select Participant Group</option>
-              {participantGroups.map(group => (
-                <option key={group._id} value={group._id}>{group.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Date & Time</label>
-            <input
-              type="datetime-local"
-              name="dateTime"
-              value={formData.dateTime}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Presentations Due</label>
-            <input
-              type="date"
-              name="presentationsDue"
-              value={formData.presentationsDue}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>New Material</label>
-            <input
-              type="checkbox"
-              name="newMaterial"
-              checked={formData.newMaterial}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Color</label>
-            <input
-              type="color"
-              name="color"
-              value={formData.color}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Topic</label>
-            <select name="topic" value={formData.topic} onChange={handleChange} required>
-              <option value="">Select Topic</option>
-              {topics.map(topic => (
-                <option key={topic._id} value={topic._id}>{topic.name}</option>
-              ))}
-            </select>
-          </div> */}
+            {/* Presenting Specialist */}
+            <div className="form-group">
+              <label className="block font-medium">Presenting Specialist</label>
+              <select
+                name="presentingSpecialist"
+                value={formData.presentingSpecialist}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Presenting Specialist</option>
+                {specialists.map(spec => (
+                  <option 
+                    key={spec._id} value={spec._id}>{spec.name}
+                  </option>
+                ))}              
+              </select>
+            </div>
+            {/* Supporting Specialist 1 */}
+            <div className="form-group">
+              <label className="block font-medium">Supporting Specialist 1</label>
+              <select
+                name="supportingSpecialist1"
+                value={formData.supportingSpecialist1}
+                onChange={handleChange}
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Supporting Specialist 1</option>
+                {specialists.map(spec => (
+                  <option key={spec._id} value={spec._id}>{spec.name}</option>
+                ))}             
+              </select>
+            </div>
+            {/* Supporting Specialist 2 */}
+            <div className="form-group">
+              <label className="block font-medium">Supporting Specialist 2</label>
+              <select
+                name="supportingSpecialist2"
+                value={formData.supportingSpecialist2}
+                onChange={handleChange}
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Supporting Specialist 2</option>
+                {specialists.map(spec => (
+                  <option key={spec._id} value={spec._id}>{spec.name}</option>
+                ))}             
+              </select>
+            </div>
+            {/* Participant Group */}
+            <div className="form-group">
+              <label className="block font-medium">Participant Group</label>
+              <select
+                name="participantGroup"
+                value={formData.participantGroup}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Participant Group</option>
+                {participantGroups.map(group => (
+                  <option key={group._id} value={group._id}>{group.name}</option>
+                ))}             
+              </select>
+            </div>
+            {/* Date & Time */}
+            <div className="form-group">
+              <label className="block font-medium">Date & Time</label>
+              <input
+                type="datetime-local"
+                name="dateTime"
+                value={formData.dateTime}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            {/* Presentations Due */}
+            <div className="form-group">
+              <label className="block font-medium">Presentations Due</label>
+              <input
+                type="date"
+                name="presentationsDue"
+                value={formData.presentationsDue}
+                onChange={handleChange}
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            {/* New Material */}
+            <div className="form-group">
+              <label className="block font-medium">New Material</label>
+              <input
+                type="checkbox"
+                name="newMaterial"
+                checked={formData.newMaterial}
+                onChange={handleChange}
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            {/* Color */}
+            <div className="form-group">
+              <label className="block font-medium">Color</label>
+              <input
+                type="color"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+                className="border border-gray-300 rounded w-full p-2"
+              />
+            </div>
+            {/* Topic */}
+            <div className="form-group">
+              <label className="block font-medium">Topic</label>
+              <select
+                name="topic"
+                value={formData.topic}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Topic</option>
+                {topics.map(topic => (
+                  <option key={topic._id} value={topic._id}>{topic.name}</option>
+                ))}            
+              </select>
+            </div>
 
           </div>
           <div className="form-group mt-4">
