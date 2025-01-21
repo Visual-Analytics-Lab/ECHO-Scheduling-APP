@@ -7,8 +7,9 @@ import {
     SessionsCollection,
 } from '../imports/api/collections';
 
-Meteor.publish('users', function () {
-    const currentUser = Meteor.users.findOne(this.userId);
+Meteor.publish('users', async function () {
+    const currentUser = await Meteor.users.findOneAsync(this.userId);
+    
     if (currentUser && currentUser.isAdmin) {
       return Meteor.users.find({}, {
         fields: {

@@ -8,6 +8,8 @@ Meteor.methods({
         check(data, {
             title: String,
             description: String,
+            startDate: String,
+            endDate: String
         });
         
         const cohortGroupsId = await CohortGroupsCollection.insertAsync({
@@ -17,17 +19,19 @@ Meteor.methods({
         //console.log('Inserted specialist with ID:', cohortGroupsId);
         return cohortGroupsId;
     },
-    'cohortGroups.remove'(cohortGroupsId) {
+    async 'cohortGroups.remove'(cohortGroupsId) {
         check(cohortGroupsId, String);
-        return CohortGroupsCollection.remove(cohortGroupsId);
+        return await CohortGroupsCollection.removeAsync(cohortGroupsId);
     },
-    'cohortGroups.update'(cohortGroupsId, data) {
+    async 'cohortGroups.update'(cohortGroupsId, data) {
         check(cohortGroupsId, String);
         check(data, {
             title: String,
-            description: String
+            description: String,
+            startDate: String,
+            endDate: String
         });
-        return CohortGroupsCollection.update(cohortGroupsId, {
+        return await CohortGroupsCollection.updateAsync(cohortGroupsId, {
             $set: data
         });
     }

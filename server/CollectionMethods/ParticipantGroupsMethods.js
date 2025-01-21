@@ -20,11 +20,11 @@ Meteor.methods({
         //console.log('Inserted specialist with ID:', participantGroupsId);
         return participantGroupsId;
     },
-    'participantGroups.remove'(participantGroupsId) {
+    async 'participantGroups.remove'(participantGroupsId) {
         check(participantGroupsId, String);
-        return ParticipantGroupsCollection.remove(participantGroupsId);
+        return await ParticipantGroupsCollection.removeAsync(participantGroupsId);
     },
-    'participantGroups.update'(participantGroupsId, data) {
+    async 'participantGroups.update'(participantGroupsId, data) {
         check(participantGroupsId, String);
         check(data, {
             name: String,
@@ -33,7 +33,7 @@ Meteor.methods({
             phone: String,
             families: String
         });
-        return ParticipantGroupsCollection.update(participantGroupsId, {
+        return await ParticipantGroupsCollection.updateAsync(participantGroupsId, {
             $set: data
         });
     }

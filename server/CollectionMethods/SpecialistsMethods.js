@@ -20,11 +20,11 @@ Meteor.methods({
         //console.log('Inserted specialist with ID:', specialistId);
         return specialistId;
     },
-    'specialists.remove'(specialistId) {
+    async 'specialists.remove'(specialistId) {
         check(specialistId, String);
-        return SpecialistsCollection.remove(specialistId);
+        return await SpecialistsCollection.removeAsync(specialistId);
     },
-    'specialists.update'(specialistId, data) {
+    async 'specialists.update'(specialistId, data) {
         check(specialistId, String);
         check(data, {
             name: String,
@@ -33,7 +33,7 @@ Meteor.methods({
             phone: String,
             institute: String
         });
-        return SpecialistsCollection.update(specialistId, {
+        return await SpecialistsCollection.updateAsync(specialistId, {
             $set: data
         });
     }
