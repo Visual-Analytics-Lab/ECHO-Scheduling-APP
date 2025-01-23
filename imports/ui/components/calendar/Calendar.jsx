@@ -8,13 +8,19 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { SessionsCollection } from "../../../api/collections";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; 
+import { Meteor } from "meteor/meteor";
 
 const Calendar = () => {
   const [activeOption, setActiveOption] = useState("Print Option 1");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const sessions = useTracker(() => SessionsCollection.find().fetch());
+  const sessions = useTracker(() => {
+    Meteor.subscribe('sessions');
+    return SessionsCollection.find().fetch()
+  });
 
   const handleSidebarClick = (option) => {
     setActiveOption(option);
@@ -26,9 +32,13 @@ const Calendar = () => {
   };
 
   const handleCreateSession = (formData) => {
-    SessionsCollection.insert({
-      ...formData,
-      createdAt: new Date(),
+    Meteor.call(`sessions.insert`, formData, (error, result) => {
+      if (error) {
+        console.log(error);
+        toast.error(error.reason || 'An error occurred');
+      } else {
+        toast.success("Successfully added new session")
+      }
     });
   };
 
@@ -66,8 +76,8 @@ const Calendar = () => {
                     editable={true}
                     selectable={true}
                     select={handleDateClick}
-                    events={sessions.map(session => ({
-                      title: session.title,
+                    events={sessions?.map(session => ({
+                      title: session.sessionTitle,
                       start: new Date(session.dateTime).toISOString(),
                       end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
                     }))}
@@ -81,6 +91,7 @@ const Calendar = () => {
             </div>
         </main>
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

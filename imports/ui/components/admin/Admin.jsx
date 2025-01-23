@@ -47,7 +47,11 @@ const Admin = () => {
   const getFieldsForSection = () => {
     switch (activeSection) {
       case "Users":
-        return [{ name: "email", label: "Email" }];
+        return [
+          { name: "id", label: "ID" },
+          { name: "email", label: "Email" },
+          { name: "password", label: "password" }
+        ];
       case "Specialists":
         return [
           { name: "name", label: "Name" },

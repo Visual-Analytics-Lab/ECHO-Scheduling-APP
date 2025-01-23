@@ -6,14 +6,23 @@ import {
   ParticipantGroupsCollection,
   TopicsCollection,
 } from '../../../api/collections';
+import { Meteor } from 'meteor/meteor';
 
 const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
   // Subscribe to collections
   const users = useTracker(() => Meteor.users.find().fetch());
-  const specialists = useTracker(() => SpecialistsCollection.find().fetch());
-  // console.log(specialists);
-  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
-  const topics = useTracker(() => TopicsCollection.find().fetch());
+  const specialists = useTracker(() => {
+    Meteor.subscribe('specialists');
+    return SpecialistsCollection.find().fetch();
+  });
+  const participantGroups = useTracker(() => {
+    Meteor.subscribe('participantGroups');
+    return ParticipantGroupsCollection.find().fetch()
+  });
+  const topics = useTracker(() => {
+    Meteor.subscribe('topics');
+    return TopicsCollection.find().fetch();
+  });
 
   const [formData, setFormData] = useState({
     casePresenter: '',
@@ -40,7 +49,9 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
   };
 
   const handleSubmit = () => {
+    console.log("Data:  ", formData);
     onCreate(formData);
+    setFormData({});
     onClose();
   };
 
@@ -112,9 +123,9 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Coordinator</option>
-                {users.map((user) => (
+                {users?.map((user) => (
                   <option key={user._id} value={user._id}>
-                    {user.username}
+                    {user.user}
                   </option>
                 ))}
               </select>
@@ -130,7 +141,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Presenting Specialist</option>
-                {specialists.map(spec => (
+                {specialists?.map(spec => (
                   <option 
                     key={spec._id} value={spec._id}>{spec.name}
                   </option>
@@ -147,7 +158,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Supporting Specialist 1</option>
-                {specialists.map(spec => (
+                {specialists?.map(spec => (
                   <option key={spec._id} value={spec._id}>{spec.name}</option>
                 ))}             
               </select>
@@ -162,7 +173,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Supporting Specialist 2</option>
-                {specialists.map(spec => (
+                {specialists?.map(spec => (
                   <option key={spec._id} value={spec._id}>{spec.name}</option>
                 ))}             
               </select>
@@ -178,7 +189,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Participant Group</option>
-                {participantGroups.map(group => (
+                {participantGroups?.map(group => (
                   <option key={group._id} value={group._id}>{group.name}</option>
                 ))}             
               </select>
@@ -239,8 +250,8 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Topic</option>
-                {topics.map(topic => (
-                  <option key={topic._id} value={topic._id}>{topic.name}</option>
+                {topics?.map(topic => (
+                  <option key={topic._id} value={topic._id}>{topic.title}</option>
                 ))}            
               </select>
             </div>
