@@ -5,8 +5,20 @@ import { SessionsCollection } from '../../imports/api/collections';
 Meteor.methods({
     async 'sessions.insert'(data) {
         check(data, {
-            title: String,
-            description: String,
+            sessionTitle: String,
+            casePresenter: String,
+            facilitator: String,
+            coordinator: String,
+            presentingSpecialist: String,
+            supportingSpecialist1: String,
+            supportingSpecialist2: String,
+            participantGroup: String,
+            dateTime: String,
+            presentationsDue: String,
+            newMaterial: Boolean,
+            color: String,
+            topic: String,
+            notes: String,
         });
         
         const sessionsId = await SessionsCollection.insertAsync({
