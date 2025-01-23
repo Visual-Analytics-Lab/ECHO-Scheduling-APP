@@ -34,7 +34,13 @@ const Admin = () => {
     };
   }, []);
 
-  const users = useTracker(() => Meteor.users.find().fetch());
+  const users = useTracker(() => 
+    Meteor.users.find().fetch().map(user => ({
+      _id: user._id,
+      username: user.username,
+      email: user.emails?.[0]?.address || 'No email'
+    }))
+  );
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() =>
     ParticipantGroupsCollection.find().fetch()
@@ -48,9 +54,8 @@ const Admin = () => {
     switch (activeSection) {
       case "Users":
         return [
-          { name: "id", label: "ID" },
+          { name: "username", label: "User Name" },
           { name: "email", label: "Email" },
-          { name: "password", label: "password" }
         ];
       case "Specialists":
         return [
@@ -84,6 +89,13 @@ const Admin = () => {
       default:
         return [];
     }
+  };
+  const getUserFormFields = () => {
+    return [
+      { name: "username", label: "Username", type: "text" },
+      { name: "email", label: "Email", type: "email" },
+      { name: "password", label: "Password", type: "password" }
+    ];
   };
   const getCollectionName = () => {
     switch(activeSection) {
@@ -160,7 +172,7 @@ const Admin = () => {
             isOpen={isPopupOpen}
             onClose={() => setIsPopupOpen(false)}
             collection={getCollectionName()}
-            fields={getFieldsForSection()}
+            fields={activeSection === 'Users' ? getUserFormFields() : getFieldsForSection()}
             title={`Add New ${activeSection.slice(0, -1)}`}
             onSuccess={() => {
               setIsPopupOpen(false);

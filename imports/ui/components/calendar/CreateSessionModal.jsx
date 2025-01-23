@@ -8,7 +8,7 @@ import {
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
 
-const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate }) => {
+const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
   // Subscribe to collections
   const users = useTracker(() => Meteor.users.find().fetch());
   const specialists = useTracker(() => {

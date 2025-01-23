@@ -3,33 +3,35 @@ import { check } from 'meteor/check';
 
 Meteor.methods({
     async 'users.insert'(data) {
-        //console.log('Received data:', data);
         check(data, {
-            id: String,
+            username: String,
             email: String,
             password: String,
         });
         
-        //console.log('Inserted specialist with ID:', cohortGroupsId);
         return Accounts.createUser({
-            ...data,
+            username: data.username,
+            email: data.email,
+            password: data.password,
             createdAt: new Date(),
-          });
-    },
-    async 'users.remove'(cohortGroupsId) {
-        check(cohortGroupsId, String);
-        return await CohortGroupsCollection.removeAsync(cohortGroupsId);
-    },
-    async 'users.update'(cohortGroupsId, data) {
-        check(cohortGroupsId, String);
-        check(data, {
-            title: String,
-            description: String,
-            startDate: String,
-            endDate: String
         });
-        return await CohortGroupsCollection.updateAsync(cohortGroupsId, {
-            $set: data
+    },
+    async 'users.remove'(userId) {
+        check(userId, String);
+        return Meteor.users.remove(userId);
+    },
+    async 'users.update'(userId, data) {
+        check(userId, String);
+        check(data, {
+            username: String,
+            email: String,
+        });
+        
+        return await Meteor.users.updateAsync(userId, {
+            $set: {
+                username: data.username,
+                'emails.0.address': data.email,
+            }
         });
     }
 });
