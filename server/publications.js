@@ -9,7 +9,6 @@ import {
 
 Meteor.publish('users', async function () {
     const currentUser = await Meteor.users.findOneAsync(this.userId);
-    
     if (currentUser) {
       return Meteor.users.find({}, {
         fields: {

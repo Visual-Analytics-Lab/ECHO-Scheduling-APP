@@ -47,7 +47,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
       [name]: type === 'checkbox' ? checked : value,
     });
   };
-
+  //Check Calender Function handleCreateFunction for the rest of the handleSubmit
   const handleSubmit = () => {
     console.log("Data:  ", formData);
     onCreate(formData);

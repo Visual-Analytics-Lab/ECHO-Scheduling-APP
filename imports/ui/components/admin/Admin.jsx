@@ -17,7 +17,7 @@ import "react-toastify/dist/ReactToastify.css";
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-
+  //Subscribing to Collections
   useEffect(() => {
     const sub0 = Meteor.subscribe("users");
     const sub1 = Meteor.subscribe("specialists");
@@ -33,12 +33,11 @@ const Admin = () => {
       sub4.stop();
     };
   }, []);
-
   const users = useTracker(() => 
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
       username: user.username,
-      email: user.emails?.[0]?.address || 'No email'
+      email: user.emails?.[0]?.address || 'No email' // Email address is structured like email: [address : 'here']
     }))
   );
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
@@ -50,6 +49,7 @@ const Admin = () => {
   );
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
+  //Getting Fields for showing data as well as used for pop ups(except users)
   const getFieldsForSection = () => {
     switch (activeSection) {
       case "Users":
@@ -90,6 +90,7 @@ const Admin = () => {
         return [];
     }
   };
+  //Exception here because don't show password, but have password field when pop up
   const getUserFormFields = () => {
     return [
       { name: "username", label: "Username", type: "text" },
@@ -108,7 +109,8 @@ const Admin = () => {
     }
   };
   const getMethodName = (operation) => {
-    const section = activeSection.charAt(0).toLowerCase() + activeSection.slice(1).replace(/\s+/g, '');
+    //const section = activeSection.charAt(0).toLowerCase() + activeSection.slice(1).replace(/\s+/g, '');
+    const section = getCollectionName();
     return `${section}.${operation}`;
   };
 
