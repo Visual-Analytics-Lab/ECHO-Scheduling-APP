@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTracker } from 'meteor/react-meteor-data';
-import CreateSessionModal from "./CreateSessionModal";
+import SessionModal from "./SessionModal";
 import Navbar from "../navbar/Navbar";
 import CalendarSidebar from "./CalendarSidebar";
 import FullCalendar from "@fullcalendar/react";
@@ -16,6 +16,7 @@ const Calendar = () => {
   const [activeOption, setActiveOption] = useState("Print Option 1");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(null);
 
   const sessions = useTracker(() => {
     Meteor.subscribe('sessions');
@@ -31,13 +32,42 @@ const Calendar = () => {
     setIsModalOpen(true);
   };
 
-  const handleCreateSession = (formData) => {
-    Meteor.call(`sessions.insert`, formData, (error, result) => {
+  const handleEventClick = (info) => {
+    const sessionId = info.event.extendedProps.sessionId;
+    const session = sessions.find(s => s._id === sessionId);
+    if (session) {
+      setSelectedSession(session);
+      setIsModalOpen(true);
+    }
+  };
+  
+  const handleSubmit = (formData, sessionId) => {
+    if (sessionId) {
+      // Update existing session
+      Meteor.call('sessions.update', sessionId, formData, (error) => {
+        if (error) {
+          toast.error(error.reason || 'An error occurred');
+        } else {
+          toast.success('Session updated successfully');
+        }
+      });
+    } else {
+      // Create new session
+      Meteor.call('sessions.insert', formData, (error) => {
+        if (error) {
+          toast.error(error.reason || 'An error occurred');
+        } else {
+          toast.success('Session created successfully');
+        }
+      });
+    }
+  };
+  const handleDelete = (sessionId) => {
+    Meteor.call('sessions.remove', sessionId, (error) => {
       if (error) {
-        console.log(error);
         toast.error(error.reason || 'An error occurred');
       } else {
-        toast.success("Successfully added new session")
+        toast.success('Session deleted successfully');
       }
     });
   };
@@ -64,29 +94,38 @@ const Calendar = () => {
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
             <div className="bg-white shadow-lg rounded border border-gray-300 p-2 h-[calc(100vh-145px)]">
-                <FullCalendar
-                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                    initialView="dayGridMonth"
-                    headerToolbar={{
-                        left: "prev,next today",
-                        center: "title",
-                        right: "dayGridMonth,timeGridWeek,timeGridDay",
-                    }}
-                    height="100%"
-                    editable={true}
-                    selectable={true}
-                    select={handleDateClick}
-                    events={sessions?.map(session => ({
-                      title: session.sessionTitle,
-                      start: new Date(session.dateTime).toISOString(),
-                      end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
-                    }))}
-                />
-              <CreateSessionModal
+            <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    right: "dayGridMonth,timeGridWeek,timeGridDay",
+                }}
+                height="100%"
+                editable={true}
+                selectable={true}
+                select={handleDateClick}
+                eventClick={handleEventClick}  // Add this line
+                events={sessions?.map(session => ({
+                  title: session.sessionTitle,
+                  start: new Date(session.dateTime).toISOString(),
+                  end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
+                  extendedProps: {
+                    sessionId: session._id  // Make sure to include this!
+                  }
+                }))}
+            />
+              <SessionModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onCreate={handleCreateSession}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setSelectedSession(null);
+                }}
+                onSubmit={handleSubmit}
+                onDelete={handleDelete}
                 selectedDate={selectedDate}
+                existingSession={selectedSession}
               />
             </div>
         </main>

@@ -27,17 +27,29 @@ Meteor.methods({
         });
         return sessionsId;
     },
-    'sessions.remove'(sessionsId) {
+    async 'sessions.remove'(sessionsId) {
         check(sessionsId, String);
-        return SessionsCollection.remove(sessionsId);
+        return await SessionsCollection.removeAsync(sessionsId);
     },
-    'sessions.update'(sessionsId, data) {
+    async 'sessions.update'(sessionsId, data) {
         check(sessionsId, String);
         check(data, {
-            title: String,
-            description: String
+            sessionTitle: String,
+            casePresenter: String,
+            facilitator: String,
+            coordinator: String,
+            presentingSpecialist: String,
+            supportingSpecialist1: String,
+            supportingSpecialist2: String,
+            participantGroup: String,
+            dateTime: String,
+            presentationsDue: String,
+            newMaterial: Boolean,
+            color: String,
+            topic: String,
+            notes: String,
         });
-        return SessionsCollection.update(sessionsId, {
+        return await SessionsCollection.updateAsync(sessionsId, {
             $set: data
         });
     }
