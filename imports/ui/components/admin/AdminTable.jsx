@@ -233,13 +233,13 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
             >
               Cancel
             </Button>
-            <Button 
+            <RedButton 
               variant="destructive" 
               onClick={handleDeleteConfirm}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Deleting...' : 'Delete'}
-            </Button>
+            </RedButton>
           </div>
         </DialogContent>
       </Dialog>

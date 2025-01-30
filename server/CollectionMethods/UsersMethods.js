@@ -18,7 +18,7 @@ Meteor.methods({
     },
     async 'users.remove'(userId) {
         check(userId, String);
-        return Meteor.users.remove(userId);
+        return await Meteor.users.removeAsync(userId);
     },
     async 'users.update'(userId, data) {
         check(userId, String);

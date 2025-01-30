@@ -26,7 +26,7 @@ const Calendar = () => {
   const handleSidebarClick = (option) => {
     setActiveOption(option);
   };
-
+ 
   const handleDateClick = (info) => {
     setSelectedDate(info.dateStr);
     setIsModalOpen(true);
