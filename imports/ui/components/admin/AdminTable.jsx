@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../shadecn-components/dialog";
 import { Button } from "../shadecn-components/button";
+import { RedButton } from "../shadecn-components/redButton";
 import { Alert, AlertDescription } from "../shadecn-components/alert";
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
@@ -151,14 +152,14 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                     >
                       Edit
                     </Button>
-                    <Button 
+                    <RedButton 
                       variant="ghost" 
                       className="text-red-500 hover:text-red-700"
                       onClick={() => handleDeleteClick(item)}
                       disabled={isSubmitting}
                     >
                       Delete
-                    </Button>
+                    </RedButton>
                   </div>
                 </td>
               </tr>
@@ -232,13 +233,13 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
             >
               Cancel
             </Button>
-            <Button 
+            <RedButton 
               variant="destructive" 
               onClick={handleDeleteConfirm}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Deleting...' : 'Delete'}
-            </Button>
+            </RedButton>
           </div>
         </DialogContent>
       </Dialog>
