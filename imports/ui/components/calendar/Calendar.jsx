@@ -25,6 +25,7 @@ const Calendar = () => {
 
   const handleSidebarClick = (option) => {
     setActiveOption(option);
+    handlePrint(option);
   };
  
   const handleDateClick = (info) => {
@@ -40,6 +41,44 @@ const Calendar = () => {
       setIsModalOpen(true);
     }
   };
+  const handlePrint = (option) => {
+    if (option === "Schedules by Week") {
+      // Get the current date
+      const today = new Date();
+  
+      // Calculate the first day (Sunday) of this week
+      const firstDayOfWeek = new Date(today);
+      firstDayOfWeek.setDate(today.getDate() - today.getDay());
+      firstDayOfWeek.setHours(0, 0, 0, 0);
+  
+      // Calculate the last day (Saturday) of this week
+      const lastDayOfWeek = new Date(today);
+      lastDayOfWeek.setDate(today.getDate() - today.getDay() + 6);
+      lastDayOfWeek.setHours(23, 59, 59, 999);
+  
+      // Call the exportCSV method passing the boundaries of the week
+      Meteor.call('exportCSV', firstDayOfWeek, lastDayOfWeek, (error, csv) => {
+        if (error) {
+          console.error("Error exporting CSV:", error);
+          // Optionally, you can use your toast notification here as well.
+        } else {
+          // Optionally trigger a download for the CSV file.
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "schedules_by_week.csv";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      });
+    } else {
+      console.log("Other print options not implemented yet.");
+    }
+  };
+  
   
   const handleSubmit = (formData, sessionId) => {
     if (sessionId) {
@@ -106,11 +145,13 @@ const Calendar = () => {
                 editable={true}
                 selectable={true}
                 select={handleDateClick}
-                eventClick={handleEventClick}  // Add this line
+                eventClick={handleEventClick} 
                 events={sessions?.map(session => ({
                   title: session.sessionTitle,
                   start: new Date(session.dateTime).toISOString(),
                   end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
+                  backgroundColor: session.color,
+                  borderColor: session.color,
                   extendedProps: {
                     sessionId: session._id  // Make sure to include this!
                   }

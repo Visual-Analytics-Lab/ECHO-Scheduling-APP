@@ -10,7 +10,14 @@ import { Meteor } from 'meteor/meteor';
 
 const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
   // Subscribe to collections
-  const users = useTracker(() => Meteor.users.find().fetch());
+  const users = useTracker(() => {
+    Meteor.subscribe('users'); // Add this line
+    return Meteor.users.find().fetch().map(user => ({
+      _id: user._id,
+      username: user.username,
+      email: user.emails?.[0]?.address || 'No email'
+    }));
+  });
   const specialists = useTracker(() => {
     Meteor.subscribe('specialists');
     return SpecialistsCollection.find().fetch();
@@ -105,7 +112,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
                 className="border border-gray-300 rounded w-full p-2"
               >
                 <option value="">Select Facilitator</option>
-                {users.map((user) => (
+                {users?.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.username}
                   </option>
@@ -114,9 +121,9 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
             </div>
             {/* Coordinator */}
             <div className="form-group">
-              <label className="block font-medium">Coodinator</label>
+              <label className="block font-medium">Coordinator</label> {/* Fixed typo */}
               <select
-                name="coordinator"
+                name="coordinator" // Ensure name matches state key
                 value={formData.coordinator}
                 onChange={handleChange}
                 required
@@ -125,7 +132,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
                 <option value="">Select Coordinator</option>
                 {users?.map((user) => (
                   <option key={user._id} value={user._id}>
-                    {user.user}
+                    {user.username} {/* Ensure this field exists */}
                   </option>
                 ))}
               </select>

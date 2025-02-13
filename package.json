@@ -16,6 +16,7 @@
     "@radix-ui/react-dialog": "^1.1.4",
     "@types/react-router-dom": "^5.3.3",
     "classnames": "^2.5.1",
+    "json2csv": "^6.0.0-alpha.2",
     "meteor-node-stubs": "^1.2.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

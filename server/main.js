@@ -8,6 +8,7 @@ import './CollectionMethods/CohortGroupsMethods';
 import './CollectionMethods/TopicsMethods';
 import './CollectionMethods/UsersMethods'
 import './CollectionMethods/SessionsMethods'
+import '../imports/api/export'
 
 if (Meteor.isServer) {
   Meteor.startup(async () => {
