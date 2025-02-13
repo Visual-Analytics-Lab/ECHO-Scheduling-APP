@@ -14,9 +14,9 @@ Run `MONGO_URL="mongodb://localhost:27017/echo" meteor --port 3000`
 ### Installing Meteor
 Install Meteor using `npx meteor`
 
-If error, maybe check if node is installed.<\br>
-To install node, run the following commands: <\br>
-`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` <\br>
+If error, maybe check if node is installed.<br/>
+To install node, run the following commands: <br/>
+`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash` <br/>
 `nvm install node`
 
 ### Installing MongoDB
