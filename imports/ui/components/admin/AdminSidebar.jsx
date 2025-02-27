@@ -5,7 +5,8 @@ const AdminSidebar = ({ activeSection, setActiveSection }) => {
     "Users",
     "Specialists",
     "Participant Groups",
-    "Cohort Groups",
+    "Semesters",
+    "Series",
     "Topics",
   ];
 

@@ -4,7 +4,8 @@ import '../imports/api/collections';
 import './publications';
 import './CollectionMethods/SpecialistsMethods';
 import './CollectionMethods/ParticipantGroupsMethods';
-import './CollectionMethods/CohortGroupsMethods';
+import './CollectionMethods/SemesterMethods';
+import './CollectionMethods/SeriesMethods';
 import './CollectionMethods/TopicsMethods';
 import './CollectionMethods/UsersMethods'
 import './CollectionMethods/SessionsMethods'
