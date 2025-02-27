@@ -60,7 +60,7 @@ const Calendar = () => {
       Meteor.call('exportCSV', firstDayOfWeek, lastDayOfWeek, (error, csv) => {
         if (error) {
           console.error("Error exporting CSV:", error);
-          // Optionally, you can use your toast notification here as well.
+
         } else {
           // Optionally trigger a download for the CSV file.
           const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -153,7 +153,7 @@ const Calendar = () => {
                   backgroundColor: session.color,
                   borderColor: session.color,
                   extendedProps: {
-                    sessionId: session._id  // Make sure to include this!
+                    sessionId: session._id 
                   }
                 }))}
             />
