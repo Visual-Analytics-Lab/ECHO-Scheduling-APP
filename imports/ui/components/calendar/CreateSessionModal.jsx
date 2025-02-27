@@ -4,6 +4,8 @@ import {
   UsersCollection,
   SpecialistsCollection,
   ParticipantGroupsCollection,
+  SemesterCollection,
+  SeriesCollection,
   TopicsCollection,
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
@@ -25,6 +27,14 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
   const participantGroups = useTracker(() => {
     Meteor.subscribe('participantGroups');
     return ParticipantGroupsCollection.find().fetch()
+  });
+  const semesters = useTracker(() => {
+    Meteor.subscribe('semsters');
+    return SemesterCollection.find().fetch()
+  });
+  const series = useTracker(() => {
+    Meteor.subscribe('series');
+    return SeriesCollection.find().fetch()
   });
   const topics = useTracker(() => {
     Meteor.subscribe('topics');

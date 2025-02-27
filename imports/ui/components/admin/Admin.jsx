@@ -7,7 +7,8 @@ import AdminTable from "./AdminTable";
 import {
   SpecialistsCollection,
   ParticipantGroupsCollection,
-  CohortGroupsCollection,
+  SemesterCollection,
+  SeriesCollection,
   TopicsCollection,
 } from "../../../api/collections";
 import PopupForm from "../popup_form/PopupForm";
@@ -22,8 +23,9 @@ const Admin = () => {
     const sub0 = Meteor.subscribe("users");
     const sub1 = Meteor.subscribe("specialists");
     const sub2 = Meteor.subscribe("participantGroups");
-    const sub3 = Meteor.subscribe("cohortGroups");
-    const sub4 = Meteor.subscribe("topics");
+    const sub3 = Meteor.subscribe("semesters");
+    const sub4 = Meteor.subscribe("series");
+    const sub5 = Meteor.subscribe("topics");
 
     return () => {
       sub0.stop();
@@ -31,6 +33,7 @@ const Admin = () => {
       sub2.stop();
       sub3.stop();
       sub4.stop();
+      sub5.stop();
     };
   }, []);
   const users = useTracker(() => 
@@ -44,8 +47,11 @@ const Admin = () => {
   const participantGroups = useTracker(() =>
     ParticipantGroupsCollection.find().fetch()
   );
-  const cohortGroups = useTracker(() =>
-    CohortGroupsCollection.find().fetch()
+  const semesters = useTracker(() =>
+    SemesterCollection.find().fetch()
+  );
+  const series = useTracker(() =>
+    SeriesCollection.find().fetch()
   );
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
@@ -73,12 +79,18 @@ const Admin = () => {
           { name: "phone", label: "Phone" },
           { name: "families", label: "Families" },
         ];
-      case "Cohort Groups":
+      case "Semesters":
         return [
           { name: "title", label: "Title" },
           { name: "description", label: "Description" },
           { name: "startDate", label: "Start Date" },
           { name: "endDate", label: "End Date" },
+        ];
+      case "Series":
+        return [
+          { name: "title", label: "Title" },
+          { name: "description", label: "Description" },
+          { name: "series", label: "Series" },
         ];
       case "Topics":
         return [
@@ -103,7 +115,8 @@ const Admin = () => {
       case 'Users': return 'users';
       case 'Specialists': return 'specialists';
       case 'Participant Groups': return 'participantGroups';
-      case 'Cohort Groups': return 'cohortGroups';
+      case 'Semesters': return 'semesters';
+      case 'Series': return 'series';
       case 'Topics': return 'topics';
       default: return '';
     }
@@ -142,7 +155,8 @@ const Admin = () => {
     Users: users,
     Specialists: specialists,
     "Participant Groups": participantGroups,
-    "Cohort Groups": cohortGroups,
+    "Semesters": semesters,
+    "Series": series,
     Topics: topics,
   };
 

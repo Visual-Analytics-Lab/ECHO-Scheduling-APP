@@ -2,8 +2,8 @@ import { Meteor } from 'meteor/meteor'
 import {
     SpecialistsCollection,
     ParticipantGroupsCollection,
-    CohortGroupsCollection,
-    TopicsCollection,
+    SemesterCollection,
+    SeriesCollection,
     SessionsCollection,
 } from '../imports/api/collections';
 
@@ -27,8 +27,11 @@ Meteor.publish('specialists', function () {
 Meteor.publish('participantGroups', function() {
     return ParticipantGroupsCollection.find();
 });
-Meteor.publish('cohortGroups', function() {
-    return CohortGroupsCollection.find();
+Meteor.publish('semesters', function() {
+    return SemesterCollection.find();
+});
+Meteor.publish('series', function() {
+    return SeriesCollection.find();
 });
 Meteor.publish('topics', function() {
     return TopicsCollection.find();

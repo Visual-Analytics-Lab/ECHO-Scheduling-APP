@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Meteor } from 'meteor/meteor';
+import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 
 const PopupForm = ({ 
   isOpen, 
@@ -72,19 +73,12 @@ const PopupForm = ({
           ))}
           
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded"
-            >
+            <GrayButton onClick={onClose} >
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
+            </GrayButton>
+            <GreenButton type="submit" >
               Save
-            </button>
+            </GreenButton>
           </div>
         </form>
       </div>
