@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../shadecn-components/dialog";
-import { Button } from "../shadecn-components/button";
-import { RedButton } from "../shadecn-components/redButton";
+import { Button, RedButton } from "../shadecn-components/button";
 import { Alert, AlertDescription } from "../shadecn-components/alert";
 import {
   useReactTable,
