@@ -5,6 +5,7 @@ import {
     SemesterCollection,
     SeriesCollection,
     SessionsCollection,
+    TopicsCollection
 } from '../imports/api/collections';
 
 Meteor.publish('users', async function () {

@@ -157,7 +157,7 @@ const Admin = () => {
     "Participant Groups": participantGroups,
     "Semesters": semesters,
     "Series": series,
-    Topics: topics,
+    "Topics": topics,
   };
 
   return (
