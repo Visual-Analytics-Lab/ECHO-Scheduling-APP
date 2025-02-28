@@ -10,14 +10,14 @@ const Navbar = () => {
 
   return (
     <nav className="bg-echo-maroon h-16 flex flex-shrink-0 items-center justify-between px-4">
-      <div className="flex items-center space-x-2">
+      <Link to="/" className="flex items-center space-x-2">
         <img
           src="/assets/images/Echo Logo.png"
           alt="Echo Logo"
           className="h-8"
         />
         <h1 className="text-white text-xl">Scheduling App</h1>
-      </div>
+      </Link>
       
       {user ? (
         <div className="flex items-center space-x-4">
