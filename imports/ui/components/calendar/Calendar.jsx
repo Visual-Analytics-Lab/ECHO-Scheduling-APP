@@ -100,10 +100,11 @@ const Calendar = () => {
           ]}
         />
         <main className="flex-1 p-2">
-            <header className="bg-white text-grey text-center py-2 rounded-t-lg border border-gray-300 shadow-lg">
+          <div className="w-[55vw] rounded-lg shadow-full-border">
+            <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-400">
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
-            <div className="bg-white shadow-lg rounded border border-gray-300 p-2 h-[calc(100vh-145px)]">
+            <div className="bg-white rounded-b-lg border border-gray-400 p-2 h-[calc(100vh-145px)]">
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
@@ -140,6 +141,7 @@ const Calendar = () => {
                 existingSession={selectedSession}
               />
             </div>
+          </div>
         </main>
       </div>
       <ToastContainer position="top-right" autoClose={3000} />

@@ -9,7 +9,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="bg-[#721D35] h-16 flex flex-shrink-0 items-center justify-between px-4">
+    <nav className="bg-echo-maroon h-16 flex flex-shrink-0 items-center justify-between px-4">
       <div className="flex items-center space-x-2">
         <img
           src="/assets/images/Echo Logo.png"
@@ -22,11 +22,11 @@ const Navbar = () => {
       {user ? (
         <div className="flex items-center space-x-4">
           <nav className="flex space-x-4">
-            <Link to="/calendar" className="text-white hover:text-gray-200">
+            <Link to="/calendar" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
               Calendar
             </Link>
-            <Link to="/admin" className="text-white hover:text-gray-200">
-              Admin
+            <Link to="/admin" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+              Administration
             </Link>
           </nav>
           <div className="relative">

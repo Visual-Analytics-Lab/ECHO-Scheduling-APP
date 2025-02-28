@@ -161,13 +161,13 @@ const Admin = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="bg-bg-light flex flex-col h-screen">
       <Navbar />
       <div className="flex flex-1">
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-6">
           <header className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-[#721D35]">{activeSection}</h1>
+            <h1 className="text-2xl font-bold text-echo-maroon">{activeSection}</h1>
             <button
               className="bg-[#0EA6B2] text-white py-2 px-4 rounded hover:bg-[#0c8f9a] transition duration-200"
               onClick={() => setIsPopupOpen(true)}
