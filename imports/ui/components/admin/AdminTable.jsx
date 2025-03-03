@@ -10,6 +10,7 @@ import {
   getPaginationRowModel,
   flexRender
 } from "@tanstack/react-table";
+import { MdSearch } from "react-icons/md";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
@@ -133,14 +134,20 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
         </Alert>
       )}
 
-      <section className="bg-white rounded-lg shadow p-4">
+      <section className="bg-white border border-gray-300 rounded-lg shadow-full-border p-4">
+      {/* SEARCH BAR */}
+      <div className="relative w-full mb-4">
         <input
           type="text"
           placeholder="Search..."
           value={globalFilter || ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="mb-4 p-2 border rounded w-full"
+          className="p-2 pr-10 border-2 border-echo-maroon rounded w-full"
         />
+        <div className="absolute inset-y-0 right-0 flex items-center bg-echo-maroon text-white p-4 rounded">
+          <MdSearch size={30} />
+        </div>
+      </div>
         <table className="w-full text-left border-collapse">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
