@@ -3,7 +3,7 @@ import { MdLocalPrintshop } from "react-icons/md";
 
 const CalendarSidebar = ({ activeOption, onOptionSelect, options }) => {
   return (
-    <aside className="w-64 bg-gray-100 text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
+    <aside className="w-64 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
       <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
         <h2 className="flex text-xl text-white items-center"><MdLocalPrintshop className="mr-2" size={28}/> Print</h2>
       </div>

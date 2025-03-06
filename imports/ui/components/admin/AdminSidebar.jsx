@@ -11,7 +11,7 @@ const AdminSidebar = ({ activeSection, setActiveSection }) => {
   ];
 
   return (
-    <aside className="w-64 bg-gray-100 text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
+    <aside className="w-64 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
       <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
         <h2 className="text-xl text-white">Setup</h2>
       </div>
