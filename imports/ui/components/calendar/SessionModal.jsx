@@ -5,6 +5,8 @@ import {
   SpecialistsCollection,
   ParticipantGroupsCollection,
   TopicsCollection,
+  SemesterCollection,
+  SeriesCollection
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
 
@@ -17,14 +19,23 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   });
   const participantGroups = useTracker(() => {
     Meteor.subscribe('participantGroups');
-    return ParticipantGroupsCollection.find().fetch()
+    return ParticipantGroupsCollection.find().fetch();
   });
   const topics = useTracker(() => {
     Meteor.subscribe('topics');
     return TopicsCollection.find().fetch();
   });
+  const semesters = useTracker(() => {
+    Meteor.subscribe('semesters');
+    return SemesterCollection.find().fetch();
+  });
+  const series = useTracker(() => {
+    Meteor.subscribe('series');
+    return SeriesCollection.find().fetch();
+  });
 
   const [formData, setFormData] = useState({
+    sessionTitle: '',
     casePresenter: '',
     facilitator: '',
     coordinator: '',
@@ -38,7 +49,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     color: '',
     topic: '',
     notes: '',
+    semester: '',
+    series: ''
   });
+
   useEffect(() => {
     if (existingSession) {
       setFormData({
@@ -51,12 +65,15 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         supportingSpecialist2: existingSession.supportingSpecialist2,
         participantGroup: existingSession.participantGroup,
         dateTime: new Date(existingSession.dateTime).toISOString().slice(0, 16),
-        presentationsDue: existingSession.presentationsDue ? 
-          new Date(existingSession.presentationsDue).toISOString().slice(0, 10) : '',
+        presentationsDue: existingSession.presentationsDue
+          ? new Date(existingSession.presentationsDue).toISOString().slice(0, 10)
+          : '',
         newMaterial: existingSession.newMaterial,
         color: existingSession.color,
         topic: existingSession.topic,
         notes: existingSession.notes,
+        semester: existingSession.semester,
+        series: existingSession.series
       });
     } else {
       setFormData({
@@ -74,6 +91,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         color: '',
         topic: '',
         notes: '',
+        semester: '',
+        series: ''
       });
     }
   }, [existingSession, selectedDate]);
@@ -85,12 +104,13 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       [name]: type === 'checkbox' ? checked : value,
     });
   };
-  //Check Calender Function handleCreateFunction for the rest of the handleSubmit
+
   const handleSubmit = () => {
     onSubmit(formData, existingSession?._id);
     setFormData({});
     onClose();
   };
+
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       onDelete(existingSession._id);
@@ -114,7 +134,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         </h2>
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
             {/* Session Title */}
             <div className="form-group">
               <label className="block font-medium">Session Title</label>
@@ -159,7 +178,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             </div>
             {/* Coordinator */}
             <div className="form-group">
-              <label className="block font-medium">Coodinator</label>
+              <label className="block font-medium">Coordinator</label>
               <select
                 name="coordinator"
                 value={formData.coordinator}
@@ -170,7 +189,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 <option value="">Select Coordinator</option>
                 {users?.map((user) => (
                   <option key={user._id} value={user._id}>
-                    {user.user}
+                    {user.username}
                   </option>
                 ))}
               </select>
@@ -187,10 +206,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Presenting Specialist</option>
                 {specialists?.map(spec => (
-                  <option 
-                    key={spec._id} value={spec._id}>{spec.name}
+                  <option key={spec._id} value={spec._id}>
+                    {spec.name}
                   </option>
-                ))}              
+                ))}
               </select>
             </div>
             {/* Supporting Specialist 1 */}
@@ -204,8 +223,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Supporting Specialist 1</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id}>{spec.name}</option>
-                ))}             
+                  <option key={spec._id} value={spec._id}>
+                    {spec.name}
+                  </option>
+                ))}
               </select>
             </div>
             {/* Supporting Specialist 2 */}
@@ -219,8 +240,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Supporting Specialist 2</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id}>{spec.name}</option>
-                ))}             
+                  <option key={spec._id} value={spec._id}>
+                    {spec.name}
+                  </option>
+                ))}
               </select>
             </div>
             {/* Participant Group */}
@@ -235,8 +258,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Participant Group</option>
                 {participantGroups?.map(group => (
-                  <option key={group._id} value={group._id}>{group.name}</option>
-                ))}             
+                  <option key={group._id} value={group._id}>
+                    {group.name}
+                  </option>
+                ))}
               </select>
             </div>
             {/* Date & Time */}
@@ -296,11 +321,48 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Topic</option>
                 {topics?.map(topic => (
-                  <option key={topic._id} value={topic._id}>{topic.title}</option>
-                ))}            
+                  <option key={topic._id} value={topic._id}>
+                    {topic.title}
+                  </option>
+                ))}
               </select>
             </div>
-
+            {/* Semester */}
+            <div className="form-group">
+              <label className="block font-medium">Semester</label>
+              <select
+                name="semester"
+                value={formData.semester}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Semester</option>
+                {semesters?.map(sem => (
+                  <option key={sem._id} value={sem._id}>
+                    {sem.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Series */}
+            <div className="form-group">
+              <label className="block font-medium">Series</label>
+              <select
+                name="series"
+                value={formData.series}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Series</option>
+                {series?.map(ser => (
+                  <option key={ser._id} value={ser._id}>
+                    {ser.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="form-group mt-4">
             <label className="block font-medium">Notes</label>

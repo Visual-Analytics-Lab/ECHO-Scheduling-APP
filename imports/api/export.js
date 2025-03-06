@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
-import ExcelJS from 'exceljs'; // install via npm if you haven't already
+import ExcelJS from 'exceljs';
 import { SessionsCollection } from './collections';
 
 Meteor.methods({
@@ -9,11 +9,9 @@ Meteor.methods({
     check(fromDate, Date);
     check(toDate, Date);
 
-    // Convert dates to strings matching the stored format
     const startStr = fromDate.toISOString().slice(0, 16);
     const endStr = toDate.toISOString().slice(0, 16);
 
-    // Retrieve sessions with our lookup pipeline (adjust if you need extra fields)
     const data = await SessionsCollection.rawCollection().aggregate([
       { 
         $match: { dateTime: { $gte: startStr, $lte: endStr } } 
@@ -74,7 +72,22 @@ Meteor.methods({
           as: "topicDetails"
         }
       },
-      // If your documents include extra fields such as "semester" or "agency", project them:
+      {
+        $lookup: {
+          from: "semesters",
+          localField: "semester",
+          foreignField: "_id",
+          as: "semesterDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "series",
+          localField: "series",
+          foreignField: "_id",
+          as: "seriesDetails"
+        }
+      },
       {
         $project: {
           sessionTitle: 1,
@@ -92,10 +105,10 @@ Meteor.methods({
           topic: { $arrayElemAt: ["$topicDetails.title", 0] },
           notes: 1,
           createdAt: 1,
-          semester: 1, // assume this exists
-          agency: 1    // assume this exists
+          semester: { $arrayElemAt: ["$semesterDetails.title", 0] },
+          series: { $arrayElemAt: ["$seriesDetails.title", 0] }
         }
-      }
+      }      
     ]).toArray();
 
     if (!data.length) {
@@ -121,6 +134,8 @@ Meteor.methods({
         { header: "Color", key: "color", width: 20 },
         { header: "Topic", key: "topic", width: 20 },
         { header: "Notes", key: "notes", width: 30 },
+        { header: "Semester", key: "semester", width: 30 },
+        { header: "Series", key: "series", width: 30 },
         { header: "Created At", key: "createdAt", width: 20 }
       ];
       sessions.forEach(session => worksheet.addRow(session));
@@ -242,6 +257,8 @@ Meteor.methods({
               "Color",
               "Topic",
               "Notes",
+              "Semester",
+              "Series",
               "Created At"
             ]);
             agencyGroups[agency][semester].forEach(session => {
@@ -260,6 +277,8 @@ Meteor.methods({
                 session.color,
                 session.topic,
                 session.notes,
+                session.semester,
+                session.series,
                 session.createdAt
               ]);
             });
