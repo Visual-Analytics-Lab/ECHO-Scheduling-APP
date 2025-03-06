@@ -8,7 +8,8 @@ Meteor.methods({
         check(data, {
             title: String,
             description: String,
-            series: String
+            startDate: String,
+            endDate: String
         });
         
         const seriesGroupID = await SeriesCollection.insertAsync({
@@ -27,7 +28,8 @@ Meteor.methods({
         check(data, {
             title: String,
             description: String,
-            series: String
+            startDate: String,
+            endDate: String
         });
         return await SeriesCollection.updateAsync(semesterGroupID, {
             $set: data

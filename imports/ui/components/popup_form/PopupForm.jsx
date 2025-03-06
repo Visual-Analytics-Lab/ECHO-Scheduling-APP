@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Meteor } from 'meteor/meteor';
 import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 
-const PopupForm = ({ 
+import { MultiSelect } from 'primereact/multiselect';
+        
+
+const PopupForm = ({
+  data, 
   isOpen, 
   onClose, 
   collection, 
@@ -13,11 +17,21 @@ const PopupForm = ({
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
 
+  const series = data?.series || [];
+  console.log(data);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleMultiSelectChange = (e, name) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: e.value // PrimeReact MultiSelect provides `e.value` as the selected array
     }));
   };
 
@@ -57,20 +71,44 @@ const PopupForm = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          {fields.map(({ name, label, type = 'text' }) => (
-            <div key={name} className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                {label}
-              </label>
-              <input
-                type={type}
-                name={name}
-                value={formData[name] || ''}
-                onChange={handleChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              />
-            </div>
-          ))}
+          {fields.map(({ name, label, inputType}) => {
+            // TODO: Fix multiselect CSS
+            if (inputType === "multiSelect") {
+              return (
+                <div key={name} className="card mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    {label}
+                  </label> 
+                  <MultiSelect 
+                    value={formData[name] || []} 
+                    onChange={(e) => handleMultiSelectChange(e, name)} 
+                    options={series.map((s) => ({ ...s, key: s._id }))}
+                    optionLabel="title" 
+                    optionValue="_id"
+                    placeholder="Select Series" 
+                    maxSelectedLabels={3} 
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    panelClassName="shadow bg-white border rounded text-gray-700 focus:outline-none focus:shadow-outline"
+                  />
+                </div>
+              );
+            } else {
+              return (
+                <div key={name} className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    {label}
+                  </label> 
+                  <input
+                    type='text'
+                    name={name}
+                    value={formData[name] || ''}
+                    onChange={handleChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                </div>
+              );
+            }
+          })}
           
           <div className="flex justify-end gap-2">
             <GrayButton onClick={onClose} >

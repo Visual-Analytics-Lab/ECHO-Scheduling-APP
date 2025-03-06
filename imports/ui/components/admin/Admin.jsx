@@ -18,7 +18,8 @@ import "react-toastify/dist/ReactToastify.css";
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  //Subscribing to Collections
+
+  // Subscribing to Collections
   useEffect(() => {
     const sub0 = Meteor.subscribe("users");
     const sub1 = Meteor.subscribe("specialists");
@@ -26,7 +27,6 @@ const Admin = () => {
     const sub3 = Meteor.subscribe("semesters");
     const sub4 = Meteor.subscribe("series");
     const sub5 = Meteor.subscribe("topics");
-
     return () => {
       sub0.stop();
       sub1.stop();
@@ -36,6 +36,8 @@ const Admin = () => {
       sub5.stop();
     };
   }, []);
+
+  // Fetch from collections after subscribing
   const users = useTracker(() => 
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
@@ -44,15 +46,9 @@ const Admin = () => {
     }))
   );
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
-  const participantGroups = useTracker(() =>
-    ParticipantGroupsCollection.find().fetch()
-  );
-  const semesters = useTracker(() =>
-    SemesterCollection.find().fetch()
-  );
-  const series = useTracker(() =>
-    SeriesCollection.find().fetch()
-  );
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const semesters = useTracker(() => SemesterCollection.find().fetch());
+  const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
   //Getting Fields for showing data as well as used for pop ups(except users)
@@ -85,12 +81,14 @@ const Admin = () => {
           { name: "description", label: "Description" },
           { name: "startDate", label: "Start Date" },
           { name: "endDate", label: "End Date" },
+          { name: "series", label: "Series", inputType: "multiSelect" },
         ];
       case "Series":
         return [
           { name: "title", label: "Title" },
           { name: "description", label: "Description" },
-          { name: "series", label: "Series" },
+          { name: "startDate", label: "Start Date" },
+          { name: "endDate", label: "End Date" },
         ];
       case "Topics":
         return [
@@ -102,6 +100,7 @@ const Admin = () => {
         return [];
     }
   };
+
   //Exception here because don't show password, but have password field when pop up
   const getUserFormFields = () => {
     return [
@@ -110,6 +109,7 @@ const Admin = () => {
       { name: "password", label: "Password", type: "password" }
     ];
   };
+
   const getCollectionName = () => {
     switch(activeSection) {
       case 'Users': return 'users';
@@ -121,6 +121,28 @@ const Admin = () => {
       default: return '';
     }
   };
+
+  const getRequiredData = () => {
+    switch (activeSection) {
+      case "Users":
+        return {};
+      case "Specialists":
+        return {};
+      case "Participant Groups":
+        return {};
+      case "Semesters":
+        return {
+          series: series,
+        };
+      case "Series":
+        return {};
+      case "Topics":
+        return {};
+      default:
+        return {};
+    }
+  };
+
   const getMethodName = (operation) => {
     //const section = activeSection.charAt(0).toLowerCase() + activeSection.slice(1).replace(/\s+/g, '');
     const section = getCollectionName();
@@ -151,6 +173,7 @@ const Admin = () => {
     }
   };
 
+  // Data from collections required for selection
   const data = {
     Users: users,
     Specialists: specialists,
@@ -185,6 +208,7 @@ const Admin = () => {
           />
 
           <PopupForm
+            data={getRequiredData()}
             isOpen={isPopupOpen}
             onClose={() => setIsPopupOpen(false)}
             collection={getCollectionName()}
