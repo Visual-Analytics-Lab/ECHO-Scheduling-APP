@@ -87,8 +87,7 @@ const PopupForm = ({
                     optionValue="_id"
                     placeholder="Select Series" 
                     maxSelectedLabels={3} 
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    panelClassName="shadow bg-white border rounded text-gray-700 focus:outline-none focus:shadow-outline"
+                    className="shadow appearance-none border rounded w-full text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                   />
                 </div>
               );
