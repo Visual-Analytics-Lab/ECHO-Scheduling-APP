@@ -99,12 +99,12 @@ const Calendar = () => {
             "Topics by Participant Groups",
           ]}
         />
-        <main className="flex-1 p-2">
+        <main className="flex-1 p-4">
           <div className="w-[55vw] rounded-lg shadow-full-border">
-            <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-400">
+            <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-300">
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
-            <div className="bg-white rounded-b-lg border border-gray-400 p-2 h-[calc(100vh-145px)]">
+            <div className="bg-white rounded-b-lg border border-gray-300 p-2 h-[calc(100vh-145px)]">
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
