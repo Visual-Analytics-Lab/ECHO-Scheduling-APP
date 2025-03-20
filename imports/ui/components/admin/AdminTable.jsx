@@ -22,11 +22,22 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
   const columns = useMemo(
     () =>
       fields.map((field) => ({
-        accessorKey: field.name,
         header: field.label,
+        accessorKey: field.name,
+
+        // If the field is an _id referencing another collection (e.g., series_id),
+        //    display the name, title, etc. of the entry matching the _id.
+        ...(field.parentCollection && {
+          cell: ({ row }) => {
+            const ids = row.original[field.name] || []; // Array of IDs
+            const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
+            return relatedDocs.map(doc => doc.title || doc.name || "").join(", ");
+          }
+        })
       })),
     [fields]
   );

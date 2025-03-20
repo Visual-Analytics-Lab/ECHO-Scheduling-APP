@@ -7,8 +7,8 @@ Meteor.methods({
         //console.log('Received data:', data);
         check(data, {
             title: String,
+            specialists_ids: [String],
             description: String,
-            category: String,
         });
         
         const topicsId = await TopicsCollection.insertAsync({
@@ -26,8 +26,8 @@ Meteor.methods({
         check(topicsId, String);
         check(data, {
             title: String,
+            specialists_ids: [String],
             description: String,
-            category: String,
         });
         return await TopicsCollection.updateAsync(topicsId, {
             $set: data

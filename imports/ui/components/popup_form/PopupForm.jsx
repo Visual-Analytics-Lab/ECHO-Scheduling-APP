@@ -5,20 +5,17 @@ import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 import { MultiSelect } from 'primereact/multiselect';
         
 
-const PopupForm = ({
-  data, 
+const PopupForm = ({ 
   isOpen, 
   onClose, 
   collection, 
   fields, 
+  fieldData,
   title = 'Add New Item',
   onSuccess = () => {} 
 }) => {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
-
-  const series = data?.series || [];
-  console.log(data);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,10 +79,10 @@ const PopupForm = ({
                   <MultiSelect 
                     value={formData[name] || []} 
                     onChange={(e) => handleMultiSelectChange(e, name)} 
-                    options={series.map((s) => ({ ...s, key: s._id }))}
-                    optionLabel="title" 
+                    options={fieldData[name].map((s) => ({ ...s, key: s._id }))}
+                    optionLabel={fieldData[name][0]?.title ? "title" : "name"}  // Check if 'title' exists, otherwise use 'name'
                     optionValue="_id"
-                    placeholder="Select Series" 
+                    placeholder={`Select ${label}`}
                     maxSelectedLabels={3} 
                     className="shadow appearance-none border rounded w-full text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                   />

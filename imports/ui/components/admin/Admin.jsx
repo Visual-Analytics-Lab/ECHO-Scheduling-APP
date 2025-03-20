@@ -51,7 +51,8 @@ const Admin = () => {
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
-  //Getting Fields for showing data as well as used for pop ups(except users)
+  // Getting Fields for showing data as well as used for pop ups(except users)
+  // name - the referenced field; label - colum header; inputType - determines input behaviour; parentCollection - collection the field points to (such as series_id)
   const getFieldsForSection = () => {
     switch (activeSection) {
       case "Users":
@@ -81,7 +82,7 @@ const Admin = () => {
           { name: "description", label: "Description" },
           { name: "startDate", label: "Start Date" },
           { name: "endDate", label: "End Date" },
-          { name: "series", label: "Series", inputType: "multiSelect" },
+          { name: "series_ids", label: "Series", inputType: "multiSelect", parentCollection: SeriesCollection },
         ];
       case "Series":
         return [
@@ -93,8 +94,8 @@ const Admin = () => {
       case "Topics":
         return [
           { name: "title", label: "Title" },
+          { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect", parentCollection: SpecialistsCollection },
           { name: "description", label: "Description" },
-          { name: "category", label: "Category" },
         ];
       default:
         return [];
@@ -122,7 +123,8 @@ const Admin = () => {
     }
   };
 
-  const getRequiredData = () => {
+  // Get data required for the field input (field name: data required)
+  const getDataForFields = () => {
     switch (activeSection) {
       case "Users":
         return {};
@@ -132,12 +134,14 @@ const Admin = () => {
         return {};
       case "Semesters":
         return {
-          series: series,
+          series_ids: series,
         };
       case "Series":
         return {};
       case "Topics":
-        return {};
+        return {
+          specialists_ids: specialists,
+        };
       default:
         return {};
     }
@@ -208,11 +212,11 @@ const Admin = () => {
           />
 
           <PopupForm
-            data={getRequiredData()}
             isOpen={isPopupOpen}
             onClose={() => setIsPopupOpen(false)}
             collection={getCollectionName()}
             fields={activeSection === 'Users' ? getUserFormFields() : getFieldsForSection()}
+            fieldData={getDataForFields()}
             title={`Add New ${activeSection.slice(0, -1)}`}
             onSuccess={() => {
               setIsPopupOpen(false);
