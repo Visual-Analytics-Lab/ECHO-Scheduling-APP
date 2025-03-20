@@ -7,9 +7,10 @@ import './CollectionMethods/ParticipantGroupsMethods';
 import './CollectionMethods/SemesterMethods';
 import './CollectionMethods/SeriesMethods';
 import './CollectionMethods/TopicsMethods';
-import './CollectionMethods/UsersMethods'
-import './CollectionMethods/SessionsMethods'
-import '../imports/api/export'
+import './CollectionMethods/UsersMethods';
+import './CollectionMethods/SessionsMethods';
+import './CollectionMethods/RolesMethods';
+import '../imports/api/export';
 
 if (Meteor.isServer) {
   Meteor.startup(async () => {
@@ -21,6 +22,7 @@ if (Meteor.isServer) {
           username: 'testuser',
           email: 'test@example.com',
           password: 'testpassword',
+          role: 'admin',
         });
         console.log('Test user created');
       } else {

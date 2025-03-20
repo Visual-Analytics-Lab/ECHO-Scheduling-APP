@@ -7,12 +7,14 @@ Meteor.methods({
             username: String,
             email: String,
             password: String,
+            role: String
         });
         
         return Accounts.createUser({
             username: data.username,
             email: data.email,
             password: data.password,
+            role: String,
             createdAt: new Date(),
         });
     },
@@ -25,6 +27,7 @@ Meteor.methods({
         check(data, {
             username: String,
             email: String,
+            role: String,
         });
         
         return await Meteor.users.updateAsync(userId, {

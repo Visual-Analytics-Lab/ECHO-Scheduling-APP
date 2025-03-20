@@ -10,6 +10,7 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
+  RolesCollection
 } from "../../../api/collections";
 import PopupForm from "../popup_form/PopupForm";
 import { ToastContainer, toast } from "react-toastify";
@@ -26,6 +27,7 @@ const Admin = () => {
     const sub3 = Meteor.subscribe("semesters");
     const sub4 = Meteor.subscribe("series");
     const sub5 = Meteor.subscribe("topics");
+    const sub6 = Meteor.subscribe("roles");
 
     return () => {
       sub0.stop();
@@ -34,6 +36,7 @@ const Admin = () => {
       sub3.stop();
       sub4.stop();
       sub5.stop();
+      sub6.stop();
     };
   }, []);
   const users = useTracker(() => 
@@ -54,6 +57,7 @@ const Admin = () => {
     SeriesCollection.find().fetch()
   );
   const topics = useTracker(() => TopicsCollection.find().fetch());
+  const roles = useTracker(() => RolesCollection.find().fetch());
 
   //Getting Fields for showing data as well as used for pop ups(except users)
   const getFieldsForSection = () => {
@@ -62,6 +66,12 @@ const Admin = () => {
         return [
           { name: "username", label: "User Name" },
           { name: "email", label: "Email" },
+          { name: "role", label: "Role" },
+        ];
+      case "Roles":
+        return [
+          {name: "role", label: "Role"},
+          {name: "desc", label: "Description"},
         ];
       case "Specialists":
         return [
@@ -107,12 +117,14 @@ const Admin = () => {
     return [
       { name: "username", label: "Username", type: "text" },
       { name: "email", label: "Email", type: "email" },
+      { name: "role", label: "Role", type: "text" },
       { name: "password", label: "Password", type: "password" }
     ];
   };
   const getCollectionName = () => {
     switch(activeSection) {
       case 'Users': return 'users';
+      case 'Roles': return 'roles';
       case 'Specialists': return 'specialists';
       case 'Participant Groups': return 'participantGroups';
       case 'Semesters': return 'semesters';
@@ -153,6 +165,7 @@ const Admin = () => {
 
   const data = {
     Users: users,
+    Roles: roles,
     Specialists: specialists,
     "Participant Groups": participantGroups,
     "Semesters": semesters,
