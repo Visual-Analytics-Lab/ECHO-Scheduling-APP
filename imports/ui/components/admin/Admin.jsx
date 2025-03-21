@@ -156,21 +156,8 @@ const Admin = () => {
 
   const openEditPopUp = (data) => {
     setRowData(data);
-    // console.log(rowData);
     setIsPopupOpen(true);
   }  
-
-  const handleEdit = async (id, updatedData) => {
-    try {
-      const methodName = getMethodName('update');
-      await Meteor.call(methodName, id, updatedData);
-
-      toast.success("Item updated successfully!");
-    } catch (error) {
-      console.error("Error updating item:", error);
-      toast.error(error.reason || "Failed to update item. Please try again.");
-    }
-  };
 
   const handleDelete = async (id) => {
     try {
@@ -235,9 +222,8 @@ const Admin = () => {
             setFormData={setRowData}
             fields={activeSection === 'Users' ? getUserFormFields() : getFieldsForSection()}
             fieldData={getDataForFields()}
-            // Add any active selections into the array that are the same plural and singular
             title={getPopUpTitle()}
-            onSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
+            alertSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
           />
         </main>
       </div>

@@ -14,7 +14,7 @@ const PopupForm = ({
   fields, 
   fieldData,
   title,
-  onSuccess,
+  alertSuccess,
 }) => {
   const [error, setError] = useState(null);
 
@@ -40,7 +40,7 @@ const PopupForm = ({
       Meteor.call(`${collection}.update`, formData._id, formData, (error, result) => {
         if (error) setError(error.reason || "An error occurred");
         else {
-          onSuccess('updated');
+          alertSuccess('updated');
           handleClose();
         }
       });
@@ -49,13 +49,14 @@ const PopupForm = ({
       Meteor.call(`${collection}.insert`, formData, (error, result) => {
         if (error) setError(error.reason || "An error occurred");
         else {
-          onSuccess('added');
+          alertSuccess('added');
           handleClose();
         }
       });      
     }
   };
   const handleClose = (e) => {
+    e.preventDefault()
     setFormData({});
     setError(null);
     setIsOpen(false);
