@@ -199,7 +199,7 @@ const Admin = () => {
           <header className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-echo-maroon">{activeSection}</h1>
             <button
-              className="bg-[#0EA6B2] text-white py-2 px-4 rounded hover:bg-[#0c8f9a] transition duration-200"
+              className="bg-echo-teal text-white py-2 px-4 rounded hover:bg-echo-teal-hover transition duration-200"
               onClick={() => setIsPopupOpen(true)}
             >
               + Add New

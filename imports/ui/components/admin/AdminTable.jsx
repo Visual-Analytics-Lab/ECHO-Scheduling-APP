@@ -10,7 +10,7 @@ import {
   getPaginationRowModel,
   flexRender
 } from "@tanstack/react-table";
-import { MdSearch } from "react-icons/md";
+import { MdSearch, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
@@ -120,23 +120,26 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
         <table className="w-full text-left border-collapse">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="bg-gray-200">
+            <tr key={headerGroup.id} className="bg-neutral-200">
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
                   className="p-3 cursor-pointer"
                   onClick={header.column.getToggleSortingHandler()}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                  {{
-                    asc: " 🔼",
-                    desc: " 🔽",
-                  }[header.column.getIsSorted()] ?? null}
+                  <div className="flex items-center">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {{
+                      asc: (<MdKeyboardArrowUp size={22} className="ml-1"/>),
+                      desc: (<MdKeyboardArrowDown size={22} className="ml-1"/>),
+                    }[header.column.getIsSorted()] ?? null}
+                  </div>
                 </th>
               ))}
-              <th className="p-3">Actions</th>
+              {/* Use w-[1%] to make the Actions column as small as possible */}
+              <th className="p-3 w-[1%]">Actions</th>
             </tr>
           ))}
         </thead>
@@ -149,9 +152,9 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
-                <td className="p-3">
+                <td className="p-3 w-[1%]">
                   <div className="flex space-x-2">
-                    <Button onClick={() => onEdit(row.original)}>
+                    <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => onEdit(row.original)}>
                       Edit
                     </Button>
                     <RedButton onClick={() => handleDeleteClick(row.original)}>
@@ -163,11 +166,12 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
             ))}
           </tbody>
         </table>
+        {/* TODO: Make sure these buttons even work */}
         <div className="flex justify-between items-center mt-4">
-          <Button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>

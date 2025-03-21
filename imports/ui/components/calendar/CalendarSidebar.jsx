@@ -13,7 +13,7 @@ const CalendarSidebar = ({ activeOption, onOptionSelect, options }) => {
           <button
             key={option}
             onClick={() => onOptionSelect(option)}
-            className={`rounded-lg w-5/6 text-left text-base px-4 py-3 text-sm bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400`}
+            className={`rounded-lg w-[90%] text-left text-base px-4 py-3 text-md bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400`}
           >
             {option}
           </button>

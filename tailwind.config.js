@@ -10,6 +10,7 @@ module.exports = {
         "echo-maroon": "#721d35",
         "echo-gold": "#f9b126",
         "echo-teal": "#0ea6b2",
+        "echo-teal-hover": "#0c8f9a",
         "bg-light": "theme(colors.gray.100)",
         "bg-dark": "theme(colors.neutral.700)",
       },

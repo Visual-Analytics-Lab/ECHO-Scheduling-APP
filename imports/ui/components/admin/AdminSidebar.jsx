@@ -21,7 +21,7 @@ const AdminSidebar = ({ activeSection, setActiveSection }) => {
           <button
             key={section}
             onClick={() => setActiveSection(section)}
-            className={`rounded-lg w-5/6 text-left text-base px-4 py-3 text-sm hover:bg-neutral-300 active:bg-neutral-400 ${
+            className={`rounded-lg w-[90%] text-left text-base px-4 py-3 text-md hover:bg-neutral-300 active:bg-neutral-400 ${
               activeSection === section ? "bg-neutral-300" : "bg-neutral-200"
             }`}
           >
