@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { SeriesCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -25,13 +25,13 @@ Meteor.methods({
     },
     async 'series.update'(seriesGroupID, data) {
         check(seriesGroupID, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             title: String,
             description: String,
             startDate: String,
             endDate: String
-        });
-        return await SeriesCollection.updateAsync(semesterGroupID, {
+        }));
+        return await SeriesCollection.updateAsync(seriesGroupID, {
             $set: data
         });
     }

@@ -18,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [rowData, setRowData] = useState({});
 
   // Subscribing to Collections
   useEffect(() => {
@@ -153,6 +154,12 @@ const Admin = () => {
     return `${section}.${operation}`;
   };
 
+  const openEditPopUp = (data) => {
+    setRowData(data);
+    // console.log(rowData);
+    setIsPopupOpen(true);
+  }  
+
   const handleEdit = async (id, updatedData) => {
     try {
       const methodName = getMethodName('update');
@@ -176,6 +183,15 @@ const Admin = () => {
       toast.error(error.reason || "Failed to delete item. Please try again.");
     }
   };
+
+  const getPopUpTitle = () =>
+  {
+    const start = rowData._id ? 'Edit' : 'Add New'
+    // Add any active selections into the array that are the same plural and singular
+    return activeSection && ['Series'].includes(activeSection) 
+      ? `${start} ${activeSection}` 
+      : `${start} ${activeSection.slice(0, -1)}`
+  }
 
   // Data from collections required for selection
   const data = {
@@ -207,21 +223,21 @@ const Admin = () => {
             data={data[activeSection]}
             sectionTitle={activeSection}
             fields={getFieldsForSection()}
-            onEdit={handleEdit}
+            onEdit={openEditPopUp}
             onDelete={handleDelete}
           />
 
           <PopupForm
             isOpen={isPopupOpen}
-            onClose={() => setIsPopupOpen(false)}
+            setIsOpen={setIsPopupOpen}
             collection={getCollectionName()}
+            formData={rowData}
+            setFormData={setRowData}
             fields={activeSection === 'Users' ? getUserFormFields() : getFieldsForSection()}
             fieldData={getDataForFields()}
-            title={`Add New ${activeSection.slice(0, -1)}`}
-            onSuccess={() => {
-              setIsPopupOpen(false);
-              toast.success("Item added successfully!");
-            }}
+            // Add any active selections into the array that are the same plural and singular
+            title={getPopUpTitle()}
+            onSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
           />
         </main>
       </div>

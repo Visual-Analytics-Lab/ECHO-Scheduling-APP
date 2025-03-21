@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { SessionsCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -33,7 +33,7 @@ Meteor.methods({
     },
     async 'sessions.update'(sessionsId, data) {
         check(sessionsId, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             sessionTitle: String,
             casePresenter: String,
             facilitator: String,
@@ -48,7 +48,7 @@ Meteor.methods({
             color: String,
             topic: String,
             notes: String,
-        });
+        }));
         return await SessionsCollection.updateAsync(sessionsId, {
             $set: data
         });

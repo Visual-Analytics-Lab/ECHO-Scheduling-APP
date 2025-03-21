@@ -7,14 +7,15 @@ import { MultiSelect } from 'primereact/multiselect';
 
 const PopupForm = ({ 
   isOpen, 
-  onClose, 
+  setIsOpen, 
   collection, 
+  formData,
+  setFormData,
   fields, 
   fieldData,
-  title = 'Add New Item',
-  onSuccess = () => {} 
+  title,
+  onSuccess,
 }) => {
-  const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
@@ -24,7 +25,6 @@ const PopupForm = ({
       [name]: value
     }));
   };
-
   const handleMultiSelectChange = (e, name) => {
     setFormData(prev => ({
       ...prev,
@@ -32,19 +32,34 @@ const PopupForm = ({
     }));
   };
 
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    Meteor.call(`${collection}.insert`, formData, (error, result) => {
-      if (error) {
-        setError(error.reason || 'An error occurred');
-      } else {
-        setFormData({});
-        onSuccess(result);
-        onClose();
-      }
-    });
+    // If _id already exists for entry, update instead of creating new one.
+    if (formData._id) {
+      Meteor.call(`${collection}.update`, formData._id, formData, (error, result) => {
+        if (error) setError(error.reason || "An error occurred");
+        else {
+          onSuccess('updated');
+          handleClose();
+        }
+      });
+    }
+    else {
+      Meteor.call(`${collection}.insert`, formData, (error, result) => {
+        if (error) setError(error.reason || "An error occurred");
+        else {
+          onSuccess('added');
+          handleClose();
+        }
+      });      
+    }
   };
+  const handleClose = (e) => {
+    setFormData({});
+    setError(null);
+    setIsOpen(false);
+  }
 
   if (!isOpen) return null;
 
@@ -54,7 +69,7 @@ const PopupForm = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-gray-700"
           >
             ✕
@@ -68,7 +83,7 @@ const PopupForm = ({
         )}
 
         <form onSubmit={handleSubmit}>
-          {fields.map(({ name, label, inputType}) => {
+          {fields.map(({name, label, inputType}) => {
             // TODO: Fix multiselect CSS
             if (inputType === "multiSelect") {
               return (
@@ -84,7 +99,8 @@ const PopupForm = ({
                     optionValue="_id"
                     placeholder={`Select ${label}`}
                     maxSelectedLabels={3} 
-                    className="shadow appearance-none border rounded w-full text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    className="shadow border rounded w-full text-gray-700 leading-tight" 
+                    panelClassName="bg-gray-100"
                   />
                 </div>
               );
@@ -107,7 +123,7 @@ const PopupForm = ({
           })}
           
           <div className="flex justify-end gap-2">
-            <GrayButton onClick={onClose} >
+            <GrayButton onClick={handleClose} >
               Cancel
             </GrayButton>
             <GreenButton type="submit" >

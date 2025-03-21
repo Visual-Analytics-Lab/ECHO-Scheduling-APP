@@ -14,10 +14,8 @@ import { MdSearch } from "react-icons/md";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
-  const [editItem, setEditItem] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [editedValues, setEditedValues] = useState({});
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -53,9 +51,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const getNestedValue = (obj, path) =>
-    path.split(".").reduce((acc, part) => acc && acc[part], obj);
-
   const validateField = (value, field) => {
     if (field.required && !value) {
       throw new Error(`${field.label} is required`);
@@ -81,38 +76,9 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     }
   };
 
-  const handleEditClick = (item) => {
-    const initialValues = {};
-    fields.forEach((field) => {
-      initialValues[field.name] = getNestedValue(item, field.name) || "";
-    });
-    setEditedValues(initialValues);
-    setEditItem(item);
-    setError("");
-  };
-
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
     setShowDeleteDialog(true);
-  };
-
-  const handleEditSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-      setError("");
-
-      // Validate all fields
-      fields.forEach((field) => {
-        validateField(editedValues[field.name], field);
-      });
-
-      await onEdit(editItem._id, editedValues);
-      setEditItem(null);
-    } catch (err) {
-      setError(err.message || "Failed to update item. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -127,14 +93,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleInputChange = (fieldName, value) => {
-    setEditedValues((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
-    setError("");
   };
 
   return (
@@ -193,7 +151,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                 ))}
                 <td className="p-3">
                   <div className="flex space-x-2">
-                    <Button onClick={() => handleEditClick(row.original)}>
+                    <Button onClick={() => onEdit(row.original)}>
                       Edit
                     </Button>
                     <RedButton onClick={() => handleDeleteClick(row.original)}>
@@ -219,52 +177,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
           </div>
         )}
       </section>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={editItem !== null}
-        onOpenChange={() => !isSubmitting && setEditItem(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit {sectionTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {fields.map((field) => (
-              <div key={field.name} className="flex flex-col space-y-1.5">
-                <label htmlFor={field.name} className="text-sm font-medium">
-                  {field.label}
-                  {field.required && (
-                    <span className="text-red-500 ml-1">*</span>
-                  )}
-                </label>
-                <input
-                  id={field.name}
-                  type={field.type || "text"}
-                  value={editedValues[field.name] || ""}
-                  onChange={(e) =>
-                    handleInputChange(field.name, e.target.value)
-                  }
-                  disabled={isSubmitting}
-                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm disabled:opacity-50"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditItem(null)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog
