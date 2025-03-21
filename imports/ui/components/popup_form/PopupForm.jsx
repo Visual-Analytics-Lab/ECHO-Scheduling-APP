@@ -56,7 +56,7 @@ const PopupForm = ({
     }
   };
   const handleClose = (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     setFormData({});
     setError(null);
     setIsOpen(false);
