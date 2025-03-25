@@ -9,22 +9,27 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const tracker = Tracker.autorun(() => {
-            const meteorUser = Meteor.user();
-            setUser(meteorUser);
-            setLoading(false);
-        });
-        return () => tracker.stop();
+      const tracker = Tracker.autorun(() => {
+        const meteorUser = Meteor.user();
+        const loggingIn = Meteor.loggingIn();
+
+        if (!loggingIn) {
+          setUser(meteorUser);
+          setLoading(false);
+        }
+      });
+      return () => tracker.stop();
     }, []);
 
     const logout = () => {
-        Meteor.logout();
+      Meteor.logout();
+      setUser(null); // Ensure UI updates immediately
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, logout }}>
-            {!loading && children}
-        </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, loading, logout }}>
+        {children}
+      </AuthContext.Provider>
     );
 };
 
