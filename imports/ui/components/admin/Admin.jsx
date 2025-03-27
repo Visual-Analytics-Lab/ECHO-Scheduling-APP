@@ -39,7 +39,7 @@ const getSectionConfig = (users, specialists, participantGroups, semesters, seri
       }
       return fields;
     },
-    fieldContext: {},
+    fieldContext: { role: roles },
   },
   Roles: {
     collectionName: "roles",

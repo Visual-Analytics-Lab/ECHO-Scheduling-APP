@@ -30,7 +30,7 @@ export const App = () => (
                     <Route 
                         path="/admin" 
                         element={
-                            <PrivateRoute>
+                            <PrivateRoute allowedRoles={["admin"]}>
                                 <Admin />
                             </PrivateRoute>
                         } 
