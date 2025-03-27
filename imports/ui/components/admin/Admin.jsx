@@ -31,21 +31,25 @@ const getSectionConfig = (users, specialists, participantGroups, semesters, seri
       const fields = [
         { name: "username", label: "Username", type: "text" },
         { name: "email", label: "Email", type: "email" },
-        { name: "role", label: "Role", inputType: "multiSelect", parentCollection: RolesCollection},
       ];
+      // Show roles as long as user isn't editting their own
+      if (rowData._id != Meteor.user()._id)
+      {
+        fields.push({ name: "role_id", label: "Role", inputType: "select", parentCollection: RolesCollection});
+      }
       // Show password only when using add new user pop up
       if (!rowData._id && component == "popup") {
         fields.push({ name: "password", label: "Password", type: "password" });
       }
       return fields;
     },
-    fieldContext: {},
+    fieldContext: { role_id: roles},
   },
   Roles: {
     collectionName: "roles",
     collectionData: roles,
     fields: () => [
-      {name: "role", label: "Role"},
+      {name: "title", label: "Role"},
       {name: "desc", label: "Description"},
     ],
     fieldContext: {},
@@ -135,7 +139,8 @@ const Admin = () => {
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
       username: user.username,
-      email: user.emails?.[0]?.address || 'No email' // Email address is structured like email: [address : 'here']
+      email: user.emails?.[0]?.address || 'No email', // Email address is structured like email: [address : 'here']
+      role_id: user.role_id,
     }))
   );
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());

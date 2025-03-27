@@ -31,8 +31,14 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
         //    display the name, title, etc. of the entry matching the _id.
         ...(field.parentCollection && {
           cell: ({ row }) => {
-            const ids = row.original[field.name] || []; // Array of IDs
+            const fieldValue = row.original[field.name];
+            if (!fieldValue) return; // No data to display
+        
+            // Use Array.isArray to check if it's an array and handle accordingly
+            const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
             const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
+        
+            // Get the titles/names and join them with commas
             return relatedDocs.map(doc => doc.title || doc.name || "").join(", ");
           }
         })

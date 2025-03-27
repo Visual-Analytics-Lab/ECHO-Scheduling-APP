@@ -3,6 +3,7 @@ import { Meteor } from 'meteor/meteor';
 import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 
 import { MultiSelect } from 'primereact/multiselect';
+import { Dropdown } from 'primereact/dropdown';
         
 
 const PopupForm = ({ 
@@ -26,7 +27,7 @@ const PopupForm = ({
       [name]: value
     }));
   };
-  const handleMultiSelectChange = (e, name) => {
+  const handlePReactChange = (e, name) => {
     setFormData(prev => ({
       ...prev,
       [name]: e.value // PrimeReact MultiSelect provides `e.value` as the selected array
@@ -95,34 +96,50 @@ const PopupForm = ({
         <form onSubmit={handleSubmit}>
           {fields.map(({ name, label, inputType }) => {
             const hasError = errors[name]; // Check if this field has an error
-            
             // Set input element based on inputType
             let inputElement;
-            if (inputType === "multiSelect") {
-              // TODO: Add css to the dropdown checkboxes so they don't blend into the background
-              inputElement = (
-                <MultiSelect 
-                  value={formData[name] || []} 
-                  onChange={(e) => handleMultiSelectChange(e, name)} 
-                  options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
-                  optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
-                  optionValue="_id"
-                  placeholder={`Select ${label}`}
-                  maxSelectedLabels={3} 
-                  className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
-                  panelClassName="bg-gray-100"
-                />                
-              )
-            } else {
-              inputElement = (
-                <input
-                  type="text"
-                  name={name}
-                  value={formData[name] || ''}
-                  onChange={handleChange}
-                  className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
-                />                
-              )
+            switch (inputType)
+            {
+              case "multiSelect":
+                inputElement = (
+                  <MultiSelect 
+                    value={formData[name] || []} 
+                    onChange={(e) => handlePReactChange(e, name)} 
+                    options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
+                    optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
+                    optionValue="_id"
+                    placeholder={`Select ${label}`}
+                    maxSelectedLabels={3} 
+                    className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
+                    panelClassName="bg-gray-100"
+                  />                
+                )
+                break;
+              case "select":
+                inputElement = (
+                  <Dropdown 
+                    value={formData[name] || ""} 
+                    onChange={(e) => handlePReactChange(e, name)} 
+                    options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
+                    optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
+                    optionValue="_id"
+                    placeholder={`Select ${label}`} 
+                    className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
+                    panelClassName="bg-gray-100"
+                  />                
+                )
+                break;
+              default:
+                inputElement = (
+                  <input
+                    type="text"
+                    name={name}
+                    value={formData[name] || ''}
+                    onChange={handleChange}
+                    className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                  />                
+                )
+                break;
             }
 
             return (

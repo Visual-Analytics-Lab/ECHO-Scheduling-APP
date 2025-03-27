@@ -7,7 +7,7 @@ Meteor.methods({
             username: String,
             email: String,
             password: String,
-            role: String
+            role_id: String
         });
         
         try {
@@ -16,7 +16,7 @@ Meteor.methods({
             username: data.username,
             email: data.email,
             password: data.password,
-            role: String,
+            role_id: String,
             createdAt: new Date(),
           });
         } 
@@ -42,13 +42,14 @@ Meteor.methods({
         check(data, Match.ObjectIncluding({
             username: String,
             email: String,
-            role: String,
+            role_id: String,
         }));
         
         return await Meteor.users.updateAsync(userId, {
             $set: {
                 username: data.username,
                 'emails.0.address': data.email,
+                role_id: data.role_id
             }
         });
     }
