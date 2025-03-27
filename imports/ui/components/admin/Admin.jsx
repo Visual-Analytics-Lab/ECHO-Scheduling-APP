@@ -23,7 +23,7 @@ import "react-toastify/dist/ReactToastify.css";
 *   fields - fields to display in table/popup, 
 *   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
 */ 
-const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, rowData) => ({
+const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, roles, rowData) => ({
   Users: {
     collectionName: "users",
     collectionData: users,
@@ -124,7 +124,7 @@ const Admin = () => {
       Meteor.subscribe("semesters"),
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
-      Meteor.subscribe("roles");
+      Meteor.subscribe("roles"),
     ];
 
     return () => subscriptions.forEach(sub => sub.stop());
@@ -147,7 +147,7 @@ const Admin = () => {
 
 
   // Fetch current section config dynamically
-  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, rowData);
+  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, roles, rowData);
   const currentSection = sectionConfig[activeSection] || {};
 
   // Return "(collectionName).(operation)""

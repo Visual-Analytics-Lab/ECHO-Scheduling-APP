@@ -43,7 +43,7 @@ Meteor.methods({
             username: String,
             email: String,
             role: String,
-        });
+        }));
         
         return await Meteor.users.updateAsync(userId, {
             $set: {
