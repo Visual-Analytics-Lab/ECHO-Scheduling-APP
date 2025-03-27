@@ -19,6 +19,8 @@ Meteor.methods({
             color: String,
             topic: String,
             notes: String,
+            semester: String,
+            series: String
         });
         
         const sessionsId = await SessionsCollection.insertAsync({
@@ -48,7 +50,9 @@ Meteor.methods({
             color: String,
             topic: String,
             notes: String,
-        }));
+            semester: String,
+            series: String
+        });
         return await SessionsCollection.updateAsync(sessionsId, {
             $set: data
         });

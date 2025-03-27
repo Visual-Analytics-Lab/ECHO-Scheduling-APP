@@ -11,7 +11,7 @@ import { SessionsCollection } from "../../../api/collections";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 import { Meteor } from "meteor/meteor";
-import { printSchedulesWeekly } from "./Printing";
+import { printExcel } from "./Printing";
 
 const Calendar = () => {
   const [activeOption, setActiveOption] = useState("Print Option 1");
@@ -43,12 +43,8 @@ const Calendar = () => {
     }
   };
   const handlePrint = (option) => {
-    if (option === "Schedules by Week") {
-      printSchedulesWeekly();
-    } else {
-      console.log("Other print options not implemented yet.");
-    }
-  };
+    printExcel(option);
+  };  
   
   
   const handleSubmit = (formData, sessionId) => {
