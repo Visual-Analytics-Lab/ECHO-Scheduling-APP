@@ -3,6 +3,7 @@ import React from "react";
 const AdminSidebar = ({ activeSection, setActiveSection }) => {
   const sections = [
     "Users",
+    "Roles",
     "Specialists",
     "Participant Groups",
     "Semesters",

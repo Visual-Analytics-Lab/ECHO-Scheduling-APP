@@ -7,9 +7,10 @@ import './CollectionMethods/ParticipantGroupsMethods';
 import './CollectionMethods/SemesterMethods';
 import './CollectionMethods/SeriesMethods';
 import './CollectionMethods/TopicsMethods';
-import './CollectionMethods/UsersMethods'
-import './CollectionMethods/SessionsMethods'
-import '../imports/api/export'
+import './CollectionMethods/UsersMethods';
+import './CollectionMethods/SessionsMethods';
+import './CollectionMethods/RolesMethods';
+import '../imports/api/export';
 
 if (Meteor.isServer) {
   Meteor.startup(async () => {
