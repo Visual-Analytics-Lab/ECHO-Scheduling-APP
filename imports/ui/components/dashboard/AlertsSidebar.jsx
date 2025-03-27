@@ -1,6 +1,12 @@
 import React from "react";
+import { SessionsCollection } from "../../../api/collections";
+import { Meteor } from "meteor/meteor";
+import { useTracker } from "meteor/react-meteor-data";
 
 const AlertsSidebar = () => {
+  Meteor.subscribe("sessions");
+  const sessions = useTracker(() => SessionsCollection.fetch().find());
+  
   return (
     <aside className="w-64 bg-white m-4 border border-gray-300 rounded-lg shadow-xl">
       <div className="py-3 px-4 bg-[#721D35] rounded-t-lg">

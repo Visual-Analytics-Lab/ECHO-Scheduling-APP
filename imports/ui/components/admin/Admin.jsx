@@ -66,7 +66,7 @@ const Admin = () => {
         return [
           { name: "username", label: "User Name" },
           { name: "email", label: "Email" },
-          { name: "role", label: "Role" },
+          { name: "role", label: "Role", inputType: "multiSelect", parentCollection: RolesCollection},
         ];
       case "Roles":
         return [
