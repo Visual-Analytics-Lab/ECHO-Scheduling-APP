@@ -14,22 +14,17 @@ import '../imports/api/export';
 
 if (Meteor.isServer) {
   Meteor.startup(async () => {
-    try {
-      const user = await Meteor.users.findOneAsync({ username: 'testuser' });
-
-      if (!user) {
-        Accounts.createUser({
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'testpassword',
-          role: 'admin',
-        });
-        console.log('Test user created');
-      } else {
-        console.log('Test user already exists');
-      }
-    } catch (error) {
-      console.error('Error checking or creating user:', error);
-    }
+      const testUser = {
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'testpassword',
+      };
+      Meteor.call('users.insert', testUser, (error, result) => {
+        if (error) {
+          console.log('Test user already exists');
+        } else {
+          console.log('Test user created');
+        }
+      })
   });
 }

@@ -1,19 +1,19 @@
 import React from "react";
+import { MdLocalPrintshop } from "react-icons/md";
 
 const CalendarSidebar = ({ activeOption, onOptionSelect, options }) => {
   return (
-    <aside className="w-64 bg-gray-100 text-black m-4 border border-[#721D35] rounded-lg shadow-xl">
-      <div className="py-3 px-4 bg-[#721D35] rounded-t-lg">
-        <h2 className="text-lg text-white">🖶 Print</h2>
+    <aside className="w-64 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
+      <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
+        <h2 className="flex text-xl text-white items-center"><MdLocalPrintshop className="mr-2" size={28}/> Print</h2>
       </div>
-      <nav className="space-y-2">
+      <nav className="flex flex-col justify-between items-center space-y-3">
+        <div></div>
         {options.map((option) => (
           <button
             key={option}
             onClick={() => onOptionSelect(option)}
-            className={`block w-full text-left px-6 py-2 text-sm hover:bg-gray-300 ${
-              activeOption === option ? "" : ""
-            }`}
+            className={`rounded-lg w-[90%] text-left text-base px-4 py-3 text-md bg-neutral-200 hover:bg-neutral-300 active:bg-neutral-400`}
           >
             {option}
           </button>

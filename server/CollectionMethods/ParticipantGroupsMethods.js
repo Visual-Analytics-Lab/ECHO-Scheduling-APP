@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { ParticipantGroupsCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -26,13 +26,13 @@ Meteor.methods({
     },
     async 'participantGroups.update'(participantGroupsId, data) {
         check(participantGroupsId, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             name: String,
             agency: String,
             email: String,
             phone: String,
             families: String
-        });
+        }));
         return await ParticipantGroupsCollection.updateAsync(participantGroupsId, {
             $set: data
         });

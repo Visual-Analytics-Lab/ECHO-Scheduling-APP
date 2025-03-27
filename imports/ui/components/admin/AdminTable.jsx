@@ -10,22 +10,32 @@ import {
   getPaginationRowModel,
   flexRender
 } from "@tanstack/react-table";
+import { MdSearch, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
-  const [editItem, setEditItem] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [editedValues, setEditedValues] = useState({});
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
   const columns = useMemo(
     () =>
       fields.map((field) => ({
-        accessorKey: field.name,
         header: field.label,
+        accessorKey: field.name,
+
+        // If the field is an _id referencing another collection (e.g., series_id),
+        //    display the name, title, etc. of the entry matching the _id.
+        ...(field.parentCollection && {
+          cell: ({ row }) => {
+            const ids = row.original[field.name] || []; // Array of IDs
+            const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
+            return relatedDocs.map(doc => doc.title || doc.name || "").join(", ");
+          }
+        })
       })),
     [fields]
   );
@@ -40,9 +50,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
-
-  const getNestedValue = (obj, path) =>
-    path.split(".").reduce((acc, part) => acc && acc[part], obj);
 
   const validateField = (value, field) => {
     if (field.required && !value) {
@@ -69,38 +76,9 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     }
   };
 
-  const handleEditClick = (item) => {
-    const initialValues = {};
-    fields.forEach((field) => {
-      initialValues[field.name] = getNestedValue(item, field.name) || "";
-    });
-    setEditedValues(initialValues);
-    setEditItem(item);
-    setError("");
-  };
-
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
     setShowDeleteDialog(true);
-  };
-
-  const handleEditSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-      setError("");
-
-      // Validate all fields
-      fields.forEach((field) => {
-        validateField(editedValues[field.name], field);
-      });
-
-      await onEdit(editItem._id, editedValues);
-      setEditItem(null);
-    } catch (err) {
-      setError(err.message || "Failed to update item. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -117,14 +95,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     }
   };
 
-  const handleInputChange = (fieldName, value) => {
-    setEditedValues((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
-    setError("");
-  };
-
   return (
     <>
       {error && (
@@ -133,34 +103,43 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
         </Alert>
       )}
 
-      <section className="bg-white rounded-lg shadow p-4">
+      <section className="bg-white border border-gray-300 rounded-lg shadow-full-border p-4">
+      {/* SEARCH BAR */}
+      <div className="relative w-full mb-4">
         <input
           type="text"
           placeholder="Search..."
           value={globalFilter || ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="mb-4 p-2 border rounded w-full"
+          className="p-2 pr-10 border-2 border-echo-maroon rounded w-full"
         />
+        <div className="absolute inset-y-0 right-0 flex items-center bg-echo-maroon text-white p-4 rounded">
+          <MdSearch size={30} />
+        </div>
+      </div>
         <table className="w-full text-left border-collapse">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="bg-gray-200">
+            <tr key={headerGroup.id} className="bg-neutral-200">
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
                   className="p-3 cursor-pointer"
                   onClick={header.column.getToggleSortingHandler()}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                  {{
-                    asc: " 🔼",
-                    desc: " 🔽",
-                  }[header.column.getIsSorted()] ?? null}
+                  <div className="flex items-center">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {{
+                      asc: (<MdKeyboardArrowUp size={22} className="ml-1"/>),
+                      desc: (<MdKeyboardArrowDown size={22} className="ml-1"/>),
+                    }[header.column.getIsSorted()] ?? null}
+                  </div>
                 </th>
               ))}
-              <th className="p-3">Actions</th>
+              {/* Use w-[1%] to make the Actions column as small as possible */}
+              <th className="p-3 w-[1%]">Actions</th>
             </tr>
           ))}
         </thead>
@@ -173,9 +152,9 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
-                <td className="p-3">
+                <td className="p-3 w-[1%]">
                   <div className="flex space-x-2">
-                    <Button onClick={() => handleEditClick(row.original)}>
+                    <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => onEdit(row.original)}>
                       Edit
                     </Button>
                     <RedButton onClick={() => handleDeleteClick(row.original)}>
@@ -187,11 +166,12 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
             ))}
           </tbody>
         </table>
+        {/* TODO: Make sure these buttons even work */}
         <div className="flex justify-between items-center mt-4">
-          <Button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
           </Button>
-          <Button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
         </div>
@@ -201,52 +181,6 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
           </div>
         )}
       </section>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={editItem !== null}
-        onOpenChange={() => !isSubmitting && setEditItem(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit {sectionTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {fields.map((field) => (
-              <div key={field.name} className="flex flex-col space-y-1.5">
-                <label htmlFor={field.name} className="text-sm font-medium">
-                  {field.label}
-                  {field.required && (
-                    <span className="text-red-500 ml-1">*</span>
-                  )}
-                </label>
-                <input
-                  id={field.name}
-                  type={field.type || "text"}
-                  value={editedValues[field.name] || ""}
-                  onChange={(e) =>
-                    handleInputChange(field.name, e.target.value)
-                  }
-                  disabled={isSubmitting}
-                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm disabled:opacity-50"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditItem(null)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog

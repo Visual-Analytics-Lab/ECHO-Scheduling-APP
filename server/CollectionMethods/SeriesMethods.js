@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { SeriesCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -8,7 +8,8 @@ Meteor.methods({
         check(data, {
             title: String,
             description: String,
-            series: String
+            startDate: String,
+            endDate: String
         });
         
         const seriesGroupID = await SeriesCollection.insertAsync({
@@ -24,12 +25,13 @@ Meteor.methods({
     },
     async 'series.update'(seriesGroupID, data) {
         check(seriesGroupID, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             title: String,
             description: String,
-            series: String
-        });
-        return await SeriesCollection.updateAsync(semesterGroupID, {
+            startDate: String,
+            endDate: String
+        }));
+        return await SeriesCollection.updateAsync(seriesGroupID, {
             $set: data
         });
     }
