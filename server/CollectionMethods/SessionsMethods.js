@@ -52,7 +52,7 @@ Meteor.methods({
             notes: String,
             semester: String,
             series: String
-        });
+        }));
         return await SessionsCollection.updateAsync(sessionsId, {
             $set: data
         });
