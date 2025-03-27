@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { SpecialistsCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -26,13 +26,13 @@ Meteor.methods({
     },
     async 'specialists.update'(specialistId, data) {
         check(specialistId, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             name: String,
             speciality: String,
             email: String,
             phone: String,
             institute: String
-        });
+        }));
         return await SpecialistsCollection.updateAsync(specialistId, {
             $set: data
         });

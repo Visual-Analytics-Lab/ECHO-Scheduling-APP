@@ -15,27 +15,109 @@ import PopupForm from "../popup_form/PopupForm";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
+
+/*  
+*   colName - string used to call meteor collection methods, 
+*   colData - fetched data from that collection,
+*   fields - fields to display in table/popup, 
+*   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
+*/ 
+const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, rowData) => ({
+  Users: {
+    collectionName: "users",
+    collectionData: users,
+    fields: (component) => {
+      const fields = [
+        { name: "username", label: "Username", type: "text" },
+        { name: "email", label: "Email", type: "email" },
+      ];
+      // Show password only when using add new user pop up
+      if (!rowData._id && component == "popup") {
+        fields.push({ name: "password", label: "Password", type: "password" });
+      }
+      return fields;
+    },
+    fieldContext: {},
+  },
+  Specialists: {
+    collectionName: "specialists",
+    collectionData: specialists,
+    fields: () => [
+      { name: "name", label: "Name" },
+      { name: "speciality", label: "Specialty" },
+      { name: "email", label: "Email" },
+      { name: "phone", label: "Phone" },
+      { name: "institute", label: "Institute" },
+    ],
+    fieldContext: {},
+  },
+  "Participant Groups": {
+    collectionName: "participantGroups",
+    collectionData: participantGroups,
+    fields: () => [
+      { name: "name", label: "Name" },
+      { name: "agency", label: "Agency" },
+      { name: "email", label: "Email" },
+      { name: "phone", label: "Phone" },
+      { name: "families", label: "Families" },
+    ],
+    fieldContext: {},
+  },
+  Semesters: {
+    collectionName: "semesters",
+    collectionData: semesters,
+    fields: () => [
+      { name: "title", label: "Title" },
+      { name: "description", label: "Description" },
+      { name: "startDate", label: "Start Date" },
+      { name: "endDate", label: "End Date" },
+      { name: "series_ids", label: "Series", inputType: "multiSelect", parentCollection: SeriesCollection },
+    ],
+    fieldContext: { series_ids: series },
+  },
+  Series: {
+    collectionName: "series",
+    collectionData: series,
+    fields: () => [
+      { name: "title", label: "Title" },
+      { name: "description", label: "Description" },
+      { name: "startDate", label: "Start Date" },
+      { name: "endDate", label: "End Date" },
+    ],
+    fieldContext: {},
+  },
+  Topics: {
+    collectionName: "topics",
+    collectionData: topics,
+    fields: () => [
+      { name: "title", label: "Title" },
+      { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect", parentCollection: SpecialistsCollection },
+      { name: "description", label: "Description" },
+    ],
+    fieldContext: { specialists_ids: specialists },
+  },
+});
+
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  //Subscribing to Collections
-  useEffect(() => {
-    const sub0 = Meteor.subscribe("users");
-    const sub1 = Meteor.subscribe("specialists");
-    const sub2 = Meteor.subscribe("participantGroups");
-    const sub3 = Meteor.subscribe("semesters");
-    const sub4 = Meteor.subscribe("series");
-    const sub5 = Meteor.subscribe("topics");
+  const [rowData, setRowData] = useState({});
 
-    return () => {
-      sub0.stop();
-      sub1.stop();
-      sub2.stop();
-      sub3.stop();
-      sub4.stop();
-      sub5.stop();
-    };
+  // Subscribe to collections
+  useEffect(() => {
+    const subscriptions = [
+      Meteor.subscribe("users"),
+      Meteor.subscribe("specialists"),
+      Meteor.subscribe("participantGroups"),
+      Meteor.subscribe("semesters"),
+      Meteor.subscribe("series"),
+      Meteor.subscribe("topics"),
+    ];
+
+    return () => subscriptions.forEach(sub => sub.stop());
   }, []);
+
+  // Fetch from collections after subscribing
   const users = useTracker(() => 
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
@@ -44,100 +126,22 @@ const Admin = () => {
     }))
   );
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
-  const participantGroups = useTracker(() =>
-    ParticipantGroupsCollection.find().fetch()
-  );
-  const semesters = useTracker(() =>
-    SemesterCollection.find().fetch()
-  );
-  const series = useTracker(() =>
-    SeriesCollection.find().fetch()
-  );
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const semesters = useTracker(() => SemesterCollection.find().fetch());
+  const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
-  //Getting Fields for showing data as well as used for pop ups(except users)
-  const getFieldsForSection = () => {
-    switch (activeSection) {
-      case "Users":
-        return [
-          { name: "username", label: "User Name" },
-          { name: "email", label: "Email" },
-        ];
-      case "Specialists":
-        return [
-          { name: "name", label: "Name" },
-          { name: "speciality", label: "Specialty" },
-          { name: "email", label: "Email" },
-          { name: "phone", label: "Phone" },
-          { name: "institute", label: "Institute" },
-        ];
-      case "Participant Groups":
-        return [
-          { name: "name", label: "Name" },
-          { name: "agency", label: "Agency" },
-          { name: "email", label: "Email" },
-          { name: "phone", label: "Phone" },
-          { name: "families", label: "Families" },
-        ];
-      case "Semesters":
-        return [
-          { name: "title", label: "Title" },
-          { name: "description", label: "Description" },
-          { name: "startDate", label: "Start Date" },
-          { name: "endDate", label: "End Date" },
-        ];
-      case "Series":
-        return [
-          { name: "title", label: "Title" },
-          { name: "description", label: "Description" },
-          { name: "series", label: "Series" },
-        ];
-      case "Topics":
-        return [
-          { name: "title", label: "Title" },
-          { name: "description", label: "Description" },
-          { name: "category", label: "Category" },
-        ];
-      default:
-        return [];
-    }
-  };
-  //Exception here because don't show password, but have password field when pop up
-  const getUserFormFields = () => {
-    return [
-      { name: "username", label: "Username", type: "text" },
-      { name: "email", label: "Email", type: "email" },
-      { name: "password", label: "Password", type: "password" }
-    ];
-  };
-  const getCollectionName = () => {
-    switch(activeSection) {
-      case 'Users': return 'users';
-      case 'Specialists': return 'specialists';
-      case 'Participant Groups': return 'participantGroups';
-      case 'Semesters': return 'semesters';
-      case 'Series': return 'series';
-      case 'Topics': return 'topics';
-      default: return '';
-    }
-  };
-  const getMethodName = (operation) => {
-    //const section = activeSection.charAt(0).toLowerCase() + activeSection.slice(1).replace(/\s+/g, '');
-    const section = getCollectionName();
-    return `${section}.${operation}`;
-  };
+  // Fetch current section config dynamically
+  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, rowData);
+  const currentSection = sectionConfig[activeSection] || {};
 
-  const handleEdit = async (id, updatedData) => {
-    try {
-      const methodName = getMethodName('update');
-      await Meteor.call(methodName, id, updatedData);
-
-      toast.success("Item updated successfully!");
-    } catch (error) {
-      console.error("Error updating item:", error);
-      toast.error(error.reason || "Failed to update item. Please try again.");
-    }
-  };
+  // Return "(collectionName).(operation)""
+  const getMethodName = (operation) => `${currentSection.collectionName}.${operation}`;
+  // Populate RowData/FormData then open pop up for editting
+  const openEditPopUp = (data) => {
+    setRowData(data);
+    setIsPopupOpen(true);
+  }  
 
   const handleDelete = async (id) => {
     try {
@@ -151,25 +155,25 @@ const Admin = () => {
     }
   };
 
-  const data = {
-    Users: users,
-    Specialists: specialists,
-    "Participant Groups": participantGroups,
-    "Semesters": semesters,
-    "Series": series,
-    "Topics": topics,
-  };
+  const getPopUpTitle = () =>
+  {
+    const start = rowData._id ? 'Edit' : 'Add New'
+    // Add any active selections into the array that are the same plural and singular
+    return activeSection && ['Series'].includes(activeSection) 
+      ? `${start} ${activeSection}` 
+      : `${start} ${activeSection.slice(0, -1)}`
+  }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="bg-bg-light flex flex-col h-screen">
       <Navbar />
       <div className="flex flex-1">
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4">
           <header className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-[#721D35]">{activeSection}</h1>
+            <h1 className="text-2xl font-bold text-echo-maroon">{activeSection}</h1>
             <button
-              className="bg-[#0EA6B2] text-white py-2 px-4 rounded hover:bg-[#0c8f9a] transition duration-200"
+              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200"
               onClick={() => setIsPopupOpen(true)}
             >
               + Add New
@@ -177,23 +181,23 @@ const Admin = () => {
           </header>
 
           <AdminTable
-            data={data[activeSection]}
+            data={currentSection.collectionData}
             sectionTitle={activeSection}
-            fields={getFieldsForSection()}
-            onEdit={handleEdit}
+            fields={currentSection.fields() || []}
+            onEdit={openEditPopUp}
             onDelete={handleDelete}
           />
 
           <PopupForm
             isOpen={isPopupOpen}
-            onClose={() => setIsPopupOpen(false)}
-            collection={getCollectionName()}
-            fields={activeSection === 'Users' ? getUserFormFields() : getFieldsForSection()}
-            title={`Add New ${activeSection.slice(0, -1)}`}
-            onSuccess={() => {
-              setIsPopupOpen(false);
-              toast.success("Item added successfully!");
-            }}
+            setIsOpen={setIsPopupOpen}
+            collection={currentSection.collectionName || ""}
+            formData={rowData}
+            setFormData={setRowData}
+            fields={currentSection.fields("popup") || []}
+            fieldData={currentSection.fieldContext}
+            title={getPopUpTitle()}
+            alertSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
           />
         </main>
       </div>

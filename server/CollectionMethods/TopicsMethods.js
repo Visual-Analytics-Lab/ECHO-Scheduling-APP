@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { TopicsCollection } from '../../imports/api/collections';
 
 Meteor.methods({
@@ -7,8 +7,8 @@ Meteor.methods({
         //console.log('Received data:', data);
         check(data, {
             title: String,
+            specialists_ids: [String],
             description: String,
-            category: String,
         });
         
         const topicsId = await TopicsCollection.insertAsync({
@@ -24,11 +24,11 @@ Meteor.methods({
     },
     async 'topics.update'(topicsId, data) {
         check(topicsId, String);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             title: String,
+            specialists_ids: [String],
             description: String,
-            category: String,
-        });
+        }));
         return await TopicsCollection.updateAsync(topicsId, {
             $set: data
         });
