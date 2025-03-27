@@ -10,6 +10,7 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
+  RolesCollection
 } from "../../../api/collections";
 import PopupForm from "../popup_form/PopupForm";
 import { ToastContainer, toast } from "react-toastify";
@@ -22,7 +23,7 @@ import "react-toastify/dist/ReactToastify.css";
 *   fields - fields to display in table/popup, 
 *   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
 */ 
-const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, rowData) => ({
+const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, roles, rowData) => ({
   Users: {
     collectionName: "users",
     collectionData: users,
@@ -30,6 +31,7 @@ const getSectionConfig = (users, specialists, participantGroups, semesters, seri
       const fields = [
         { name: "username", label: "Username", type: "text" },
         { name: "email", label: "Email", type: "email" },
+        { name: "role", label: "Role", inputType: "multiSelect", parentCollection: RolesCollection},
       ];
       // Show password only when using add new user pop up
       if (!rowData._id && component == "popup") {
@@ -37,6 +39,15 @@ const getSectionConfig = (users, specialists, participantGroups, semesters, seri
       }
       return fields;
     },
+    fieldContext: {},
+  },
+  Roles: {
+    collectionName: "roles",
+    collectionData: roles,
+    fields: () => [
+      {name: "role", label: "Role"},
+      {name: "desc", label: "Description"},
+    ],
     fieldContext: {},
   },
   Specialists: {
@@ -105,6 +116,7 @@ const Admin = () => {
 
   // Subscribe to collections
   useEffect(() => {
+
     const subscriptions = [
       Meteor.subscribe("users"),
       Meteor.subscribe("specialists"),
@@ -112,6 +124,7 @@ const Admin = () => {
       Meteor.subscribe("semesters"),
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
+      Meteor.subscribe("roles"),
     ];
 
     return () => subscriptions.forEach(sub => sub.stop());
@@ -130,9 +143,11 @@ const Admin = () => {
   const semesters = useTracker(() => SemesterCollection.find().fetch());
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
+  const roles = useTracker(() => RolesCollection.find().fetch());
+
 
   // Fetch current section config dynamically
-  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, rowData);
+  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, roles, rowData);
   const currentSection = sectionConfig[activeSection] || {};
 
   // Return "(collectionName).(operation)""
