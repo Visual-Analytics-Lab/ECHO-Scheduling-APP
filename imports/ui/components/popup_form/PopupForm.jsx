@@ -76,88 +76,79 @@ const PopupForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
-          <button 
-            onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
         </div>
 
-        {/* {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
-            {error}
-          </div>
-        )} */}
-
         <form onSubmit={handleSubmit}>
-          {fields.map(({ name, label, inputType }) => {
-            const hasError = errors[name]; // Check if this field has an error
-            // Set input element based on inputType
-            let inputElement;
-            switch (inputType)
-            {
-              case "multiSelect":
-                inputElement = (
-                  <MultiSelect 
-                    value={formData[name] || []} 
-                    onChange={(e) => handlePReactChange(e, name)} 
-                    options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
-                    optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
-                    optionValue="_id"
-                    placeholder={`Select ${label}`}
-                    maxSelectedLabels={3} 
-                    className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
-                    panelClassName="bg-gray-100"
-                  />                
-                )
-                break;
-              case "select":
-                inputElement = (
-                  <Dropdown 
-                    value={formData[name] || ""} 
-                    onChange={(e) => handlePReactChange(e, name)} 
-                    options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
-                    optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
-                    optionValue="_id"
-                    placeholder={`Select ${label}`} 
-                    className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
-                    panelClassName="bg-gray-100"
-                  />                
-                )
-                break;
-              default:
-                inputElement = (
-                  <input
-                    type="text"
-                    name={name}
-                    value={formData[name] || ''}
-                    onChange={handleChange}
-                    className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
-                  />                
-                )
-                break;
-            }
+          {/* Use grid layout with dynamic column span */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fields.map(({ name, label, inputType, colSpan }) => {
+              const hasError = errors[name];
+              // Dynamically set the column span
+              const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
 
-            return (
-              <div key={name} className="mb-4">
-                {/* Label and error */}
-                <div className="flex justify-between items-center">
-                  <label className="block text-gray-700 text-sm font-bold">
+              let inputElement;
+              switch (inputType) {
+                case "multiSelect":
+                  inputElement = (
+                    <MultiSelect
+                      value={formData[name] || []}
+                      onChange={(e) => handlePReactChange(e, name)}
+                      options={fieldData[name].map((s) => ({ ...s, key: s._id }))}
+                      optionLabel={fieldData[name][0]?.title ? "title" : "name"}
+                      optionValue="_id"
+                      placeholder={`Select ${label}`}
+                      maxSelectedLabels={3}
+                      className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
+                      panelClassName="bg-gray-100"
+                    />
+                  );
+                  break;
+                case "select":
+                  inputElement = (
+                    <Dropdown
+                      value={formData[name] || ""}
+                      onChange={(e) => handlePReactChange(e, name)}
+                      options={fieldData[name].map((s) => ({ ...s, key: s._id }))}
+                      optionLabel={fieldData[name][0]?.title ? "title" : "name"}
+                      optionValue="_id"
+                      placeholder={`Select ${label}`}
+                      className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
+                      panelClassName="bg-gray-100"
+                    />
+                  );
+                  break;
+                default:
+                  inputElement = (
+                    <input
+                      type="text"
+                      name={name}
+                      value={formData[name] || ''}
+                      onChange={handleChange}
+                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                    />
+                  );
+                  break;
+              }
+
+              return (
+                <div key={name} className={`${columnClass}`}>
+                  <label className="block text-gray-700 text-sm font-bold mb-1">
                     {label}
                   </label>
+                  {inputElement}
                   {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
                 </div>
-                {/* Render inputElement */}
-                {inputElement}
-              </div>
-            );
-          })}
-          
-          <div className="flex justify-end gap-2">
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
             <GrayButton onClick={handleClose}>Cancel</GrayButton>
             <GreenButton type="submit">Save</GreenButton>
           </div>
