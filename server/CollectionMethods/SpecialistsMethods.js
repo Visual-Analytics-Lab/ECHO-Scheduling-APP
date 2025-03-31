@@ -5,13 +5,11 @@ import { SpecialistsCollection } from '../../imports/api/collections';
 Meteor.methods({
     async 'specialists.insert'(data) {
         //console.log('Received data:', data);
-        check(data, {
-            name: String,
-            speciality: String,
-            email: String,
-            phone: String,
-            institute: String
-        });
+        check(data, Match.ObjectIncluding({
+          firstName: String,
+          lastName: String,
+          email: String,
+        }));
         
         const specialistId = await SpecialistsCollection.insertAsync({
             ...data,
@@ -27,11 +25,9 @@ Meteor.methods({
     async 'specialists.update'(specialistId, data) {
         check(specialistId, String);
         check(data, Match.ObjectIncluding({
-            name: String,
-            speciality: String,
-            email: String,
-            phone: String,
-            institute: String
+          firstName: String,
+          lastName: String,
+          email: String,
         }));
         return await SpecialistsCollection.updateAsync(specialistId, {
             $set: data

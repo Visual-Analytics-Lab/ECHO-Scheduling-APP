@@ -11,6 +11,7 @@ import {
   flexRender
 } from "@tanstack/react-table";
 import { MdSearch, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md";
+import { createColumnHelper } from "@tanstack/react-table";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
@@ -20,29 +21,44 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  const columnHelper = createColumnHelper();
+
+  const nameFilterFn = (row, columnId, filterValue) => {
+    const firstName = row.original.firstName?.toLowerCase() || "";
+    const lastName = row.original.lastName?.toLowerCase() || "";
+    const fullName = `${firstName} ${lastName}`;
+    return fullName.includes(filterValue.toLowerCase());
+  };
+
   // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
   const columns = useMemo(
     () =>
-      fields.map((field) => ({
-        header: field.label,
-        accessorKey: field.name,
-
-        // If the field is an _id referencing another collection (e.g., series_id),
-        //    display the name, title, etc. of the entry matching the _id.
-        ...(field.parentCollection && {
-          cell: ({ row }) => {
-            const fieldValue = row.original[field.name];
-            if (!fieldValue) return; // No data to display
-        
-            // Use Array.isArray to check if it's an array and handle accordingly
-            const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
-            const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
-        
-            // Get the titles/names and join them with commas
-            return relatedDocs.map(doc => doc.title || doc.name || "").join(", ");
-          }
-        })
-      })),
+      fields.map((field) => {
+        // If field is "fullName", combine existing fullName and lastName fields
+        if (field.name === "fullName") {
+          return columnHelper.accessor(row => `${row.firstName} ${row.lastName}`, {
+            id: "fullName",
+            header: "Name",
+            cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`,
+            filterFn: nameFilterFn, // Register the function here
+          });
+        }
+        // By default, header = label, and key = name
+        return {
+          header: field.label,
+          accessorKey: field.name,
+          // If field has a set parentCollection, return .title or .name for matching id
+          ...(field.parentCollection && {
+            cell: ({ row }) => {
+              const fieldValue = row.original[field.name];
+              if (!fieldValue) return ""; // No data to display
+              const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+              const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
+              return relatedDocs.map((doc) => doc.title || doc.name || "").join(", ");
+            },
+          }),
+        };
+      }),
     [fields]
   );
 

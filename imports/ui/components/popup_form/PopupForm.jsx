@@ -36,9 +36,9 @@ const PopupForm = ({
 
   const validateForm = () => {
     const newErrors = {};
-  
-    fields.forEach(({ name, inputType }) => {
-      if (!formData[name] || (Array.isArray(formData[name]) && formData[name].length === 0)) {
+    // Show errors for empty fields that are required.
+    fields.forEach(({ name, inputType, required }) => {
+      if (required && (!formData[name] || (Array.isArray(formData[name]) && formData[name].length === 0))) {
         newErrors[name] = "This field is required";
       }
     });
@@ -120,6 +120,18 @@ const PopupForm = ({
                       placeholder={`Select ${label}`}
                       className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
                       panelClassName="bg-gray-100"
+                    />
+                  );
+                  break;
+                case "number":
+                  inputElement = (
+                    <input
+                      type="number"
+                      name={name}
+                      value={formData[name] || ''}
+                      onChange={handleChange}
+                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                      placeholder="Enter a number"
                     />
                   );
                   break;

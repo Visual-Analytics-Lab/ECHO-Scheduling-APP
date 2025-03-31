@@ -8,6 +8,7 @@
 *   -- Popup Specific -------------
 *   popupFields - fields to display in popup (inputType is text by default),
 *   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
+*   required - make field required if set to true
 *   colSpan - How many columns the field input shield span (Max and default = 2)
 */ 
 const getSectionConfig = (collections, colData, rowData) => ({
@@ -57,28 +58,32 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionName: "specialists",
     collectionData: colData.specialists,
     tableFields: () => [
-      { name: "name", label: "Name" },
-      { name: "specialty", label: "Specialty" },
+      // fullName will combine firstName and lastName fields into 1 column
+      { name: "fullName", label: "Name" },
+      { name: "profession", label: "Profession" },
       { name: "email", label: "Email" },
       { name: "phone", label: "Phone" },
       { name: "institute", label: "Institute" },
     ],
-    // TODO: edit collection methods to accept these
-    // TODO: Finish changing these fields
     popupFields: () => [
-      { name: "firstName", label: "First Name", colSpan: 1 },
-      { name: "dob", label: "Date of Birth", colSpan: 1 },
-      { name: "lastName", label: "Last Name", colSpan: 1 },
-      // TODO Make color picker here
-      { name: "lastName", label: "Last Name", colSpan: 1 },
-      { name: "email", label: "Email", colSpan: 1 },
-      { name: "participantGroups_id", label: "Preferred Audience", inputType: "select", colSpan: 1 },
-      { name: "specialty", label: "Specialty" },
-      { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
-      { name: "institute", label: "Institute" },
+      { name: "firstName", label: "First Name", required: true, colSpan: 1 },
+      { name: "lastName", label: "Last Name", required: true, colSpan: 1 },
+      { name: "email", label: "Email", required: true, colSpan: 1 },
+      { name: "phone", label: "Phone", colSpan: 1 },
+      // TODO: make this a color picker
+      { name: "nameColor", label: "Name Color", inputType: "color", colSpan: 1 },
+      { name: "sessionPreferrence", label: "Preferred Sessions Per Week", inputType: "number", colSpan: 1},
+      { name: "participantGroups_id", label: "Preferred Audience", inputType: "select"},
+      { name: "profession", label: "Profession", colSpan: 1 },
+      { name: "institute", label: "Institute/Employer", colSpan: 1 },
+      { name: "topics_ids", label: "Topics of Expertise", inputType: "multiSelect" },
+      { name: "areasOfExpertise", label: "Major Areas of Expertise" },
+      // TODO: Add a resume and bio upload somehow
     ],
-    fieldContext: { participantGroups_ids: colData.participantGroups},
+    fieldContext: { 
+      participantGroups_id: colData.participantGroups,
+      topics_ids: colData.topics,
+    },
   },
   "Participant Groups": {
     collectionName: "participantGroups",
