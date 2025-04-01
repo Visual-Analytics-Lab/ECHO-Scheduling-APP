@@ -39,10 +39,28 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
           return columnHelper.accessor(row => `${row.firstName} ${row.lastName}`, {
             id: "fullName",
             header: "Name",
-            cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`,
+            cell: ({ row }) => (
+              <span style={{ color: row.original.nameColor }}>
+                {row.original.firstName} {row.original.lastName}
+              </span>
+            ),
             filterFn: nameFilterFn, // Register the function here
           });
         }
+
+        // If field is "name" or "title", apply nameColor to it
+        if (field.name === "name" || field.name === "title") {
+          return {
+            header: field.label,
+            accessorKey: field.name,
+            cell: ({ row }) => (
+              <span style={{ color: row.original.nameColor }}>
+                {row.original[field.name]}
+              </span>
+            ),
+          };
+        }
+        
         // By default, header = label, and key = name
         return {
           header: field.label,

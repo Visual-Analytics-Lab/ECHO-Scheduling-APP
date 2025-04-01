@@ -27,6 +27,16 @@ const PopupForm = ({
       [name]: value
     }));
   };
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    // Convert the local time to UTC
+
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
   const handlePReactChange = (e, name) => {
     setFormData(prev => ({
       ...prev,
@@ -135,6 +145,29 @@ const PopupForm = ({
                     />
                   );
                   break;
+                case "color":
+                  inputElement = (
+                    <input
+                      type="color"
+                      name={name}
+                      value={formData[name] || ''}
+                      onChange={handleChange}
+                      className={`w-9 h-9 shadow border rounded text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                    />
+                  );
+                  break;
+                case "dateTime":
+                  inputElement = (
+                    <input
+                      type="dateTime-local"
+                      name={name}
+                      // TODO: Make sure these dates are properly stored with UTC and displayed with local time
+                      value={formData[name] || ''}
+                      onChange={handleDateChange}
+                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                    />
+                  );
+                  break;
                 default:
                   inputElement = (
                     <input
@@ -148,14 +181,18 @@ const PopupForm = ({
                   break;
               }
 
+              let displayClass = '';
+              if (['color'].includes(inputType)) displayClass = "flex items-center gap-5 mt-4"
+              // Column class controls the column span of the field input
+              // Display class controls if the field input and label should flex so they're on the same line
               return (
-                <div key={name} className={`${columnClass}`}>
-                  <label className="block text-gray-700 text-sm font-bold mb-1">
-                    {label}
-                  </label>
+              <div key={name} className={`${columnClass}`}>
+                <div className={`${displayClass}`}>
+                  <label className="text-gray-700 text-sm font-bold">{label}</label>
                   {inputElement}
-                  {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
                 </div>
+                {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
+              </div>
               );
             })}
           </div>

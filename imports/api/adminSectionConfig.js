@@ -7,9 +7,12 @@
 *
 *   -- Popup Specific -------------
 *   popupFields - fields to display in popup (inputType is text by default),
+*       - name: key
+*       - label: input label
+*       - required: Fields checked in collection methods should be true (false by default)
+*       - inputType: type of input box
+*       - colSpan: How many columns the field input shield span (Max and default = 2)
 *   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
-*   required - make field required if set to true
-*   colSpan - How many columns the field input shield span (Max and default = 2)
 */ 
 const getSectionConfig = (collections, colData, rowData) => ({
 
@@ -37,7 +40,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
         fields.push({ name: "password", label: "Password", type: "password"});
       return fields;
     },
-    fieldContext: { role_id: colData.roles},
+    fieldContext: { role_id: colData.roles },
   },
 
   Roles: {
@@ -62,22 +65,21 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "fullName", label: "Name" },
       { name: "profession", label: "Profession" },
       { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
+      { name: "phone", label: "Phone Number" },
       { name: "institute", label: "Institute" },
     ],
     popupFields: () => [
-      { name: "firstName", label: "First Name", required: true, colSpan: 1 },
-      { name: "lastName", label: "Last Name", required: true, colSpan: 1 },
-      { name: "email", label: "Email", required: true, colSpan: 1 },
-      { name: "phone", label: "Phone", colSpan: 1 },
-      // TODO: make this a color picker
-      { name: "nameColor", label: "Name Color", inputType: "color", colSpan: 1 },
-      { name: "sessionPreferrence", label: "Preferred Sessions Per Week", inputType: "number", colSpan: 1},
-      { name: "participantGroups_id", label: "Preferred Audience", inputType: "select"},
-      { name: "profession", label: "Profession", colSpan: 1 },
-      { name: "institute", label: "Institute/Employer", colSpan: 1 },
-      { name: "topics_ids", label: "Topics of Expertise", inputType: "multiSelect" },
-      { name: "areasOfExpertise", label: "Major Areas of Expertise" },
+      { name: "firstName",            label: "First Name",     required: true,                            colSpan: 1 },
+      { name: "lastName",             label: "Last Name",      required: true,                            colSpan: 1 },
+      { name: "email",                label: "Email",          required: true,                            colSpan: 1 },
+      { name: "phone",                label: "Phone Number",                                              colSpan: 1 },
+      { name: "nameColor",            label: "Name Color",                      inputType: "color",       colSpan: 1 },
+      { name: "sessionPreferrence",   label: "Preferred Sessions Per Week",     inputType: "number",      colSpan: 1 },
+      { name: "participantGroups_id", label: "Preferred Audience",              inputType: "select"                  },
+      { name: "profession",           label: "Profession",                                                colSpan: 1 },
+      { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
+      { name: "topics_ids",           label: "Topics of Expertise",             inputType: "multiSelect"             },
+      { name: "areasOfExpertise",     label: "Major Areas of Expertise"                                              },
       // TODO: Add a resume and bio upload somehow
     ],
     fieldContext: { 
@@ -85,24 +87,38 @@ const getSectionConfig = (collections, colData, rowData) => ({
       topics_ids: colData.topics,
     },
   },
+
   "Participant Groups": {
     collectionName: "participantGroups",
     collectionData: colData.participantGroups,
     tableFields: () => [
-      { name: "name", label: "Name" },
-      { name: "agency", label: "Agency" },
-      { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
-      { name: "families", label: "Families" },
+      { name: "name",     label: "Name" },
+      { name: "agency",   label: "Agency" },
+      { name: "email",    label: "Email" },
+      { name: "phone",    label: "Phone Number" },
+      { name: "famOrPro", label: "Families or Professionals" },
     ],
     popupFields: () => [
-      { name: "name", label: "Name" },
-      { name: "agency", label: "Agency" },
-      { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
-      { name: "families", label: "Families" },
+      { name: "name",       label: "Name",                      required: true,                           colSpan: 1 },
+      { name: "series_ids", label: "Series",                    required: true, inputType: "multiSelect", colSpan: 1 },
+      { name: "agency",     label: "Agency",                    required: true,                           colSpan: 1 },
+      { name: "email",      label: "Email - Primary Contact",                                             colSpan: 1 },
+      { name: "focus",      label: "Focus",                     required: true, inputType: "select",      colSpan: 1 },
+      { name: "phone",      label: "Phone Number",                                                        colSpan: 1 },
+      { name: "famOrPro",   label: "Families or Professionals", required: true, inputType: "select",      colSpan: 1 },
+      { name: "nameColor",  label: "Name Color",                                inputType: "color",       colSpan: 1 },
     ],
-    fieldContext: {},
+    fieldContext: { 
+      series_ids: colData.series,
+      focus: [
+        { _id: "Education", title: "Education" },
+        { _id: "Social Work", title: "Social Work" },
+      ],
+      famOrPro: [
+        { _id: "Families", title: "Families" },
+        { _id: "Professionals", title: "Professionals" },
+      ]
+    },
   },
 
   Semesters: {
@@ -110,17 +126,17 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionData: colData.semesters,
     tableFields: () => [
       { name: "title", label: "Title" },
-      { name: "description", label: "Description" },
-      { name: "startDate", label: "Start Date" },
-      { name: "endDate", label: "End Date" },
       { name: "series_ids", label: "Series", parentCollection: collections.series },
+      { name: "startDate", label: "Start Date" },
+      { name: "endDate", label: "End Date" },      
+      { name: "description", label: "Description" },
     ],
     popupFields: () => [
-      { name: "title", label: "Title" },
-      { name: "description", label: "Description" },
-      { name: "startDate", label: "Start Date" },
-      { name: "endDate", label: "End Date" },
-      { name: "series_ids", label: "Series", inputType: "multiSelect" },
+      { name: "title",       label: "Title"                                },
+      { name: "series_ids",  label: "Series",     inputType: "multiSelect" },
+      { name: "startDate",   label: "Start Date", inputType: "dateTime"    },
+      { name: "endDate",     label: "End Date",   inputType: "dateTime"    },      
+      { name: "description", label: "Description"                          },
     ],
     fieldContext: { series_ids: colData.series },
   },
