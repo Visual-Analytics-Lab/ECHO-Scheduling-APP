@@ -60,6 +60,31 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
             ),
           };
         }
+
+        if (field.name.includes("Date"))
+        {
+          return {
+            header: field.label,
+            accessorKey: field.name,
+            cell: ({ row }) => {
+              const fieldValue = row.original[field.name];
+              if (!fieldValue) return '';
+              
+              const date = new Date(fieldValue);
+              if (isNaN(date.getTime())) return '';
+        
+              // Format date in MM/DD/YYYY HH:MM AM/PM
+              return date.toLocaleString(undefined, {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true, // Ensures AM/PM format
+              });           
+            }
+          }
+        }
         
         // By default, header = label, and key = name
         return {

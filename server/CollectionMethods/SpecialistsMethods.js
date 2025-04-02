@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { SpecialistsCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
     async 'specialists.insert'(data) {
         //console.log('Received data:', data);

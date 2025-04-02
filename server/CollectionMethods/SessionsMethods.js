@@ -2,6 +2,8 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { SessionsCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
+// TODO: update required checks
 Meteor.methods({
     async 'sessions.insert'(data) {
         check(data, {

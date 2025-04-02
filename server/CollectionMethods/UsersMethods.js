@@ -1,6 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 
+// Required fields and their type must be included in the insert and update method checks
+// TODO: update required checks
 Meteor.methods({
     async 'users.insert'(data) {
         check(data, {

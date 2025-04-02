@@ -28,20 +28,29 @@ const PopupForm = ({
     }));
   };
   const handleDateChange = (e) => {
-    const { name, value } = e.target;
-    // Convert the local time to UTC
-
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const localDateTime = e.target.value; // Example: "2025-04-02T14:30"
+    const utcDate = new Date(localDateTime); // Converts it to UTC
+    
+    setFormData({
+      ...formData,
+      [e.target.name]: utcDate, // Store as ISO string
+    });
   };
   const handlePReactChange = (e, name) => {
     setFormData(prev => ({
       ...prev,
       [name]: e.value // PrimeReact MultiSelect provides `e.value` as the selected array
     }));
+  };
+
+  // Helper function to format date in local time for <input type="datetime-local">
+  const formatLocalDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    // Extracts local YYYY-MM-DD and HH:MM
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
   const validateForm = () => {
@@ -86,7 +95,7 @@ const PopupForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
           <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
@@ -97,7 +106,7 @@ const PopupForm = ({
         <form onSubmit={handleSubmit}>
           {/* Use grid layout with dynamic column span */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fields.map(({ name, label, inputType, colSpan }) => {
+            {fields.map(({ name, label, inputType, colSpan, required }) => {
               const hasError = errors[name];
               // Dynamically set the column span
               const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
@@ -162,7 +171,7 @@ const PopupForm = ({
                       type="dateTime-local"
                       name={name}
                       // TODO: Make sure these dates are properly stored with UTC and displayed with local time
-                      value={formData[name] || ''}
+                      value={formatLocalDateTime(formData[name])}
                       onChange={handleDateChange}
                       className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
                     />
@@ -188,7 +197,9 @@ const PopupForm = ({
               return (
               <div key={name} className={`${columnClass}`}>
                 <div className={`${displayClass}`}>
-                  <label className="text-gray-700 text-sm font-bold">{label}</label>
+                  <label className="text-gray-700 text-sm font-bold">
+                    {label}{required && <span className="text-red-500"> *</span>} {/* Red asterisk if required */}
+                  </label>
                   {inputElement}
                 </div>
                 {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
