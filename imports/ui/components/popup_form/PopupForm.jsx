@@ -4,7 +4,8 @@ import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 
 import { MultiSelect } from 'primereact/multiselect';
 import { Dropdown } from 'primereact/dropdown';
-        
+import { MdEdit } from 'react-icons/md';
+
 
 const PopupForm = ({ 
   isOpen, 
@@ -168,13 +169,27 @@ const PopupForm = ({
                   break;
                 case "color":
                   inputElement = (
+                  <div className="relative w-9 h-9">
+                    {/* Hidden color input */}
                     <input
                       type="color"
                       name={name}
                       value={formData[name] || '#000000'}
                       onChange={handleChange}
-                      className={`w-9 h-9 shadow border rounded text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                      className="absolute opacity-0 w-full h-full cursor-pointer" // Hides the input but still functional
                     />
+                    {/* Custom input box that shows the selected color as background */}
+                    <div
+                      style={{ backgroundColor: formData[name] || '#000000' }}
+                      className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
+                    />
+                    {/* Pencil Icon on top of the color box */}
+                    <MdEdit
+                      size={20}
+                      className="absolute top-[7px] right-[8px]"
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  </div>
                   );
                   break;
                 case "dateTime":
