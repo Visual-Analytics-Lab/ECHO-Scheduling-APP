@@ -5,12 +5,12 @@ import { check, Match } from 'meteor/check';
 // TODO: update required checks
 Meteor.methods({
     async 'users.insert'(data) {
-        check(data, {
+        check(data, Match.ObjectIncluding({
             username: String,
             email: String,
             password: String,
             role_id: String
-        });
+        }));
         
         try {
           // Try to create a user

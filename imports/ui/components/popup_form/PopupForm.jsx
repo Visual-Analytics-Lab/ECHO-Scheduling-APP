@@ -53,6 +53,10 @@ const PopupForm = ({
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
+  const getOptionLabels = (field) => {
+    if (field.name) return
+  }
+
   const validateForm = () => {
     const newErrors = {};
     // Show errors for empty fields that are required.
@@ -107,9 +111,17 @@ const PopupForm = ({
           {/* Use grid layout with dynamic column span */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {fields.map(({ name, label, inputType, colSpan, required }) => {
+              
               const hasError = errors[name];
               // Dynamically set the column span
               const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
+
+              // Preprocess options to show correct label given name, title, firstName + lastName
+              const processedOptions = fieldData[name]?.map((s) => ({
+                ...s,
+                key: s._id,
+                processedName: s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.title || s.name
+              })) || [];
 
               let inputElement;
               switch (inputType) {
@@ -118,8 +130,8 @@ const PopupForm = ({
                     <MultiSelect
                       value={formData[name] || []}
                       onChange={(e) => handlePReactChange(e, name)}
-                      options={fieldData[name].map((s) => ({ ...s, key: s._id }))}
-                      optionLabel={fieldData[name][0]?.title ? "title" : "name"}
+                      options={processedOptions}
+                      optionLabel="processedName"
                       optionValue="_id"
                       placeholder={`Select ${label}`}
                       maxSelectedLabels={3}
@@ -133,8 +145,8 @@ const PopupForm = ({
                     <Dropdown
                       value={formData[name] || ""}
                       onChange={(e) => handlePReactChange(e, name)}
-                      options={fieldData[name].map((s) => ({ ...s, key: s._id }))}
-                      optionLabel={fieldData[name][0]?.title ? "title" : "name"}
+                      options={processedOptions}
+                      optionLabel="processedName"
                       optionValue="_id"
                       placeholder={`Select ${label}`}
                       className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
@@ -159,7 +171,7 @@ const PopupForm = ({
                     <input
                       type="color"
                       name={name}
-                      value={formData[name] || ''}
+                      value={formData[name] || '#000000'}
                       onChange={handleChange}
                       className={`w-9 h-9 shadow border rounded text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
                     />

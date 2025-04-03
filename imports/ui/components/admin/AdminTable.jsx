@@ -31,79 +31,103 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
   };
 
   // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
-  const columns = useMemo(
-    () =>
-      fields.map((field) => {
-        // If field is "fullName", combine existing fullName and lastName fields
-        if (field.name === "fullName") {
-          return columnHelper.accessor(row => `${row.firstName} ${row.lastName}`, {
-            id: "fullName",
-            header: "Name",
-            cell: ({ row }) => (
-              <span style={{ color: row.original.nameColor }}>
-                {row.original.firstName} {row.original.lastName}
-              </span>
-            ),
-            filterFn: nameFilterFn, // Register the function here
-          });
-        }
-
-        // If field is "name" or "title", apply nameColor to it
-        if (field.name === "name" || field.name === "title") {
+  const columns = useMemo(() => {
+    return fields.map((field) => {
+      const { name, label, parentCollection } = field;
+  
+      // Common function to format date fields
+      const formatDate = (value) => {
+        if (!value) return "";
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat(undefined, {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true, // Ensures AM/PM format
+        }).format(date);
+      };
+  
+      // Handle special field cases
+      switch (name) {
+        case "fullName":
+          return columnHelper.accessor(
+            row => `${row.firstName} ${row.lastName}`,
+            {
+              id: "fullName",
+              header: "Name",
+              cell: ({ row }) => (
+                <span style={{ color: row.original.nameColor }}>
+                  {row.original.firstName} {row.original.lastName}
+                </span>
+              ),
+              filterFn: nameFilterFn,
+            }
+          );
+        case "name":
+        case "title":
           return {
-            header: field.label,
-            accessorKey: field.name,
+            header: label,
+            accessorKey: name,
             cell: ({ row }) => (
               <span style={{ color: row.original.nameColor }}>
-                {row.original[field.name]}
+                {row.original[name]}
               </span>
             ),
           };
-        }
-
-        if (field.name.includes("Date"))
-        {
-          return {
-            header: field.label,
-            accessorKey: field.name,
-            cell: ({ row }) => {
-              const fieldValue = row.original[field.name];
-              if (!fieldValue) return '';
-              
-              const date = new Date(fieldValue);
-              if (isNaN(date.getTime())) return '';
-        
-              // Format date in MM/DD/YYYY HH:MM AM/PM
-              return date.toLocaleString(undefined, {
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true, // Ensures AM/PM format
-              });           
-            }
+        default:
+          // Handle date fields
+          if (name.includes("Date")) {
+            return {
+              header: label,
+              accessorKey: name,
+              cell: ({ row }) => formatDate(row.original[name]),
+            };
           }
-        }
-        
-        // By default, header = label, and key = name
-        return {
-          header: field.label,
-          accessorKey: field.name,
-          // If field has a set parentCollection, return .title or .name for matching id
-          ...(field.parentCollection && {
-            cell: ({ row }) => {
-              const fieldValue = row.original[field.name];
-              if (!fieldValue) return ""; // No data to display
-              const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
-              const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
-              return relatedDocs.map((doc) => doc.title || doc.name || "").join(", ");
-            },
-          }),
-        };
-      }),
-    [fields]
-  );
+  
+          // Handle parentCollection lookup
+          if (parentCollection) {
+            return {
+              header: label,
+              accessorKey: name,
+              cell: ({ row }) => {
+                const fieldValue = row.original[name];
+                if (!fieldValue) return ""; // No data to display
+  
+                const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+                const relatedDocs = parentCollection.find({ _id: { $in: ids } }).fetch();
+                // Place any id fields inside this array with related docs with colored .firstName and .lastName
+                if (["specialists_ids"].includes(name)) {
+                  return (
+                    <>
+                      {relatedDocs.map((doc) => (
+                        <span key={doc._id} style={{ display: 'block', color: doc.nameColor, marginBottom: "5px" }}>
+                          {doc.firstName} {doc.lastName}
+                        </span>
+                      ))}
+                    </>
+                  );
+                }
+                // Return titles/names of related doc to id uncolored
+                return relatedDocs.map((doc) => (
+                  <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
+                    {doc.title || doc.name}
+                  </span>
+                ));
+              },
+            };
+          }
+  
+          // Default case for general fields
+          return {
+            header: label,
+            accessorKey: name,
+          };
+      }
+    });
+  }, [fields]);
 
   const table = useReactTable({
     data,

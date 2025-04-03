@@ -3,7 +3,6 @@ import { check, Match } from 'meteor/check';
 import { SemesterCollection } from '../../imports/api/collections';
 
 // Required fields and their type must be included in the insert and update method checks
-// TODO: update required checks
 Meteor.methods({
     async 'semesters.insert'(data) {
         //console.log('Received data:', data);
