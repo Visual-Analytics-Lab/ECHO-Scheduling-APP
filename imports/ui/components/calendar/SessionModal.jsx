@@ -9,6 +9,8 @@ import {
   SeriesCollection
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
+import { MdEdit } from 'react-icons/md';
+
 
 const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, existingSession = null}) => {
   // Subscribe to collections
@@ -299,15 +301,29 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               />
             </div>
             {/* Color */}
-            <div className="form-group">
-              <label className="block font-medium">Color</label>
-              <input
-                type="color"
-                name="color"
-                value={formData.color}
-                onChange={handleChange}
-                className="border border-gray-300 rounded w-full p-2"
-              />
+            <div className="form-group flex items-center gap-5 mt-4">
+              <label className="font-medium">Color</label>
+              <div className="relative w-9 h-9">
+                {/* Hidden color input */}
+                <input
+                  type="color"
+                  name="color"
+                  value={formData.color || '#0ea6b2'}
+                  onChange={handleChange}
+                  className="absolute opacity-0 w-full h-full cursor-pointer" // Hides the input but still functional
+                />
+                {/* Custom input box that shows the selected color as background */}
+                <div
+                  style={{ backgroundColor: formData.color || '#0ea6b2' }}
+                  className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+                {/* Pencil Icon on top of the color box */}
+                <MdEdit
+                  size={20}
+                  className="absolute top-[7px] right-[8px]"
+                  style={{ pointerEvents: 'none' }}
+                />
+              </div>
             </div>
             {/* Topic */}
             <div className="form-group">

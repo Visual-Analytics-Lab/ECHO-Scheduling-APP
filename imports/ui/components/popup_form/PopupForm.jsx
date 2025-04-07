@@ -197,7 +197,6 @@ const PopupForm = ({
                     <input
                       type="dateTime-local"
                       name={name}
-                      // TODO: Make sure these dates are properly stored with UTC and displayed with local time
                       value={formatLocalDateTime(formData[name])}
                       onChange={handleDateChange}
                       className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
