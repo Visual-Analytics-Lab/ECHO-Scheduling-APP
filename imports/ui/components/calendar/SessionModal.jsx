@@ -45,7 +45,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     supportingSpecialist1: '',
     supportingSpecialist2: '',
     participantGroup: '',
-    dateTime: selectedDate,
+    dateTime: '',
     presentationsDue: '',
     newMaterial: false,
     color: '',
@@ -66,10 +66,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         supportingSpecialist1: existingSession.supportingSpecialist1,
         supportingSpecialist2: existingSession.supportingSpecialist2,
         participantGroup: existingSession.participantGroup,
-        dateTime: new Date(existingSession.dateTime).toISOString().slice(0, 16),
-        presentationsDue: existingSession.presentationsDue
-          ? new Date(existingSession.presentationsDue).toISOString().slice(0, 10)
-          : '',
+        dateTime: formatLocalDateTime(existingSession.dateTime),
+        presentationsDue: formatLocalDateTime(existingSession.presentationsDue),
         newMaterial: existingSession.newMaterial,
         color: existingSession.color,
         topic: existingSession.topic,
@@ -78,6 +76,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         series: existingSession.series
       });
     } else {
+      console.log(formatLocalDateTime(selectedDate));
       setFormData({
         sessionTitle: '',
         casePresenter: '',
@@ -87,8 +86,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         supportingSpecialist1: '',
         supportingSpecialist2: '',
         participantGroup: '',
-        dateTime: selectedDate,
-        presentationsDue: '',
+        dateTime: formatLocalDateTime(selectedDate),
+        presentationsDue: formatLocalDateTime(getWeekBefore(selectedDate)),
         newMaterial: false,
         color: '',
         topic: '',
@@ -99,6 +98,22 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     }
   }, [existingSession, selectedDate]);
 
+  // UTC Date to Local Time
+  const formatLocalDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    // Extracts local YYYY-MM-DD and HH:MM
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+  const getWeekBefore = (dateString) => {
+    const date = new Date(dateString);
+    // Subtract 7 days in milliseconds
+    const weekBefore = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return weekBefore;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -107,8 +122,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     });
   };
 
+  // On submit, convert dates to store them in UTC time
   const handleSubmit = () => {
-    onSubmit(formData, existingSession?._id);
+    const dataToSubmit = {
+      ...formData,
+      dateTime: new Date(formData.dateTime), // Converts the local string to a Date (in UTC)
+      // If you handle presentationsDue similarly:
+      presentationsDue: formData.presentationsDue ? new Date(formData.presentationsDue) : '',
+    };
+  
+    onSubmit(dataToSubmit, existingSession?._id);
     setFormData({});
     onClose();
   };
@@ -124,7 +147,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-6 relative">
         <button
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
           onClick={onClose}
@@ -135,9 +158,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           {existingSession ? 'Edit Session' : 'Create Session'}
         </h2>
         <form onSubmit={(e) => e.preventDefault()}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             {/* Session Title */}
-            <div className="form-group">
+            <div className="form-group md:col-span-full">
               <label className="block font-medium">Session Title</label>
               <input
                 type="text"
@@ -149,7 +172,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               />
             </div>
             {/* Case Presenter */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Case Presenter</label>
               <input
                 type="text"
@@ -161,7 +184,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               />
             </div>
             {/* Facilitator */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Facilitator</label>
               <select
                 name="facilitator"
@@ -179,7 +202,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </select>
             </div>
             {/* Coordinator */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Coordinator</label>
               <select
                 name="coordinator"
@@ -197,7 +220,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </select>
             </div>
             {/* Presenting Specialist */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Presenting Specialist</label>
               <select
                 name="presentingSpecialist"
@@ -208,14 +231,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Presenting Specialist</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id}>
-                    {spec.name}
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                    {spec.firstName} {spec.lastName}
                   </option>
                 ))}
               </select>
             </div>
             {/* Supporting Specialist 1 */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Supporting Specialist 1</label>
               <select
                 name="supportingSpecialist1"
@@ -225,14 +248,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Supporting Specialist 1</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id}>
-                    {spec.name}
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                    {spec.firstName} {spec.lastName}
                   </option>
                 ))}
               </select>
             </div>
             {/* Supporting Specialist 2 */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Supporting Specialist 2</label>
               <select
                 name="supportingSpecialist2"
@@ -242,32 +265,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 <option value="">Select Supporting Specialist 2</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id}>
-                    {spec.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Participant Group */}
-            <div className="form-group">
-              <label className="block font-medium">Participant Group</label>
-              <select
-                name="participantGroup"
-                value={formData.participantGroup}
-                onChange={handleChange}
-                required
-                className="border border-gray-300 rounded w-full p-2"
-              >
-                <option value="">Select Participant Group</option>
-                {participantGroups?.map(group => (
-                  <option key={group._id} value={group._id}>
-                    {group.name}
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                    {spec.firstName} {spec.lastName}
                   </option>
                 ))}
               </select>
             </div>
             {/* Date & Time */}
-            <div className="form-group">
+            <div className="form-group md:col-span-3">
               <label className="block font-medium">Date & Time</label>
               <input
                 type="datetime-local"
@@ -279,29 +284,68 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               />
             </div>
             {/* Presentations Due */}
-            <div className="form-group">
+            <div className="form-group md:col-span-3">
               <label className="block font-medium">Presentations Due</label>
               <input
-                type="date"
+                type="datetime-local"
                 name="presentationsDue"
                 value={formData.presentationsDue}
                 onChange={handleChange}
                 className="border border-gray-300 rounded w-full p-2"
               />
             </div>
-            {/* New Material */}
-            <div className="form-group">
-              <label className="block font-medium">New Material</label>
-              <input
-                type="checkbox"
-                name="newMaterial"
-                checked={formData.newMaterial}
+            {/* Participant Group */}
+            <div className="form-group md:col-span-2">
+              <label className="block font-medium">Participant Group</label>
+              <select
+                name="participantGroup"
+                value={formData.participantGroup}
                 onChange={handleChange}
+                required
                 className="border border-gray-300 rounded w-full p-2"
-              />
+              >
+                <option value="">Select Participant Group</option>
+                {participantGroups?.map(group => (
+                  <option key={group._id} value={group._id} style={{color: group.nameColor}}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+             {/* Topic */}
+            <div className="form-group md:col-span-2">
+              <label className="block font-medium">Topic</label>
+              <select
+                name="topic"
+                value={formData.topic}
+                onChange={handleChange}
+                required
+                className="border border-gray-300 rounded w-full p-2"
+              >
+                <option value="">Select Topic</option>
+                {topics?.map(topic => (
+                  <option key={topic._id} value={topic._id}>
+                    {topic.title}
+                  </option>
+                ))}
+              </select>
+            </div>           
+            {/* New Material */}
+            <div className="form-group md:col-span-1 flex items-center gap-x-2 mt-4">
+              <label className="font-medium">New Material</label>
+              <div className="relative w-9 h-9">
+                <input
+                  type="checkbox"
+                  name="newMaterial"
+                  checked={formData.newMaterial}
+                  onChange={handleChange}
+                  // TODO: Figure out how to change the accent color of this
+                  className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+              </div>
             </div>
             {/* Color */}
-            <div className="form-group flex items-center gap-5 mt-4">
+            <div className="form-group md:col-span-1 flex items-center justify-end gap-5 mt-4">
               <label className="font-medium">Color</label>
               <div className="relative w-9 h-9">
                 {/* Hidden color input */}
@@ -325,26 +369,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 />
               </div>
             </div>
-            {/* Topic */}
-            <div className="form-group">
-              <label className="block font-medium">Topic</label>
-              <select
-                name="topic"
-                value={formData.topic}
-                onChange={handleChange}
-                required
-                className="border border-gray-300 rounded w-full p-2"
-              >
-                <option value="">Select Topic</option>
-                {topics?.map(topic => (
-                  <option key={topic._id} value={topic._id}>
-                    {topic.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* TODO THURS: work on this layout some more */}
             {/* Semester */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Semester</label>
               <select
                 name="semester"
@@ -362,7 +389,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </select>
             </div>
             {/* Series */}
-            <div className="form-group">
+            <div className="form-group md:col-span-2">
               <label className="block font-medium">Series</label>
               <select
                 name="series"
