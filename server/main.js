@@ -12,19 +12,19 @@ import './CollectionMethods/SessionsMethods';
 import './CollectionMethods/RolesMethods';
 import '../imports/api/export';
 
-if (Meteor.isServer) {
-  Meteor.startup(async () => {
-      const testUser = {
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'testpassword',
-      };
-      Meteor.call('users.insert', testUser, (error, result) => {
-        if (error) {
-          console.log('Test user already exists');
-        } else {
-          console.log('Test user created');
-        }
-      })
-  });
-}
+// if (Meteor.isServer) {
+//   Meteor.startup(async () => {
+//       const testUser = {
+//         username: 'testuser',
+//         email: 'test@example.com',
+//         password: 'testpassword',
+//       };
+//       Meteor.call('users.insert', testUser, (error, result) => {
+//         if (error) {
+//           console.log('Test user already exists');
+//         } else {
+//           console.log('Test user created');
+//         }
+//       })
+//   });
+// }

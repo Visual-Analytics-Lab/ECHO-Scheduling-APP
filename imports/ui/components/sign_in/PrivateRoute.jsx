@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {use, useEffect} from 'react';
 import { Navigate } from 'react-router';
 import { ThreeCircles } from 'react-loader-spinner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +10,14 @@ export const PrivateRoute = ({ allowedRoles, children }) => {
 
   // Subscribe to roles collection
   Meteor.subscribe('roles');
+  useEffect(() => {
+    const usersSub = Meteor.subscribe('users');
+    return () => {
+      usersSub.stop();
+    };
+  }, []);
+  console.log(user);
+  
 
   // Fetch role IDs for the allowed role names
   const allowedRoleIds = useTracker(() => {
@@ -38,7 +46,7 @@ export const PrivateRoute = ({ allowedRoles, children }) => {
 
   // Only check roles if allowedRoles is provided and non-empty
   if (allowedRoles) {
-    const userRoles = user?.roles || [];
+    const userRoles = user?.role || [];
     const hasAccess = userRoles.some(userRoleId => allowedRoleIds.includes(userRoleId));
     if (!hasAccess) {
       return (

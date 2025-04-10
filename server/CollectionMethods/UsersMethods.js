@@ -8,7 +8,7 @@ Meteor.methods({
             username: String,
             email: String,
             password: String,
-            role: Array
+            role: Array,
         });
         
         try {

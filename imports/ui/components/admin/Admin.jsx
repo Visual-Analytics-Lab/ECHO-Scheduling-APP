@@ -135,9 +135,11 @@ const Admin = () => {
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
       username: user.username,
-      email: user.emails?.[0]?.address || 'No email' // Email address is structured like email: [address : 'here']
+      email: user.emails?.[0]?.address || 'No email',
+      role: user.role
     }))
   );
+  console.log(users);
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const semesters = useTracker(() => SemesterCollection.find().fetch());
