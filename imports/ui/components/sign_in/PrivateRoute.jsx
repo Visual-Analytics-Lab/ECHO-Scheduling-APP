@@ -16,7 +16,7 @@ export const PrivateRoute = ({ allowedRoles, children }) => {
       usersSub.stop();
     };
   }, []);
-  console.log(user);
+  //console.log(user);
   
 
   // Fetch role IDs for the allowed role names

@@ -139,7 +139,7 @@ const Admin = () => {
       role: user.role
     }))
   );
-  console.log(users);
+  //console.log(users);
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const semesters = useTracker(() => SemesterCollection.find().fetch());

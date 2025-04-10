@@ -15,7 +15,7 @@ const SignInPopup = ({ isOpen, onClose }) => {
         setError('');
       }
   });
-    console.log('Signing in with:', email, password);
+    //console.log('Signing in with:', email, password);
   };
 
   if (!isOpen) return null;
