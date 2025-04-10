@@ -33,7 +33,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
           cell: ({ row }) => {
             const ids = row.original[field.name] || []; // Array of IDs
             const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
-            return relatedDocs.map(doc => doc.title || doc.name || "").join(", ");
+            return relatedDocs.map(doc => doc.title || doc.name || doc.role || "").join(", ");
           }
         })
       })),

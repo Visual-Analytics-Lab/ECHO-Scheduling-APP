@@ -1,5 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
+import { list } from 'postcss';
 
 Meteor.methods({
     async 'users.insert'(data) {
@@ -7,7 +8,7 @@ Meteor.methods({
             username: String,
             email: String,
             password: String,
-            role: String
+            role: Array,
         });
         
         try {
@@ -16,7 +17,7 @@ Meteor.methods({
             username: data.username,
             email: data.email,
             password: data.password,
-            role: String,
+            role: data.role,
             createdAt: new Date(),
           });
         } 
@@ -42,13 +43,14 @@ Meteor.methods({
         check(data, Match.ObjectIncluding({
             username: String,
             email: String,
-            role: String,
+            role: Array,
         }));
         
         return await Meteor.users.updateAsync(userId, {
             $set: {
                 username: data.username,
                 'emails.0.address': data.email,
+                role: data.role,
             }
         });
     }

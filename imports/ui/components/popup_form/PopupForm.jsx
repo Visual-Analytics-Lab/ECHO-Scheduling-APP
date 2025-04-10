@@ -105,7 +105,7 @@ const PopupForm = ({
                   value={formData[name] || []} 
                   onChange={(e) => handleMultiSelectChange(e, name)} 
                   options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
-                  optionLabel={fieldData[name][0]?.title ? "title" : "name"}  
+                  optionLabel={fieldData[name][0]?.title ? "title" : fieldData[name][0]?.name ? "name" : "role"}  
                   optionValue="_id"
                   placeholder={`Select ${label}`}
                   maxSelectedLabels={3} 
