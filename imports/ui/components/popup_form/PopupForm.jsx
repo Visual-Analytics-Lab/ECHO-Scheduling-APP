@@ -116,6 +116,7 @@ const PopupForm = ({
               const hasError = errors[name];
               // Dynamically set the column span
               const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
+              const defaultInputStyle = `w-full shadow border border-gray-400 focus:border-echo-teal focus:ring-echo-teal rounded text-gray-700 leading-tight`
 
               // Preprocess options to show correct label given name, title, firstName + lastName
               const processedOptions = fieldData[name]?.map((s) => ({
@@ -136,8 +137,23 @@ const PopupForm = ({
                       optionValue="_id"
                       placeholder={`Select ${label}`}
                       maxSelectedLabels={3}
-                      className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
                       panelClassName="bg-gray-100"
+                      // Color the dropdown options
+                      itemTemplate={(option) => (
+                        <span style={{ color: option.nameColor || 'inherit' }}>
+                          {option.processedName}
+                        </span>
+                      )}
+                      // Color the selected value
+                      valueTemplate={(option) => {
+                        if (!option) return <span>Select {label}</span>;
+                        return (
+                          <span style={{ color: option.nameColor || 'inherit' }}>
+                            {option.processedName}
+                          </span>
+                        );
+                      }}
                     />
                   );
                   break;
@@ -150,8 +166,23 @@ const PopupForm = ({
                       optionLabel="processedName"
                       optionValue="_id"
                       placeholder={`Select ${label}`}
-                      className={`w-full shadow border rounded text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
                       panelClassName="bg-gray-100"
+                      // Color the dropdown options
+                      itemTemplate={(option) => (
+                        <span style={{ color: option.nameColor || 'inherit' }}>
+                          {option.processedName}
+                        </span>
+                      )}
+                      // Color the selected value
+                      valueTemplate={(option) => {
+                        if (!option) return <span>Select {label}</span>;
+                        return (
+                          <span style={{ color: option.nameColor || 'inherit' }}>
+                            {option.processedName}
+                          </span>
+                        );
+                      }}
                     />
                   );
                   break;
@@ -162,7 +193,7 @@ const PopupForm = ({
                       name={name}
                       value={formData[name] || ''}
                       onChange={handleChange}
-                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                      className={`${defaultInputStyle} py-2 px-3 ${hasError ? 'border-red-500' : ''}`}
                       placeholder="Enter a number"
                     />
                   );
@@ -199,7 +230,7 @@ const PopupForm = ({
                       name={name}
                       value={formatLocalDateTime(formData[name])}
                       onChange={handleDateChange}
-                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                      className={`${defaultInputStyle} py-2 px-3 ${hasError ? 'border-red-500' : ''}`}
                     />
                   );
                   break;
@@ -210,7 +241,7 @@ const PopupForm = ({
                       name={name}
                       value={formData[name] || ''}
                       onChange={handleChange}
-                      className={`w-full shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
                     />
                   );
                   break;

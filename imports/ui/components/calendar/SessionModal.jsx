@@ -10,6 +10,7 @@ import {
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
 import { MdEdit } from 'react-icons/md';
+import DeleteModal from '../delete_modal/DeleteModal'
 
 
 const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, existingSession = null}) => {
@@ -54,6 +55,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     semester: '',
     series: ''
   });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (existingSession) {
@@ -76,7 +78,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         series: existingSession.series
       });
     } else {
-      console.log(formatLocalDateTime(selectedDate));
+      // console.log(formatLocalDateTime(selectedDate));
       setFormData({
         sessionTitle: '',
         casePresenter: '',
@@ -137,13 +139,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this session?')) {
-      onDelete(existingSession._id);
-      onClose();
-    }
-  };
+    onDelete(existingSession._id);
+    onClose();
+  }
 
   if (!isOpen) return null;
+
+  const defaultInputStyle = `w-full shadow border border-gray-400 focus:border-echo-teal focus:ring-echo-teal rounded text-gray-700`
+  const checkBoxColor = `checked:enabled:focus:bg-echo-teal checked:bg-echo-teal checked:hover:bg-echo-teal focus:ring-echo-teal`
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -160,7 +163,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             {/* Session Title */}
-            <div className="form-group md:col-span-full">
+            <div className="form-group md:col-span-5">
               <label className="block font-medium">Session Title</label>
               <input
                 type="text"
@@ -168,8 +171,33 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.sessionTitle}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               />
+            </div>
+            {/* Color */}
+            <div className="form-group md:col-span-1 flex items-center justify-center gap-5 mt-6">
+              <label className="font-medium">Color</label>
+              <div className="relative w-9 h-9">
+                {/* Hidden color input */}
+                <input
+                  type="color"
+                  name="color"
+                  value={formData.color || '#0ea6b2'}
+                  onChange={handleChange}
+                  className="absolute opacity-0 w-full h-full cursor-pointer" // Hides the input but still functional
+                />
+                {/* Custom input box that shows the selected color as background */}
+                <div
+                  style={{ backgroundColor: formData.color || '#0ea6b2' }}
+                  className="w-full h-full shadow rounded-lg border border-gray-400 cursor-pointer"
+                />
+                {/* Pencil Icon on top of the color box */}
+                <MdEdit
+                  size={20}
+                  className="absolute top-[7px] right-[8px]"
+                  style={{ pointerEvents: 'none' }}
+                />
+              </div>
             </div>
             {/* Case Presenter */}
             <div className="form-group md:col-span-2">
@@ -180,7 +208,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.casePresenter}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               />
             </div>
             {/* Facilitator */}
@@ -191,7 +219,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.facilitator}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               >
                 <option value="">Select Facilitator</option>
                 {users.map((user) => (
@@ -209,7 +237,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.coordinator}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               >
                 <option value="">Select Coordinator</option>
                 {users?.map((user) => (
@@ -227,11 +255,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.presentingSpecialist}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
+                // Color the name as the input value
+                style={{
+                  color:
+                    specialists.find(g => g._id === formData.presentingSpecialist)?.nameColor
+                }}
               >
-                <option value="">Select Presenting Specialist</option>
+                <option value="" style={{color: '#000000'}}>Select Presenting Specialist</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor || '#000000'}}>
                     {spec.firstName} {spec.lastName}
                   </option>
                 ))}
@@ -244,11 +277,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 name="supportingSpecialist1"
                 value={formData.supportingSpecialist1}
                 onChange={handleChange}
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
+                // Color the name as the input value
+                style={{
+                  color:
+                    specialists.find(g => g._id === formData.supportingSpecialist1)?.nameColor
+                }}
               >
-                <option value="">Select Supporting Specialist 1</option>
+                <option value="" style={{color: '#000000'}}>Select Supporting Specialist 1</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor || '#000000'}}>
                     {spec.firstName} {spec.lastName}
                   </option>
                 ))}
@@ -261,11 +299,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 name="supportingSpecialist2"
                 value={formData.supportingSpecialist2}
                 onChange={handleChange}
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
+                // Color the name as the input value
+                style={{
+                  color:
+                    specialists.find(g => g._id === formData.supportingSpecialist2)?.nameColor
+                }}
               >
-                <option value="">Select Supporting Specialist 2</option>
+                <option value="" style={{color: '#000000'}}>Select Supporting Specialist 2</option>
                 {specialists?.map(spec => (
-                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor}}>
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor || '#000000'}}>
                     {spec.firstName} {spec.lastName}
                   </option>
                 ))}
@@ -280,7 +323,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.dateTime}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               />
             </div>
             {/* Presentations Due */}
@@ -291,7 +334,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 name="presentationsDue"
                 value={formData.presentationsDue}
                 onChange={handleChange}
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               />
             </div>
             {/* Participant Group */}
@@ -302,11 +345,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.participantGroup}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
+                // Color the name as the input value
+                style={{
+                  color:
+                    participantGroups.find(g => g._id === formData.participantGroup)?.nameColor
+                }}
               >
-                <option value="">Select Participant Group</option>
+                <option value="" style={{color: '#000000'}}>Select Participant Group</option>
                 {participantGroups?.map(group => (
-                  <option key={group._id} value={group._id} style={{color: group.nameColor}}>
+                  <option key={group._id} value={group._id} style={{color: group.nameColor || '#000000'}}>
                     {group.name}
                   </option>
                 ))}
@@ -320,7 +368,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.topic}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               >
                 <option value="">Select Topic</option>
                 {topics?.map(topic => (
@@ -331,7 +379,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </select>
             </div>           
             {/* New Material */}
-            <div className="form-group md:col-span-1 flex items-center gap-x-2 mt-4">
+            <div className="form-group md:col-span-2 flex items-center justify-center gap-5 mt-4">
               <label className="font-medium">New Material</label>
               <div className="relative w-9 h-9">
                 <input
@@ -340,36 +388,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                   checked={formData.newMaterial}
                   onChange={handleChange}
                   // TODO: Figure out how to change the accent color of this
-                  className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
+                  className={`w-full h-full shadow rounded-lg border border-gray-400 cursor-pointer ${checkBoxColor}`}
                 />
               </div>
             </div>
-            {/* Color */}
-            <div className="form-group md:col-span-1 flex items-center justify-end gap-5 mt-4">
-              <label className="font-medium">Color</label>
-              <div className="relative w-9 h-9">
-                {/* Hidden color input */}
-                <input
-                  type="color"
-                  name="color"
-                  value={formData.color || '#0ea6b2'}
-                  onChange={handleChange}
-                  className="absolute opacity-0 w-full h-full cursor-pointer" // Hides the input but still functional
-                />
-                {/* Custom input box that shows the selected color as background */}
-                <div
-                  style={{ backgroundColor: formData.color || '#0ea6b2' }}
-                  className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
-                />
-                {/* Pencil Icon on top of the color box */}
-                <MdEdit
-                  size={20}
-                  className="absolute top-[7px] right-[8px]"
-                  style={{ pointerEvents: 'none' }}
-                />
-              </div>
-            </div>
-            {/* TODO THURS: work on this layout some more */}
             {/* Semester */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium">Semester</label>
@@ -378,7 +400,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.semester}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               >
                 <option value="">Select Semester</option>
                 {semesters?.map(sem => (
@@ -396,7 +418,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 value={formData.series}
                 onChange={handleChange}
                 required
-                className="border border-gray-300 rounded w-full p-2"
+                className={`${defaultInputStyle}`}
               >
                 <option value="">Select Series</option>
                 {series?.map(ser => (
@@ -407,6 +429,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </select>
             </div>
           </div>
+          {/* Notes */}
           <div className="form-group mt-4">
             <label className="block font-medium">Notes</label>
             <textarea
@@ -414,7 +437,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               value={formData.notes}
               onChange={handleChange}
               rows="4"
-              className="border border-gray-300 rounded w-full p-2"
+              className={`${defaultInputStyle}`}
             ></textarea>
           </div>
           <div className="flex justify-between gap-4 mt-6">
@@ -424,7 +447,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 <button
                   type="button"
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                  onClick={handleDelete}
+                  onClick={() => setIsDeleteModalOpen(true)}
                 >
                   Delete Session
                 </button>
@@ -440,7 +463,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               </button>
               <button
                 type="button"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition duration-200"
                 onClick={handleSubmit}
               >
                 {existingSession ? 'Save Changes' : 'Create'}
@@ -449,7 +472,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           </div>
         </form>
       </div>
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        setIsOpen={setIsDeleteModalOpen}
+        onDelete={handleDelete}
+        itemType="Session"
+      />
+
     </div>
+
   );
 };
 
