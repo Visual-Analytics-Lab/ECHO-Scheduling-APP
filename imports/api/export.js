@@ -9,8 +9,8 @@ Meteor.methods({
     check(fromDate, Date);
     check(toDate, Date);
 
-    const startStr = fromDate.toISOString().slice(0, 16);
-    const endStr = toDate.toISOString().slice(0, 16);
+    const startStr = new Date(fromDate.toISOString().slice(0, 16));
+    const endStr = new Date(toDate.toISOString().slice(0, 16));
 
     const data = await SessionsCollection.rawCollection().aggregate([
       { 
@@ -88,15 +88,16 @@ Meteor.methods({
           as: "seriesDetails"
         }
       },
+      // TODO: Fix this
       {
         $project: {
           sessionTitle: 1,
           casePresenter: 1,
           facilitator: { $arrayElemAt: ["$facilitatorDetails.username", 0] },
           coordinator: { $arrayElemAt: ["$coordinatorDetails.username", 0] },
-          presentingSpecialist: { $arrayElemAt: ["$presentingSpecialistDetails.name", 0] },
-          supportingSpecialist1: { $arrayElemAt: ["$supportingSpecialist1Details.name", 0] },
-          supportingSpecialist2: { $arrayElemAt: ["$supportingSpecialist2Details.name", 0] },
+          presentingSpecialist: { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
+          supportingSpecialist1: { $arrayElemAt: ["$supportingSpecialist1Details.firstName", 0] },
+          supportingSpecialist2: { $arrayElemAt: ["$supportingSpecialist2Details.firstName", 0] },
           participantGroup: { $arrayElemAt: ["$participantGroupDetails.name", 0] },
           dateTime: 1,
           presentationsDue: 1,
