@@ -39,7 +39,7 @@ export const App = () => (
                         path="/calendar" 
                         element={
                             <PrivateRoute>
-                                <Calendar />
+                                <Calendar allowedRoles={["admin", "Admin"]}/>
                             </PrivateRoute>
                         } 
                     />

@@ -7,18 +7,20 @@ const ThisWeekSessions = () => {
   Meteor.subscribe("sessions");
 
   const sessions = useTracker(() => {
-    const today = new Date();
-    const firstDayOfWeek = new Date(today);
-    firstDayOfWeek.setDate(today.getDate() - today.getDay());
-    firstDayOfWeek.setHours(0, 0, 0, 0);
-    const first =  firstDayOfWeek.toISOString();
-    // console.log(firstDayOfWeek.toISOString());
-    const lastDayOfWeek = new Date(today);
-    lastDayOfWeek.setDate(today.getDate() - today.getDay() + 6);
-    lastDayOfWeek.setHours(23, 59, 59, 999);
-    const last = lastDayOfWeek.toISOString();
+    const now = new Date();
+
+    // Set to Sunday (start of the week)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Set to Saturday (end of the week)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+    endOfWeek.setHours(23, 59, 59, 999);
+
     return SessionsCollection.find({
-      dateTime: { $gte: first, $lte: last }
+      dateTime: { $gte: startOfWeek, $lte: endOfWeek }
     }).fetch();
   }, []);
   // console.log(sessions);

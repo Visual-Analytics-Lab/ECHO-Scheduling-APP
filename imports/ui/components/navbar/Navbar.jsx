@@ -28,9 +28,11 @@ const Navbar = () => {
             <Link to="/dashboard" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
               Dashboard
             </Link>
-            <Link to="/calendar" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
-              Calendar
-            </Link>
+            {isAdmin && accessReady && (
+              <Link to="/calendar" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+                Calendar
+              </Link>
+            )}
             {isAdmin && accessReady && (
               <Link to="/admin" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
                 Administration

@@ -43,6 +43,30 @@ const Calendar = () => {
       setIsModalOpen(true);
     }
   };
+
+  // Handle dragging event to a new day
+  const handleEventDrop = (info) => {
+    const sessionId = info.event.extendedProps.sessionId;
+    const session = sessions.find(s => s._id === sessionId)
+
+    if (!session) return;
+
+    const oldDate = new Date(session.dateTime);
+    const newDateFromDrop = info.event.start;
+
+    // Create a new Date with the new day, but same time
+    const updatedDateTime = new Date(
+      newDateFromDrop.getFullYear(),
+      newDateFromDrop.getMonth(),
+      newDateFromDrop.getDate(),
+      oldDate.getHours(),
+      oldDate.getMinutes(),
+      oldDate.getSeconds()
+    );
+    session.dateTime = updatedDateTime
+    handleSubmit(session, sessionId);
+  };
+
   const handlePrint = (option) => {
     printExcel(option);
   };  
@@ -101,36 +125,37 @@ const Calendar = () => {
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
             <div className="bg-white rounded-b-lg border border-gray-300 p-2 h-[calc(100vh-145px)]">
-            <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                headerToolbar={{
-                    left: "prev,next today",
-                    center: "title",
-                    right: "dayGridMonth,timeGridWeek,timeGridDay",
-                }}
-                height="100%"
-                editable={true}
-                selectable={true}
-                select={handleDateClick}
-                eventClick={handleEventClick} 
-                events={sessions?.map(session => {
-                  const start = new Date(session.dateTime);
-                  const end = new Date(start);
-                  end.setHours(end.getHours() + 1); // Add 1 hour
-                
-                  return {
-                    title: session.sessionTitle,
-                    start: start.toISOString(),
-                    end: end.toISOString(),
-                    backgroundColor: session.color,
-                    borderColor: session.color,
-                    extendedProps: {
-                      sessionId: session._id
-                    }
-                  };
-                })}
-            />
+              <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  headerToolbar={{
+                      left: "prev,next today",
+                      center: "title",
+                      right: "dayGridMonth,timeGridWeek,timeGridDay",
+                  }}
+                  height="100%"
+                  editable={true}
+                  selectable={true}
+                  select={handleDateClick}
+                  eventClick={handleEventClick} 
+                  eventDrop={handleEventDrop}
+                  events={sessions?.map(session => {
+                    const start = new Date(session.dateTime);
+                    const end = new Date(start);
+                    end.setHours(end.getHours() + 1); // Add 1 hour
+                  
+                    return {
+                      title: session.sessionTitle,
+                      start: start.toISOString(),
+                      end: end.toISOString(),
+                      backgroundColor: session.color,
+                      borderColor: session.color,
+                      extendedProps: {
+                        sessionId: session._id
+                      }
+                    };
+                  })}
+              />
               <SessionModal
                 isOpen={isModalOpen}
                 onClose={() => {
