@@ -38,9 +38,9 @@ const DashboardSidebar = () => {
   );
 
   return (
-    <aside className="w-64 bg-gray-100 text-black m-4 border border-[#721D35] rounded-lg shadow-xl">
-      <div className="py-3 px-4 bg-[#721D35] rounded-t-lg">
-        <h2 className="text-lg font-semibold text-white">
+    <aside className="w-64 bg-gray-100 text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
+      <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
+        <h2 className="flex text-xl text-white items-center">
           Specialists Scheduled this Week
         </h2>
       </div>

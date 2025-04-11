@@ -29,8 +29,9 @@ const Calendar = () => {
     handlePrint(option);
   };
  
+  // When clicking to create new event, populate date field with selected
   const handleDateClick = (info) => {
-    setSelectedDate(info.dateStr);
+    setSelectedDate(info.start);
     setIsModalOpen(true);
   };
 
@@ -114,16 +115,22 @@ const Calendar = () => {
                 selectable={true}
                 select={handleDateClick}
                 eventClick={handleEventClick} 
-                events={sessions?.map(session => ({
-                  title: session.sessionTitle,
-                  start: new Date(session.dateTime).toISOString(),
-                  end: session.presentationsDue ? new Date(session.presentationsDue).toISOString() : null,
-                  backgroundColor: session.color,
-                  borderColor: session.color,
-                  extendedProps: {
-                    sessionId: session._id 
-                  }
-                }))}
+                events={sessions?.map(session => {
+                  const start = new Date(session.dateTime);
+                  const end = new Date(start);
+                  end.setHours(end.getHours() + 1); // Add 1 hour
+                
+                  return {
+                    title: session.sessionTitle,
+                    start: start.toISOString(),
+                    end: end.toISOString(),
+                    backgroundColor: session.color,
+                    borderColor: session.color,
+                    extendedProps: {
+                      sessionId: session._id
+                    }
+                  };
+                })}
             />
               <SessionModal
                 isOpen={isModalOpen}

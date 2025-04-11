@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useTracker } from "meteor/react-meteor-data";
 import { Meteor } from "meteor/meteor";
+// Components
 import Navbar from "../navbar/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import AdminTable from "./AdminTable";
+import PopupForm from "../popup_form/PopupForm";
+// Component Config
+import getSectionConfig from "../../../api/adminSectionConfig.js"
+// Collections
 import {
   SpecialistsCollection,
   ParticipantGroupsCollection,
@@ -12,103 +17,12 @@ import {
   TopicsCollection,
   RolesCollection
 } from "../../../api/collections";
-import PopupForm from "../popup_form/PopupForm";
+// Other
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
 
-/*  
-*   colName - string used to call meteor collection methods, 
-*   colData - fetched data from that collection,
-*   fields - fields to display in table/popup, 
-*   fieldContext - any colData required for listed fields (Ex: series multiselect dropdown needs all the available series) 
-*/ 
-const getSectionConfig = (users, specialists, participantGroups, semesters, series, topics, roles, rowData) => ({
-  Users: {
-    collectionName: "users",
-    collectionData: users,
-    fields: (component) => {
-      const fields = [
-        { name: "username", label: "Username", type: "text" },
-        { name: "email", label: "Email", type: "email" },
-        { name: "role", label: "Role", inputType: "multiSelect", parentCollection: RolesCollection},
-      ];
-      // Show password only when using add new user pop up
-      if (!rowData._id && component == "popup") {
-        fields.push({ name: "password", label: "Password", type: "password" });
-      }
-      return fields;
-    },
-    fieldContext: { role: roles },
-  },
-  Roles: {
-    collectionName: "roles",
-    collectionData: roles,
-    fields: () => [
-      {name: "role", label: "Role"},
-      {name: "desc", label: "Description"},
-    ],
-    fieldContext: {},
-  },
-  Specialists: {
-    collectionName: "specialists",
-    collectionData: specialists,
-    fields: () => [
-      { name: "name", label: "Name" },
-      { name: "speciality", label: "Specialty" },
-      { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
-      { name: "institute", label: "Institute" },
-    ],
-    fieldContext: {},
-  },
-  "Participant Groups": {
-    collectionName: "participantGroups",
-    collectionData: participantGroups,
-    fields: () => [
-      { name: "name", label: "Name" },
-      { name: "agency", label: "Agency" },
-      { name: "email", label: "Email" },
-      { name: "phone", label: "Phone" },
-      { name: "families", label: "Families" },
-    ],
-    fieldContext: {},
-  },
-  Semesters: {
-    collectionName: "semesters",
-    collectionData: semesters,
-    fields: () => [
-      { name: "title", label: "Title" },
-      { name: "description", label: "Description" },
-      { name: "startDate", label: "Start Date" },
-      { name: "endDate", label: "End Date" },
-      { name: "series_ids", label: "Series", inputType: "multiSelect", parentCollection: SeriesCollection },
-    ],
-    fieldContext: { series_ids: series },
-  },
-  Series: {
-    collectionName: "series",
-    collectionData: series,
-    fields: () => [
-      { name: "title", label: "Title" },
-      { name: "description", label: "Description" },
-      { name: "startDate", label: "Start Date" },
-      { name: "endDate", label: "End Date" },
-    ],
-    fieldContext: {},
-  },
-  Topics: {
-    collectionName: "topics",
-    collectionData: topics,
-    fields: () => [
-      { name: "title", label: "Title" },
-      { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect", parentCollection: SpecialistsCollection },
-      { name: "description", label: "Description" },
-    ],
-    fieldContext: { specialists_ids: specialists },
-  },
-});
-
+//#region ADMIN PAGE
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -116,7 +30,6 @@ const Admin = () => {
 
   // Subscribe to collections
   useEffect(() => {
-
     const subscriptions = [
       Meteor.subscribe("users"),
       Meteor.subscribe("specialists"),
@@ -126,7 +39,6 @@ const Admin = () => {
       Meteor.subscribe("topics"),
       Meteor.subscribe("roles"),
     ];
-
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
 
@@ -135,8 +47,8 @@ const Admin = () => {
     Meteor.users.find().fetch().map(user => ({
       _id: user._id,
       username: user.username,
-      email: user.emails?.[0]?.address || 'No email',
-      role: user.role
+      email: user.emails?.[0]?.address || 'No email', // Email address is structured like email: [address : 'here']
+      role_id: user.role_id,
     }))
   );
   //console.log(users);
@@ -146,10 +58,21 @@ const Admin = () => {
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
+  const collections = { 
+    users: Meteor.users, 
+    specialists: SpecialistsCollection, 
+    participantGroups: ParticipantGroupsCollection, 
+    semesters: SemesterCollection, 
+    series: SeriesCollection, 
+    topics: TopicsCollection, 
+    roles: RolesCollection 
+  };
+  const colData = { users, specialists, participantGroups, semesters, series, topics, roles };
+
 
 
   // Fetch current section config dynamically
-  const sectionConfig = getSectionConfig(users, specialists, participantGroups, semesters, series, topics, roles, rowData);
+  const sectionConfig = getSectionConfig(collections, colData, rowData);
   const currentSection = sectionConfig[activeSection] || {};
 
   // Return "(collectionName).(operation)""
@@ -200,7 +123,7 @@ const Admin = () => {
           <AdminTable
             data={currentSection.collectionData}
             sectionTitle={activeSection}
-            fields={currentSection.fields() || []}
+            fields={currentSection.tableFields() || []}
             onEdit={openEditPopUp}
             onDelete={handleDelete}
           />
@@ -211,7 +134,7 @@ const Admin = () => {
             collection={currentSection.collectionName || ""}
             formData={rowData}
             setFormData={setRowData}
-            fields={currentSection.fields("popup") || []}
+            fields={currentSection.popupFields() || []}
             fieldData={currentSection.fieldContext}
             title={getPopUpTitle()}
             alertSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
@@ -224,3 +147,4 @@ const Admin = () => {
 };
 
 export default Admin;
+//#endregion

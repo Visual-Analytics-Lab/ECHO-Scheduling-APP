@@ -2,26 +2,26 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { SessionsCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
+// TODO: update required checks
 Meteor.methods({
     async 'sessions.insert'(data) {
-        check(data, {
+        check(data, Match.ObjectIncluding({
             sessionTitle: String,
             casePresenter: String,
             facilitator: String,
             coordinator: String,
             presentingSpecialist: String,
-            supportingSpecialist1: String,
-            supportingSpecialist2: String,
             participantGroup: String,
-            dateTime: String,
-            presentationsDue: String,
+            dateTime: Date,
+            presentationsDue: Date,
             newMaterial: Boolean,
             color: String,
             topic: String,
             notes: String,
             semester: String,
             series: String
-        });
+        }));
         
         const sessionsId = await SessionsCollection.insertAsync({
             ...data,
@@ -41,11 +41,9 @@ Meteor.methods({
             facilitator: String,
             coordinator: String,
             presentingSpecialist: String,
-            supportingSpecialist1: String,
-            supportingSpecialist2: String,
             participantGroup: String,
-            dateTime: String,
-            presentationsDue: String,
+            dateTime: Date,
+            presentationsDue: Date,
             newMaterial: Boolean,
             color: String,
             topic: String,

@@ -19,7 +19,7 @@ const MainContent = () => {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100 shadow-full-border">
 
       <header className="bg-gray-200 text-center py-4">
         <h1 className="text-3xl font-bold text-[#721D35]">Dashboard</h1>
@@ -27,7 +27,7 @@ const MainContent = () => {
       <div className="flex flex-1">
         <DashboardSidebar />
         <main className="flex-1 p-4">
-          <div className="bg-white border border-gray-300 rounded-lg shadow-lg">
+          <div className="bg-white border border-gray-300 rounded-lg shadow-full-border">
             <div className="text-center text-black py-3 px-4 rounded-t-lg">
               <h2 className="text-2xl">Weekly Calendar</h2>
             </div>

@@ -2,16 +2,17 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { ParticipantGroupsCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
     async 'participantGroups.insert'(data) {
         //console.log('Received data:', data);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             name: String,
+            series_ids: [String],
             agency: String,
-            email: String,
-            phone: String,
-            families: String
-        });
+            focus: String,
+            famOrPro: String,
+        }));
         
         const participantGroupsId = await ParticipantGroupsCollection.insertAsync({
             ...data,
@@ -27,11 +28,11 @@ Meteor.methods({
     async 'participantGroups.update'(participantGroupsId, data) {
         check(participantGroupsId, String);
         check(data, Match.ObjectIncluding({
-            name: String,
-            agency: String,
-            email: String,
-            phone: String,
-            families: String
+          name: String,
+          series_ids: [String],
+          agency: String,
+          focus: String,
+          famOrPro: String,
         }));
         return await ParticipantGroupsCollection.updateAsync(participantGroupsId, {
             $set: data

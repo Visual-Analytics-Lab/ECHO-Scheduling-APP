@@ -24,9 +24,10 @@ const ThisWeekSessions = () => {
   console.log(sessions);
 
   return (
-    <aside className="w-64 bg-white m-4 border border-gray-300 rounded-lg shadow-xl">
-      <div className="py-3 px-4 bg-[#721D35] rounded-t-lg">
-        <h2 className="text-lg font-semibold text-white">This Week's Sessions</h2>
+    <aside className="w-64 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
+      <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
+        <h2 className="text-xl text-white items-center">This Week's Sessions</h2>
+
       </div>
       <div className="p-4 text-black">
         {sessions.length === 0 ? (

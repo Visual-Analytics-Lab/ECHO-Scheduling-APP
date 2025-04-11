@@ -10,8 +10,6 @@ import { Landing } from "./components/landing/LandingPage";
 
 
 
-
-
 export const App = () => (
     <AuthProvider>
         <BrowserRouter>

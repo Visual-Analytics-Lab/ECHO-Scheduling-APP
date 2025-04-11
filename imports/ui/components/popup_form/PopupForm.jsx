@@ -3,7 +3,9 @@ import { Meteor } from 'meteor/meteor';
 import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 
 import { MultiSelect } from 'primereact/multiselect';
-        
+import { Dropdown } from 'primereact/dropdown';
+import { MdEdit } from 'react-icons/md';
+
 
 const PopupForm = ({ 
   isOpen, 
@@ -26,18 +28,41 @@ const PopupForm = ({
       [name]: value
     }));
   };
-  const handleMultiSelectChange = (e, name) => {
+  const handleDateChange = (e) => {
+    const localDateTime = e.target.value; // Example: "2025-04-02T14:30"
+    const utcDate = new Date(localDateTime); // Converts it to UTC
+    
+    setFormData({
+      ...formData,
+      [e.target.name]: utcDate, // Store as ISO string
+    });
+  };
+  const handlePReactChange = (e, name) => {
     setFormData(prev => ({
       ...prev,
       [name]: e.value // PrimeReact MultiSelect provides `e.value` as the selected array
     }));
   };
 
+  // Helper function to format date in local time for <input type="datetime-local">
+  const formatLocalDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    // Extracts local YYYY-MM-DD and HH:MM
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+
+  const getOptionLabels = (field) => {
+    if (field.name) return
+  }
+
   const validateForm = () => {
     const newErrors = {};
-  
-    fields.forEach(({ name, inputType }) => {
-      if (!formData[name] || (Array.isArray(formData[name]) && formData[name].length === 0)) {
+    // Show errors for empty fields that are required.
+    fields.forEach(({ name, inputType, required }) => {
+      if (required && (!formData[name] || (Array.isArray(formData[name]) && formData[name].length === 0))) {
         newErrors[name] = "This field is required";
       }
     });
@@ -75,72 +100,172 @@ const PopupForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
-          <button 
-            onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
         </div>
 
-        {/* {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
-            {error}
-          </div>
-        )} */}
-
         <form onSubmit={handleSubmit}>
-          {fields.map(({ name, label, inputType }) => {
-            const hasError = errors[name]; // Check if this field has an error
-            
-            // Set input element based on inputType
-            let inputElement;
-            if (inputType === "multiSelect") {
-              // TODO: Add css to the dropdown checkboxes so they don't blend into the background
-              inputElement = (
-                <MultiSelect 
-                  value={formData[name] || []} 
-                  onChange={(e) => handleMultiSelectChange(e, name)} 
-                  options={fieldData[name].map((s) => ({ ...s, key: s._id }))} 
-                  optionLabel={fieldData[name][0]?.title ? "title" : fieldData[name][0]?.name ? "name" : "role"}  
-                  optionValue="_id"
-                  placeholder={`Select ${label}`}
-                  maxSelectedLabels={3} 
-                  className={`shadow border rounded w-full text-gray-700 leading-tight ${hasError ? 'border-red-500' : ''}`} 
-                  panelClassName="bg-gray-100"
-                />                
-              )
-            } else {
-              inputElement = (
-                <input
-                  type="text"
-                  name={name}
-                  value={formData[name] || ''}
-                  onChange={handleChange}
-                  className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-gray-300 ${hasError ? 'border-red-500' : ''}`}
-                />                
-              )
-            }
+          {/* Use grid layout with dynamic column span */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fields.map(({ name, label, inputType, colSpan, required }) => {
+              
+              const hasError = errors[name];
+              // Dynamically set the column span
+              const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
+              const defaultInputStyle = `w-full shadow border border-gray-400 focus:border-echo-teal focus:ring-echo-teal rounded text-gray-700 leading-tight`
 
-            return (
-              <div key={name} className="mb-4">
-                {/* Label and error */}
-                <div className="flex justify-between items-center">
-                  <label className="block text-gray-700 text-sm font-bold">
-                    {label}
+              // Preprocess options to show correct label given name, title, firstName + lastName
+              const processedOptions = fieldData[name]?.map((s) => ({
+                ...s,
+                key: s._id,
+                processedName: s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.title || s.name
+              })) || [];
+
+              let inputElement;
+              switch (inputType) {
+                case "multiSelect":
+                  inputElement = (
+                    <MultiSelect
+                      value={formData[name] || []}
+                      onChange={(e) => handlePReactChange(e, name)}
+                      options={processedOptions}
+                      optionLabel="processedName"
+                      optionValue="_id"
+                      placeholder={`Select ${label}`}
+                      maxSelectedLabels={3}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
+                      panelClassName="bg-gray-100"
+                      // Color the dropdown options
+                      itemTemplate={(option) => (
+                        <span style={{ color: option.nameColor || 'inherit' }}>
+                          {option.processedName}
+                        </span>
+                      )}
+                      // Color the selected value
+                      valueTemplate={(option) => {
+                        if (!option) return <span>Select {label}</span>;
+                        return (
+                          <span style={{ color: option.nameColor || 'inherit' }}>
+                            {option.processedName}
+                          </span>
+                        );
+                      }}
+                    />
+                  );
+                  break;
+                case "select":
+                  inputElement = (
+                    <Dropdown
+                      value={formData[name] || ""}
+                      onChange={(e) => handlePReactChange(e, name)}
+                      options={processedOptions}
+                      optionLabel="processedName"
+                      optionValue="_id"
+                      placeholder={`Select ${label}`}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
+                      panelClassName="bg-gray-100"
+                      // Color the dropdown options
+                      itemTemplate={(option) => (
+                        <span style={{ color: option.nameColor || 'inherit' }}>
+                          {option.processedName}
+                        </span>
+                      )}
+                      // Color the selected value
+                      valueTemplate={(option) => {
+                        if (!option) return <span>Select {label}</span>;
+                        return (
+                          <span style={{ color: option.nameColor || 'inherit' }}>
+                            {option.processedName}
+                          </span>
+                        );
+                      }}
+                    />
+                  );
+                  break;
+                case "number":
+                  inputElement = (
+                    <input
+                      type="number"
+                      name={name}
+                      value={formData[name] || ''}
+                      onChange={handleChange}
+                      className={`${defaultInputStyle} py-2 px-3 ${hasError ? 'border-red-500' : ''}`}
+                      placeholder="Enter a number"
+                    />
+                  );
+                  break;
+                case "color":
+                  inputElement = (
+                  <div className="relative w-9 h-9">
+                    {/* Hidden color input */}
+                    <input
+                      type="color"
+                      name={name}
+                      value={formData[name] || '#000000'}
+                      onChange={handleChange}
+                      className="absolute opacity-0 w-full h-full cursor-pointer" // Hides the input but still functional
+                    />
+                    {/* Custom input box that shows the selected color as background */}
+                    <div
+                      style={{ backgroundColor: formData[name] || '#000000' }}
+                      className="w-full h-full shadow rounded-lg border-2 border-gray-300 cursor-pointer"
+                    />
+                    {/* Pencil Icon on top of the color box */}
+                    <MdEdit
+                      size={20}
+                      className="absolute top-[7px] right-[8px]"
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  </div>
+                  );
+                  break;
+                case "dateTime":
+                  inputElement = (
+                    <input
+                      type="dateTime-local"
+                      name={name}
+                      value={formatLocalDateTime(formData[name])}
+                      onChange={handleDateChange}
+                      className={`${defaultInputStyle} py-2 px-3 ${hasError ? 'border-red-500' : ''}`}
+                    />
+                  );
+                  break;
+                default:
+                  inputElement = (
+                    <input
+                      type="text"
+                      name={name}
+                      value={formData[name] || ''}
+                      onChange={handleChange}
+                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
+                    />
+                  );
+                  break;
+              }
+
+              let displayClass = '';
+              if (['color'].includes(inputType)) displayClass = "flex items-center gap-5 mt-4"
+              // Column class controls the column span of the field input
+              // Display class controls if the field input and label should flex so they're on the same line
+              return (
+              <div key={name} className={`${columnClass}`}>
+                <div className={`${displayClass}`}>
+                  <label className="text-gray-700 text-sm font-bold">
+                    {label}{required && <span className="text-red-500"> *</span>} {/* Red asterisk if required */}
                   </label>
-                  {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
+                  {inputElement}
                 </div>
-                {/* Render inputElement */}
-                {inputElement}
+                {hasError && <p className="text-red-500 text-xs italic">{hasError}</p>}
               </div>
-            );
-          })}
-          
-          <div className="flex justify-end gap-2">
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
             <GrayButton onClick={handleClose}>Cancel</GrayButton>
             <GreenButton type="submit">Save</GreenButton>
           </div>

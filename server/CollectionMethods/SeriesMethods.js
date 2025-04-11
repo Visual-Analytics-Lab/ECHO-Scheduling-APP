@@ -2,15 +2,15 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { SeriesCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
     async 'series.insert'(data) {
         //console.log('Received data:', data);
-        check(data, {
+        check(data, Match.ObjectIncluding({
             title: String,
-            description: String,
-            startDate: String,
-            endDate: String
-        });
+            startDate: Date,
+            endDate: Date,
+        }));
         
         const seriesGroupID = await SeriesCollection.insertAsync({
             ...data,
@@ -27,9 +27,8 @@ Meteor.methods({
         check(seriesGroupID, String);
         check(data, Match.ObjectIncluding({
             title: String,
-            description: String,
-            startDate: String,
-            endDate: String
+            startDate: Date,
+            endDate: Date,
         }));
         return await SeriesCollection.updateAsync(seriesGroupID, {
             $set: data

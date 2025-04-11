@@ -10,3 +10,10 @@
 * {
   font-family: 'Montserrat', sans-serif;
 }
+
+/* .custom-dropdown .p-dropdown {
+  @apply w-full shadow border border-gray-400 rounded text-gray-700 leading-tight;
+}
+.custom-dropdown.p-focus {
+  @apply ring-echo-teal border-echo-teal;
+} */

@@ -2,16 +2,15 @@ import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
 import { SpecialistsCollection } from '../../imports/api/collections';
 
+// Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
     async 'specialists.insert'(data) {
         //console.log('Received data:', data);
-        check(data, {
-            name: String,
-            speciality: String,
-            email: String,
-            phone: String,
-            institute: String
-        });
+        check(data, Match.ObjectIncluding({
+          firstName: String,
+          lastName: String,
+          email: String,
+        }));
         
         const specialistId = await SpecialistsCollection.insertAsync({
             ...data,
@@ -27,11 +26,9 @@ Meteor.methods({
     async 'specialists.update'(specialistId, data) {
         check(specialistId, String);
         check(data, Match.ObjectIncluding({
-            name: String,
-            speciality: String,
-            email: String,
-            phone: String,
-            institute: String
+          firstName: String,
+          lastName: String,
+          email: String,
         }));
         return await SpecialistsCollection.updateAsync(specialistId, {
             $set: data

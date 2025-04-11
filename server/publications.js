@@ -18,6 +18,7 @@ Meteor.publish('users', async function () {
           emails: 1,
           role: 1,
           createdAt: 1,
+          role_id: 1,
         }
       });
     }

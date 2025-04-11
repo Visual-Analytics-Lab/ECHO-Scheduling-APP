@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../shadecn-components/dialog";
-import { Button, RedButton } from "../shadecn-components/button";
+import { Button, TealButton,RedButton } from "../shadecn-components/button";
+import DeleteModal from "../delete_modal/DeleteModal"
 import { Alert, AlertDescription } from "../shadecn-components/alert";
 import {
   useReactTable,
@@ -11,34 +11,124 @@ import {
   flexRender
 } from "@tanstack/react-table";
 import { MdSearch, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md";
+import { createColumnHelper } from "@tanstack/react-table";
 
 
 const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
-  const columns = useMemo(
-    () =>
-      fields.map((field) => ({
-        header: field.label,
-        accessorKey: field.name,
+  const columnHelper = createColumnHelper();
 
-        // If the field is an _id referencing another collection (e.g., series_id),
-        //    display the name, title, etc. of the entry matching the _id.
-        ...(field.parentCollection && {
-          cell: ({ row }) => {
-            const ids = row.original[field.name] || []; // Array of IDs
-            const relatedDocs = field.parentCollection.find({ _id: { $in: ids } }).fetch();
-            return relatedDocs.map(doc => doc.title || doc.name || doc.role || "").join(", ");
+  const nameFilterFn = (row, columnId, filterValue) => {
+    const firstName = row.original.firstName?.toLowerCase() || "";
+    const lastName = row.original.lastName?.toLowerCase() || "";
+    const fullName = `${firstName} ${lastName}`;
+    return fullName.includes(filterValue.toLowerCase());
+  };
+
+
+  // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
+  const columns = useMemo(() => {
+    return fields.map((field) => {
+      const { name, label, parentCollection } = field;
+  
+      // Common function to format date fields
+      const formatDate = (value) => {
+        if (!value) return "";
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat(undefined, {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true, // Ensures AM/PM format
+        }).format(date);
+      };
+  
+      // Handle special field cases
+      switch (name) {
+        case "fullName":
+          return columnHelper.accessor(
+            row => `${row.firstName} ${row.lastName}`,
+            {
+              id: "fullName",
+              header: "Name",
+              cell: ({ row }) => (
+                <span style={{ color: row.original.nameColor }}>
+                  {row.original.firstName} {row.original.lastName}
+                </span>
+              ),
+              filterFn: nameFilterFn,
+            }
+          );
+        case "name":
+        case "title":
+          return {
+            header: label,
+            accessorKey: name,
+            cell: ({ row }) => (
+              <span style={{ color: row.original.nameColor }}>
+                {row.original[name]}
+              </span>
+            ),
+          };
+        default:
+          // Handle date fields
+          if (name.includes("Date")) {
+            return {
+              header: label,
+              accessorKey: name,
+              cell: ({ row }) => formatDate(row.original[name]),
+            };
           }
-        })
-      })),
-    [fields]
-  );
+  
+          // Handle parentCollection lookup
+          if (parentCollection) {
+            return {
+              header: label,
+              accessorKey: name,
+              cell: ({ row }) => {
+                const fieldValue = row.original[name];
+                if (!fieldValue) return ""; // No data to display
+  
+                const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+                const relatedDocs = parentCollection.find({ _id: { $in: ids } }).fetch();
+                // Place any id fields inside this array with related docs with colored .firstName and .lastName
+                if (["specialists_ids"].includes(name)) {
+                  return (
+                    <>
+                      {relatedDocs.map((doc) => (
+                        <span key={doc._id} style={{ display: 'block', color: doc.nameColor, marginBottom: "5px" }}>
+                          {doc.firstName} {doc.lastName}
+                        </span>
+                      ))}
+                    </>
+                  );
+                }
+                // Return titles/names of related doc to id uncolored
+                return relatedDocs.map((doc) => (
+                  <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
+                    {doc.title || doc.name || doc.role || "").join(", ")
+                  </span>
+                ));
+              },
+            };
+          }
+  
+          // Default case for general fields
+          return {
+            header: label,
+            accessorKey: name,
+          };
+      }
+    });
+  }, [fields]);
 
   const table = useReactTable({
     data,
@@ -78,7 +168,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
 
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
-    setShowDeleteDialog(true);
+    setIsDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -86,7 +176,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
       setIsSubmitting(true);
       setError("");
       await onDelete(itemToDelete._id);
-      setShowDeleteDialog(false);
+      setIsDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (err) {
       setError(err.message || "Failed to delete item. Please try again.");
@@ -154,9 +244,9 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                 ))}
                 <td className="p-3 w-[1%]">
                   <div className="flex space-x-2">
-                    <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => onEdit(row.original)}>
+                    <TealButton  onClick={() => onEdit(row.original)}>
                       Edit
-                    </Button>
+                    </TealButton>
                     <RedButton onClick={() => handleDeleteClick(row.original)}>
                       Delete
                     </RedButton>
@@ -168,12 +258,12 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
         </table>
         {/* TODO: Make sure these buttons even work */}
         <div className="flex justify-between items-center mt-4">
-          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <TealButton onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             Previous
-          </Button>
-          <Button className="bg-echo-teal hover:bg-echo-teal-hover" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          </TealButton>
+          <TealButton onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
-          </Button>
+          </TealButton>
         </div>
         {data.length === 0 && (
           <div className="text-center py-4 text-gray-500">
@@ -183,36 +273,12 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
       </section>
 
       {/* Delete Confirmation */}
-      <Dialog
-        open={showDeleteDialog}
-        onOpenChange={(open) => !isSubmitting && setShowDeleteDialog(open)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-          </DialogHeader>
-          <p className="py-4">
-            Are you sure you want to delete this item? This action cannot be
-            undone.
-          </p>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <RedButton
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Deleting..." : "Delete"}
-            </RedButton>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        setIsOpen={setIsDeleteModalOpen}
+        onDelete={handleDeleteConfirm}
+        itemType={sectionTitle}
+      />
     </>
   );
 };
