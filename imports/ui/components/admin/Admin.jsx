@@ -22,7 +22,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
 
-
 //#region ADMIN PAGE
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
@@ -52,6 +51,7 @@ const Admin = () => {
       role_id: user.role_id,
     }))
   );
+  //console.log(users);
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const semesters = useTracker(() => SemesterCollection.find().fetch());

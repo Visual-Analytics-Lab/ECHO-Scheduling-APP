@@ -1,5 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
+import { list } from 'postcss';
 
 // Required fields and their type must be included in the insert and update method checks
 // TODO: update required checks
@@ -18,7 +19,7 @@ Meteor.methods({
             username: data.username,
             email: data.email,
             password: data.password,
-            role_id: String,
+            role_id: data.role_id,
             createdAt: new Date(),
           });
         } 
@@ -45,6 +46,7 @@ Meteor.methods({
             username: String,
             email: String,
             role_id: String,
+
         }));
         
         return await Meteor.users.updateAsync(userId, {
@@ -52,6 +54,7 @@ Meteor.methods({
                 username: data.username,
                 'emails.0.address': data.email,
                 role_id: data.role_id
+
             }
         });
     }

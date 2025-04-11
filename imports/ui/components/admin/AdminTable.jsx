@@ -30,6 +30,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
     return fullName.includes(filterValue.toLowerCase());
   };
 
+
   // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
   const columns = useMemo(() => {
     return fields.map((field) => {
@@ -113,7 +114,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                 // Return titles/names of related doc to id uncolored
                 return relatedDocs.map((doc) => (
                   <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
-                    {doc.title || doc.name}
+                    {doc.title || doc.name || doc.role || "").join(", ")
                   </span>
                 ));
               },
