@@ -111,10 +111,10 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                     </>
                   );
                 }
-                // Return titles/names of related doc to id uncolored
+                // Return titles/names/roles of related doc to id uncolored
                 return relatedDocs.map((doc) => (
                   <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
-                    {doc.title || doc.name || doc.role || "").join(", ")
+                    {doc.title || doc.name || doc.role || ""}
                   </span>
                 ));
               },

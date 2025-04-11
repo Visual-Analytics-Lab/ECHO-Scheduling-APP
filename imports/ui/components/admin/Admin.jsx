@@ -106,7 +106,6 @@ const Admin = () => {
 
   return (
     <div className="bg-bg-light flex flex-col h-screen">
-      <Navbar />
       <div className="flex flex-1">
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-4">

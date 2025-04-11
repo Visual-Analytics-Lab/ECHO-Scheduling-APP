@@ -16,7 +16,6 @@ export const Landing = () => {
     return (
         <div style={{ display: 'flex', height: '100vh' }}>
             <div style={{ flex: 1 }}>
-                <Navbar />
                 <div style={{ padding: '20px' }}>
                     <h1>Welcome to Echo Scheduling App</h1>
                 </div>

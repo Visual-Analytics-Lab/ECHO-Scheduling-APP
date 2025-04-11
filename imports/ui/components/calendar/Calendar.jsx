@@ -81,7 +81,6 @@ const Calendar = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      <Navbar />
       <div className="flex flex-1">
         <CalendarSidebar 
           activeOption={activeOption} 

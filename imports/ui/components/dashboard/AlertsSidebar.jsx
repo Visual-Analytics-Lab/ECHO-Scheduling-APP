@@ -12,7 +12,7 @@ const ThisWeekSessions = () => {
     firstDayOfWeek.setDate(today.getDate() - today.getDay());
     firstDayOfWeek.setHours(0, 0, 0, 0);
     const first =  firstDayOfWeek.toISOString();
-    console.log(firstDayOfWeek.toISOString());
+    // console.log(firstDayOfWeek.toISOString());
     const lastDayOfWeek = new Date(today);
     lastDayOfWeek.setDate(today.getDate() - today.getDay() + 6);
     lastDayOfWeek.setHours(23, 59, 59, 999);
@@ -21,7 +21,7 @@ const ThisWeekSessions = () => {
       dateTime: { $gte: first, $lte: last }
     }).fetch();
   }, []);
-  console.log(sessions);
+  // console.log(sessions);
 
   return (
     <aside className="w-64 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border">

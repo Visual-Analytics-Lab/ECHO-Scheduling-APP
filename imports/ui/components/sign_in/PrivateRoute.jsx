@@ -1,31 +1,17 @@
-import React, {use, useEffect} from 'react';
+import React from 'react';
 import { Navigate } from 'react-router';
 import { ThreeCircles } from 'react-loader-spinner';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTracker } from 'meteor/react-meteor-data';
-import { RolesCollection } from '../../../api/collections';
+import { useHasRole } from '../../hooks/useHasRole';
 
 export const PrivateRoute = ({ allowedRoles, children }) => {
-  const { user, loading } = useAuth();
+  const { user, userLoading } = useAuth();
 
-  // Subscribe to roles collection
-  Meteor.subscribe('roles');
-  useEffect(() => {
-    const usersSub = Meteor.subscribe('users');
-    return () => {
-      usersSub.stop();
-    };
-  }, []);
-  //console.log(user);
-  
+  // Get role access and readiness from the hook
+  const { hasRole: hasRole, ready: accessReady } = useHasRole(user, allowedRoles);
 
-  // Fetch role IDs for the allowed role names
-  const allowedRoleIds = useTracker(() => {
-    if (!allowedRoles || allowedRoles.length === 0) return [];
-    return RolesCollection.find({ role: { $in: allowedRoles } }).fetch().map(doc => doc._id);
-  }, [allowedRoles]);
-
-  if (loading) {
+  // If the user is still loading or the roles are not ready, show the loading spinner
+  if (userLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-lg font-bold">
         <ThreeCircles
@@ -40,28 +26,26 @@ export const PrivateRoute = ({ allowedRoles, children }) => {
     );
   }
 
+  // If no user, redirect to login page
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  // Only check roles if allowedRoles is provided and non-empty
-  if (allowedRoles) {
-    const userRoles = user?.role || [];
-    const hasAccess = userRoles.some(userRoleId => allowedRoleIds.includes(userRoleId));
-    if (!hasAccess) {
-      return (
-        <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
-          <h1 className="text-3xl font-bold mb-2">Access Denied</h1>
-          <p className="text-lg mb-1">
-            Sorry, you do not have the required permissions to view this page.
-          </p>
-          <p className="text-md">
-            Please contact your administrator if you believe this is an error.
-          </p>
-        </div>
-      );
-    }
+  // If the user doesn't have the required role, show access denied
+  if (!hasRole && allowedRoles && accessReady) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-3xl font-bold mb-2">Access Denied</h1>
+        <p className="text-lg mb-1">
+          Sorry, you do not have the required permissions to view this page.
+        </p>
+        <p className="text-md">
+          Please contact your administrator if you believe this is an error.
+        </p>
+      </div>
+    );
   }
 
+  // Render the children (actual page content)
   return children;
 };

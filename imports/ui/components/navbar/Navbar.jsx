@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { Link } from 'react-router-dom';
 import SignInPopup from '../sign_in/SignInPopup';
 import { useAuth } from '../../contexts/AuthContext';
+import { useHasRole } from '../../hooks/useHasRole';
 
 const Navbar = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  const { hasRole: isAdmin, ready: accessReady } = useHasRole(user, ['admin', 'Admin']);
 
   return (
     <nav className="bg-echo-maroon h-16 flex flex-shrink-0 items-center justify-between px-4">
@@ -22,12 +25,17 @@ const Navbar = () => {
       {user ? (
         <div className="flex items-center space-x-4">
           <nav className="flex space-x-4">
+            <Link to="/dashboard" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+              Dashboard
+            </Link>
             <Link to="/calendar" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
               Calendar
             </Link>
-            <Link to="/admin" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
-              Administration
-            </Link>
+            {isAdmin && accessReady && (
+              <Link to="/admin" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+                Administration
+              </Link>
+            )}
           </nav>
           <div className="relative">
             <button 

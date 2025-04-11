@@ -7,6 +7,7 @@ import { NotFound } from "./components/page_not_found/PageNotFound";
 import Admin from "./components/admin/Admin";
 import Calendar from "./components/calendar/Calendar";
 import { Landing } from "./components/landing/LandingPage";
+import Navbar from "./components/navbar/Navbar";
 
 
 
@@ -14,6 +15,7 @@ export const App = () => (
     <AuthProvider>
         <BrowserRouter>
             <div>
+                <Navbar />
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route 
@@ -28,7 +30,7 @@ export const App = () => (
                     <Route 
                         path="/admin" 
                         element={
-                            <PrivateRoute allowedRoles={["admin"]}>
+                            <PrivateRoute allowedRoles={["admin", "Admin"]}>
                                 <Admin />
                             </PrivateRoute>
                         } 

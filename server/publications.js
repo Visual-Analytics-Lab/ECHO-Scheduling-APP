@@ -10,20 +10,30 @@ import {
 } from '../imports/api/collections';
 
 Meteor.publish('users', async function () {
-    const currentUser = await Meteor.users.findOneAsync(this.userId);
-    if (currentUser) {
-      return Meteor.users.find({}, {
-        fields: {
-          username: 1,
-          emails: 1,
-          role: 1,
-          createdAt: 1,
-          role_id: 1,
-        }
-      });
+  const currentUser = await Meteor.users.findOneAsync(this.userId);
+  if (currentUser) {
+    return Meteor.users.find({}, {
+      fields: {
+        username: 1,
+        emails: 1,
+        createdAt: 1,
+        role_id: 1,
+      }
+    });
+  }
+  return this.ready();
+});
+Meteor.publish('currentUser', function () {
+  if (!this.userId) return this.ready();
+  return Meteor.users.find({ _id: this.userId }, {
+    fields: {
+      username: 1,
+      emails: 1,
+      createdAt: 1,
+      role_id: 1,  // Custom field
     }
-    return this.ready();
   });
+});
   
 Meteor.publish('specialists', function () {
     return SpecialistsCollection.find();

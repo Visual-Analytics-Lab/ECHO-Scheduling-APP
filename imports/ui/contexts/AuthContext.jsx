@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+      // Subscribe for access to custom fields like role
+      const userSub = Meteor.subscribe('currentUser');
       const tracker = Tracker.autorun(() => {
         const meteorUser = Meteor.user();
         const loggingIn = Meteor.loggingIn();
