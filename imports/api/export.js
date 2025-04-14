@@ -95,9 +95,27 @@ Meteor.methods({
           casePresenter: 1,
           facilitator: { $arrayElemAt: ["$facilitatorDetails.username", 0] },
           coordinator: { $arrayElemAt: ["$coordinatorDetails.username", 0] },
-          presentingSpecialist: { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
-          supportingSpecialist1: { $arrayElemAt: ["$supportingSpecialist1Details.firstName", 0] },
-          supportingSpecialist2: { $arrayElemAt: ["$supportingSpecialist2Details.firstName", 0] },
+          presentingSpecialist: {
+            $concat: [
+              { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$presentingSpecialistDetails.lastName", 0] }
+            ]
+          },
+          supportingSpecialist1: {
+            $concat: [
+              { $arrayElemAt: ["$supportingSpecialist1Details.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$supportingSpecialist1Details.lastName", 0] }
+            ]
+          },
+          supportingSpecialist2: {
+            $concat: [
+              { $arrayElemAt: ["$supportingSpecialist2Details.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$supportingSpecialist2Details.lastName", 0] }
+            ]
+          },
           participantGroup: { $arrayElemAt: ["$participantGroupDetails.name", 0] },
           dateTime: 1,
           presentationsDue: 1,

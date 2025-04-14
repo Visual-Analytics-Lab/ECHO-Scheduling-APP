@@ -50,7 +50,6 @@ const DashboardSidebar = () => {
       _id: { $in: uniqueSpecialistIds },
     }).fetch() 
   );
-  console.log(specialists)
 
   return (
     <aside className="w-64 bg-gray-100 text-black m-4 border border-gray-300 rounded-lg shadow-full-border">
