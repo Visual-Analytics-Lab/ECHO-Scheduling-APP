@@ -59,9 +59,12 @@ const Calendar = () => {
       newDateFromDrop.getFullYear(),
       newDateFromDrop.getMonth(),
       newDateFromDrop.getDate(),
-      oldDate.getHours(),
-      oldDate.getMinutes(),
-      oldDate.getSeconds()
+      newDateFromDrop.getHours(),
+      newDateFromDrop.getMinutes(),
+      newDateFromDrop.getSeconds()
+      // oldDate.getHours(),
+      // oldDate.getMinutes(),
+      // oldDate.getSeconds()
     );
     session.dateTime = updatedDateTime
     handleSubmit(session, sessionId);
