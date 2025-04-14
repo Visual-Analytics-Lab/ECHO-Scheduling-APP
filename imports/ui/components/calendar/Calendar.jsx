@@ -8,7 +8,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { SessionsCollection } from "../../../api/collections";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 import { Meteor } from "meteor/meteor";
 import { printExcel } from "./Printing";
@@ -174,7 +174,6 @@ const Calendar = () => {
           </div>
         </main>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

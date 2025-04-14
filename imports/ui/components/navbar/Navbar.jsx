@@ -1,18 +1,20 @@
 import React, { useState} from 'react';
 import { Link } from 'react-router-dom';
-import SignInPopup from '../sign_in/SignInPopup';
+import SignInPopup from '../authorization/SignInPopup';
+import ChangePassPopup from '../authorization/ChangePassPopup'
 import { useAuth } from '../../contexts/AuthContext';
 import { useHasRole } from '../../hooks/useHasRole';
 
 const Navbar = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [isChangePassOpen, setIsChangePassOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, logout } = useAuth();
 
   const { hasRole: isAdmin, ready: accessReady } = useHasRole(user, ['admin', 'Admin']);
 
   return (
-    <nav className="bg-echo-maroon h-16 flex flex-shrink-0 items-center justify-between px-4">
+    <nav className="bg-echo-maroon h-16 flex items-center justify-between px-4 relative">
       <Link to="/" className="flex items-center space-x-2">
         <img
           src="/assets/images/Echo Logo.png"
@@ -55,33 +57,39 @@ const Navbar = () => {
               </svg>
             </button>
             {isDropdownOpen && (
-              <div 
-                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                <Link 
-                  to="/settings" 
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={logout}
-                  className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  Sign Out
-                </button>
+              <div className="absolute right-0 top-11 z-50 bg-white shadow-full-border">
+                <div className="flex flex-col w-lg">
+                  <button
+                    onClick={() => { setIsChangePassOpen(true); setIsDropdownOpen(false); }}
+                    className="block w-full p-4 text-left hover:bg-gray-200"
+                  >
+                    Change Password
+                  </button>
+                  <button
+                    onClick={() => { logout(); setIsDropdownOpen(false); }}
+                    className="block w-full p-4 text-left text-red-600 hover:bg-red-100 hover:text-red-700"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       ) : (
         <button
-          onClick={() => setIsSignInOpen(true)}
+          onClick={() => setIsSignInOpen(!isSignInOpen)}
           className="bg-[#0EA6B2] text-white px-4 py-2 rounded hover:bg-[#0c8f9a] transition-colors"
         >
           Sign in
         </button>
+      )}
+
+      {user && (
+        <ChangePassPopup
+          isOpen={isChangePassOpen}
+          onClose={() => setIsChangePassOpen(false)}
+        />
       )}
 
       {!user && (

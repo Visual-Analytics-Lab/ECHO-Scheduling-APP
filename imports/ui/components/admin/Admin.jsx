@@ -18,7 +18,7 @@ import {
   RolesCollection
 } from "../../../api/collections";
 // Other
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
 
@@ -140,7 +140,6 @@ const Admin = () => {
           />
         </main>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
