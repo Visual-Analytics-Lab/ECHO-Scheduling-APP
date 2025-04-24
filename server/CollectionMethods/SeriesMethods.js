@@ -8,8 +8,6 @@ Meteor.methods({
         //console.log('Received data:', data);
         check(data, Match.ObjectIncluding({
             title: String,
-            startDate: Date,
-            endDate: Date,
         }));
         
         const seriesGroupID = await SeriesCollection.insertAsync({
@@ -27,8 +25,6 @@ Meteor.methods({
         check(seriesGroupID, String);
         check(data, Match.ObjectIncluding({
             title: String,
-            startDate: Date,
-            endDate: Date,
         }));
         return await SeriesCollection.updateAsync(seriesGroupID, {
             $set: data

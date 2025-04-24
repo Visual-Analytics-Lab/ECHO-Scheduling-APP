@@ -27,9 +27,9 @@ Meteor.methods({
       {
         $lookup: {
           from: "users",
-          localField: "coordinator",
+          localField: "supportingFacilitator",
           foreignField: "_id",
-          as: "coordinatorDetails"
+          as: "supportingFacilitatorDetails"
         }
       },
       {
@@ -94,7 +94,7 @@ Meteor.methods({
           sessionTitle: 1,
           casePresenter: 1,
           facilitator: { $arrayElemAt: ["$facilitatorDetails.username", 0] },
-          coordinator: { $arrayElemAt: ["$coordinatorDetails.username", 0] },
+          supportingFacilitator: { $arrayElemAt: ["$supportingFacilitatorDetails.username", 0] },
           presentingSpecialist: {
             $concat: [
               { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
@@ -141,8 +141,8 @@ Meteor.methods({
       worksheet.columns = [
         { header: "Session Title", key: "sessionTitle", width: 20 },
         { header: "Case Presenter", key: "casePresenter", width: 20 },
-        { header: "Facilitator", key: "facilitator", width: 20 },
-        { header: "Coordinator", key: "coordinator", width: 20 },
+        { header: "Lead Facilitator", key: "facilitator", width: 20 },
+        { header: "Supporting Facilitator", key: "supportingFacilitator", width: 20 },
         { header: "Presenting Specialist", key: "presentingSpecialist", width: 20 },
         { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
         { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 },
@@ -264,8 +264,8 @@ Meteor.methods({
             ws.addRow([
               "Session Title",
               "Case Presenter",
-              "Facilitator",
-              "Coordinator",
+              "Lead Facilitator",
+              "Supporting Facilitator",
               "Presenting Specialist",
               "Supporting Specialist 1",
               "Supporting Specialist 2",
@@ -285,7 +285,7 @@ Meteor.methods({
                 session.sessionTitle,
                 session.casePresenter,
                 session.facilitator,
-                session.coordinator,
+                session.supportingFacilitator,
                 session.presentingSpecialist,
                 session.supportingSpecialist1,
                 session.supportingSpecialist2,

@@ -8,7 +8,6 @@ Meteor.methods({
         //console.log('Received data:', data);
         check(data, Match.ObjectIncluding({
             name: String,
-            series_ids: [String],
             agency: String,
             focus: String,
             famOrPro: String,
@@ -29,7 +28,6 @@ Meteor.methods({
         check(participantGroupsId, String);
         check(data, Match.ObjectIncluding({
           name: String,
-          series_ids: [String],
           agency: String,
           focus: String,
           famOrPro: String,

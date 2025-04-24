@@ -110,12 +110,14 @@ const PopupForm = ({
 
         <form onSubmit={handleSubmit}>
           {/* Use grid layout with dynamic column span */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fields.map(({ name, label, inputType, colSpan, required }) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+            {fields.map(({ name, label, inputType, colSpan,rowSpan, required }) => {
               
               const hasError = errors[name];
               // Dynamically set the column span
               const columnClass = colSpan ? `md:col-span-${colSpan}` : 'md:col-span-2';
+              const rowClass = rowSpan ? `row-span-${rowSpan}` : '';
+              console.log(rowClass);
               const defaultInputStyle = `w-full shadow border border-gray-400 focus:border-echo-teal focus:ring-echo-teal rounded text-gray-700 leading-tight`
 
               // Preprocess options to show correct label given name, title, firstName + lastName
@@ -252,7 +254,7 @@ const PopupForm = ({
               // Column class controls the column span of the field input
               // Display class controls if the field input and label should flex so they're on the same line
               return (
-              <div key={name} className={`${columnClass}`}>
+              <div key={name} className={`${columnClass} ${rowClass}`}>
                 <div className={`${displayClass}`}>
                   <label className="text-gray-700 text-sm font-bold">
                     {label}{required && <span className="text-red-500"> *</span>} {/* Red asterisk if required */}

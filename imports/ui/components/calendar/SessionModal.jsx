@@ -41,7 +41,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     sessionTitle: '',
     casePresenter: '',
     facilitator: '',
-    coordinator: '',
+    supportingFacilitator: '',
     presentingSpecialist: '',
     supportingSpecialist1: '',
     supportingSpecialist2: '',
@@ -63,7 +63,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         sessionTitle: existingSession.sessionTitle,
         casePresenter: existingSession.casePresenter,
         facilitator: existingSession.facilitator,
-        coordinator: existingSession.coordinator,
+        supportingFacilitator: existingSession.supportingFacilitator,
         presentingSpecialist: existingSession.presentingSpecialist,
         supportingSpecialist1: existingSession.supportingSpecialist1,
         supportingSpecialist2: existingSession.supportingSpecialist2,
@@ -83,7 +83,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         sessionTitle: '',
         casePresenter: '',
         facilitator: '',
-        coordinator: '',
+        supportingFacilitator: '',
         presentingSpecialist: '',
         supportingSpecialist1: '',
         supportingSpecialist2: '',
@@ -213,7 +213,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             </div>
             {/* Facilitator */}
             <div className="form-group md:col-span-2">
-              <label className="block font-medium">Facilitator</label>
+              <label className="block font-medium">Lead Facilitator</label>
               <select
                 name="facilitator"
                 value={formData.facilitator}
@@ -229,17 +229,17 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Coordinator */}
+            {/* supportingFacilitator */}
             <div className="form-group md:col-span-2">
-              <label className="block font-medium">Coordinator</label>
+              <label className="block font-medium">Supporting Facilitator</label>
               <select
-                name="coordinator"
-                value={formData.coordinator}
+                name="supportingFacilitator"
+                value={formData.supportingFacilitator}
                 onChange={handleChange}
                 required
                 className={`${defaultInputStyle}`}
               >
-                <option value="">Select Coordinator</option>
+                <option value="">Select Supporting Facilitator</option>
                 {users?.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.username}
