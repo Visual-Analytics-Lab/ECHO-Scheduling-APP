@@ -1,5 +1,5 @@
 import React, { useState} from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import SignInPopup from '../authorization/SignInPopup';
 import ChangePassPopup from '../authorization/ChangePassPopup'
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,32 +13,48 @@ const Navbar = () => {
 
   const { hasRole: isAdmin, ready: accessReady } = useHasRole(user, ['admin', 'Admin']);
 
+  const navLinkClass = ({ isActive }) =>
+    `text-white hover:text-gray-200 border-r-2 border-white pr-4 ${
+      isActive ? 'font-bold underline underline-offset-4 decoration-2 decoration-echo-gold' : ''
+    }`;
+
   return (
     <nav className="bg-echo-maroon h-16 flex items-center justify-between px-4 relative">
-      <Link to="/" className="flex items-center space-x-2">
+      <NavLink to="/" className="flex items-center space-x-2">
         <img
           src="/assets/images/Echo Logo.png"
           alt="Echo Logo"
           className="h-8"
         />
         <h1 className="text-white text-xl">Scheduling App</h1>
-      </Link>
+      </NavLink>
       
       {user ? (
         <div className="flex items-center space-x-4">
           <nav className="flex space-x-4">
-            <Link to="/dashboard" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+            <NavLink
+              to="/dashboard"
+              className={navLinkClass}
+            >
               Dashboard
-            </Link>
+            </NavLink>
+
             {isAdmin && accessReady && (
-              <Link to="/calendar" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+              <NavLink
+                to="/calendar"
+                className={navLinkClass}
+              >
                 Calendar
-              </Link>
+              </NavLink>
             )}
+
             {isAdmin && accessReady && (
-              <Link to="/admin" className="text-white hover:text-gray-200 border-r-2 border-white pr-4">
+              <NavLink
+                to="/admin"
+                className={navLinkClass}
+              >
                 Administration
-              </Link>
+              </NavLink>
             )}
           </nav>
           <div className="relative">
