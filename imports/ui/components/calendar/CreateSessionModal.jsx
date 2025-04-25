@@ -44,7 +44,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
   const [formData, setFormData] = useState({
     casePresenter: '',
     facilitator: '',
-    coordinator: '',
+    supportingFacilitator: '',
     presentingSpecialist: '',
     supportingSpecialist1: '',
     supportingSpecialist2: '',
@@ -113,7 +113,7 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
             </div>
             {/* Facilitator */}
             <div className="form-group">
-              <label className="block font-medium">Facilitator</label>
+              <label className="block font-medium">Lead Facilitator</label>
               <select
                 name="facilitator"
                 value={formData.facilitator}
@@ -129,17 +129,17 @@ const CreateSessionModal = ({ isOpen, onClose, onCreate, selectedDate}) => {
                 ))}
               </select>
             </div>
-            {/* Coordinator */}
+            {/* supportingFacilitator */}
             <div className="form-group">
-              <label className="block font-medium">Coordinator</label> {/* Fixed typo */}
+              <label className="block font-medium">Supporting Facilitator</label> {/* Fixed typo */}
               <select
-                name="coordinator" // Ensure name matches state key
-                value={formData.coordinator}
+                name="supportingFacilitator" // Ensure name matches state key
+                value={formData.supportingFacilitator}
                 onChange={handleChange}
                 required
                 className="border border-gray-300 rounded w-full p-2"
               >
-                <option value="">Select Coordinator</option>
+                <option value="">Select Supporting Facilitator</option>
                 {users?.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.username} {/* Ensure this field exists */}
