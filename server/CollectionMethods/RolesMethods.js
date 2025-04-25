@@ -1,15 +1,14 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import { RolesCollection } from '../../imports/api/collections';
 
 // Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
     async 'roles.insert'(data) {
         //console.log('Received data:', data);
-        check(data, {
-            title: String,
-            desc: String,
-        });
+        check(data, Match.ObjectIncluding({
+            title: String
+        }));
         
         const roleGroupID = await RolesCollection.insertAsync({
             ...data,
@@ -23,10 +22,9 @@ Meteor.methods({
     },
     async 'roles.update'(roleGroupID, data) {
         check(roleGroupID, String);
-        check(data, {
-            title: String,
-            desc: String,
-        });
+        check(data, Match.ObjectIncluding({
+          title: String
+        }));
         return await RolesCollection.updateAsync(roleGroupID, {
             $set: data
         });

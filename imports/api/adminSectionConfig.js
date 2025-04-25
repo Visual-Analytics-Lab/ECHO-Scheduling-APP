@@ -33,7 +33,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
         { name: "email",    label: "Email",    required: true },
       ];
       // Show roles as long as user isn't editting their own
-      if (rowData._id != Meteor.user()._id) 
+      if (Meteor.user() && rowData._id !== Meteor.user()._id)
         fields.push({ name: "role_id", label: "Role", required: true, inputType: "select" });
       // Show password only when using add new user pop up
       if (!rowData._id) 
@@ -47,12 +47,12 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionName: "roles",
     collectionData: colData.roles,
     tableFields: () => [
-      {name: "title", label: "Role"},
+      {name: "title", label: "Title"},
       {name: "desc", label: "Description"},
     ],
     popupFields: () => [
-      {name: "title", label: "Role"},
-      {name: "desc", label: "Description", inputType: "textArea"},
+      {name: "title", label: "Title", required: true },
+      {name: "desc", label: "Description", inputType: "textArea" },
     ],
     fieldContext: {},
   },

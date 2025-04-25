@@ -5,13 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useHasRole } from '../../hooks/useHasRole';
 
 export const PrivateRoute = ({ allowedRoles, children }) => {
-  const { user, userLoading } = useAuth();
+  const { user, loading } = useAuth();
 
   // Get role access and readiness from the hook
   const { hasRole: hasRole, ready: accessReady } = useHasRole(user, allowedRoles);
 
   // If the user is still loading or the roles are not ready, show the loading spinner
-  if (userLoading) {
+  if (loading || !accessReady) {
     return (
       <div className="flex h-screen items-center justify-center text-lg font-bold">
         <ThreeCircles

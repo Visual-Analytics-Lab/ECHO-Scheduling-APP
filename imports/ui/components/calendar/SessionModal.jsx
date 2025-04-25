@@ -5,6 +5,7 @@ import {
   SpecialistsCollection,
   ParticipantGroupsCollection,
   TopicsCollection,
+  RolesCollection,
   SemesterCollection,
   SeriesCollection
 } from '../../../api/collections';
@@ -15,27 +16,27 @@ import DeleteModal from '../delete_modal/DeleteModal'
 
 const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, existingSession = null}) => {
   // Subscribe to collections
+  useEffect(() => {
+    const subscriptions = [
+      Meteor.subscribe("users"),
+      Meteor.subscribe("roles"),
+      Meteor.subscribe("specialists"),
+      Meteor.subscribe("participantGroups"),
+      Meteor.subscribe("semesters"),
+      Meteor.subscribe("series"),
+      Meteor.subscribe("topics"),
+    ];
+    return () => subscriptions.forEach(sub => sub.stop());
+  }, []);
+
   const users = useTracker(() => Meteor.users.find().fetch());
-  const specialists = useTracker(() => {
-    Meteor.subscribe('specialists');
-    return SpecialistsCollection.find().fetch();
-  });
-  const participantGroups = useTracker(() => {
-    Meteor.subscribe('participantGroups');
-    return ParticipantGroupsCollection.find().fetch();
-  });
-  const topics = useTracker(() => {
-    Meteor.subscribe('topics');
-    return TopicsCollection.find().fetch();
-  });
-  const semesters = useTracker(() => {
-    Meteor.subscribe('semesters');
-    return SemesterCollection.find().fetch();
-  });
-  const series = useTracker(() => {
-    Meteor.subscribe('series');
-    return SeriesCollection.find().fetch();
-  });
+  const adminRoleId = useTracker(() => RolesCollection.findOne({ title: 'Admin' })._id);
+  const specialists = useTracker(() => SpecialistsCollection.find().fetch());
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const semesters = useTracker(() => SemesterCollection.find().fetch());
+  const series = useTracker(() => SeriesCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
+  const roles = useTracker(() => RolesCollection.find().fetch());
 
   const [formData, setFormData] = useState({
     sessionTitle: '',
@@ -222,10 +223,12 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 className={`${defaultInputStyle}`}
               >
                 <option value="">Select Facilitator</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.username}
-                  </option>
+                {users
+                  .filter((user) => user.role_id === adminRoleId)
+                  .map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.username}
+                    </option>
                 ))}
               </select>
             </div>
@@ -240,10 +243,12 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 className={`${defaultInputStyle}`}
               >
                 <option value="">Select Supporting Facilitator</option>
-                {users?.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.username}
-                  </option>
+                {users
+                  .filter((user) => user.role_id === adminRoleId)
+                  .map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.username}
+                    </option>
                 ))}
               </select>
             </div>

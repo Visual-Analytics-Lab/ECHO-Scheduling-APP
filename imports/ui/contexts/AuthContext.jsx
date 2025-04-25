@@ -9,6 +9,13 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+      // Check if user session is stored in localStorage
+      const savedUser = localStorage.getItem('userSession');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser)); // Restore user data from localStorage
+        setLoading(false); // Mark loading as done if user is restored
+      }
+
       // Subscribe for access to custom fields like role
       const userSub = Meteor.subscribe('currentUser');
       const tracker = Tracker.autorun(() => {
@@ -17,15 +24,26 @@ export const AuthProvider = ({ children }) => {
 
         if (!loggingIn) {
           setUser(meteorUser);
+          if (meteorUser) {
+            localStorage.setItem('userSession', JSON.stringify(meteorUser)); // Save user session to localStorage
+          } 
+          else {
+            localStorage.removeItem('userSession'); // Remove session from localStorage on logout
+          }
           setLoading(false);
         }
       });
-      return () => tracker.stop();
+
+      return () => {
+        tracker.stop();
+        userSub.stop();
+      };
     }, []);
 
     const logout = () => {
       Meteor.logout();
       setUser(null); // Ensure UI updates immediately
+      localStorage.removeItem('userSession'); // Remove user session from localStorage
     };
 
     return (

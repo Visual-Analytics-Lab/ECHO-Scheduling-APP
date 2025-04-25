@@ -9,9 +9,14 @@ const Navbar = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isChangePassOpen, setIsChangePassOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, logout } = useAuth();
 
+  const { user, loading, logout } = useAuth();
   const { hasRole: isAdmin, ready: accessReady } = useHasRole(user, ['admin', 'Admin']);
+
+  // Don't show navbar if still authenticating user and role
+  if (loading || !accessReady) {
+    return null;
+  }
 
   const navLinkClass = ({ isActive }) =>
     `text-white hover:text-gray-200 border-r-2 border-white pr-4 ${

@@ -16,39 +16,41 @@ import "react-toastify/dist/ReactToastify.css";
 export const App = () => (
   <>
     <AuthProvider>
-        <BrowserRouter>
-            <div>
-                <Navbar />
-                <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route 
-                        path="/dashboard" 
-                        element={
-                            <PrivateRoute>
-                                <Dashboard />
-                            </PrivateRoute>
-                        } 
-                    />
-                    <Route path="*" element={<NotFound />} />
-                    <Route 
-                        path="/admin" 
-                        element={
-                            <PrivateRoute allowedRoles={["admin", "Admin"]}>
-                                <Admin />
-                            </PrivateRoute>
-                        } 
-                    />
-                    <Route 
-                        path="/calendar" 
-                        element={
-                            <PrivateRoute>
-                                <Calendar allowedRoles={["admin", "Admin"]}/>
-                            </PrivateRoute>
-                        } 
-                    />
-                </Routes>
-            </div>
-        </BrowserRouter>
+      <BrowserRouter>
+        <div>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <PrivateRoute>
+                    <Dashboard />
+                </PrivateRoute>
+              } 
+            />
+
+            <Route path="*" element={<NotFound />} />
+            <Route 
+              path="/admin" 
+              element={
+                <PrivateRoute allowedRoles={["admin", "Admin"]}>
+                    <Admin />
+                </PrivateRoute>
+              } 
+            />
+            
+            <Route 
+              path="/calendar" 
+              element={
+                <PrivateRoute>
+                    <Calendar allowedRoles={["admin", "Admin"]}/>
+                </PrivateRoute>
+              } 
+            />
+          </Routes>
+        </div>
+      </BrowserRouter>
     </AuthProvider>
     
     <ToastContainer position="top-right" autoClose={3000} />

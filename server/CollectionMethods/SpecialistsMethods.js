@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
-import { SpecialistsCollection } from '../../imports/api/collections';
+import { SpecialistsCollection, TopicsCollection } from '../../imports/api/collections';
 
 // Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
@@ -19,10 +19,31 @@ Meteor.methods({
         //console.log('Inserted specialist with ID:', specialistId);
         return specialistId;
     },
+
     async 'specialists.remove'(specialistId) {
-        check(specialistId, String);
-        return await SpecialistsCollection.removeAsync(specialistId);
+      check(specialistId, String);
+      // Remove the specialist from the SpecialistsCollection
+      const specialistRemoved = await SpecialistsCollection.removeAsync(specialistId);
+      
+      if (specialistRemoved) {
+        // Define the array of collections that need to be updated
+        // Make sure these are imported at the top
+        const collectionsToUpdate = [
+          TopicsCollection,
+        ];
+  
+        // Iterate over each collection and remove the specialistId from the specialists_ids array
+        for (const collection of collectionsToUpdate) {
+          await collection.updateAsync(
+            { specialists_ids: specialistId },  // Find documents containing the specialistId in the array
+            { $pull: { specialists_ids: specialistId } }, // Remove the specialistId from the array
+            { multi: true } // Apply to all documents with this specialistId in the array
+          );
+        }
+        return true;
+      }
     },
+
     async 'specialists.update'(specialistId, data) {
         check(specialistId, String);
         check(data, Match.ObjectIncluding({

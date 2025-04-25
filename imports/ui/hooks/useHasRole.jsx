@@ -3,6 +3,7 @@ import { RolesCollection } from '../../api/collections';
 import { useMemo } from 'react';
 
 export const useHasRole = (user, allowedRoles = []) => {
+  // Always run the useMemo and useTracker hooks, regardless of user state
   const allowedRolesMemo = useMemo(() => allowedRoles, [JSON.stringify(allowedRoles)]);
 
   // Use the useTracker hook to subscribe to roles and fetch the allowed role IDs
@@ -17,7 +18,11 @@ export const useHasRole = (user, allowedRoles = []) => {
     return { ready: isReady, data: ids };
   }, [JSON.stringify(allowedRolesMemo)]);  // Only re-run when `allowedRoles` changes
 
-  if (!ready || !user) return { hasRole: false, ready: false };  // Return false if either roles or user isn't ready
+  // If no user, return false for hasRole and true for ready (since we're done loading roles)
+  if (!user) return { hasRole: false, ready: true };
+
+  // If roles aren't ready, return false for hasRole and false for ready
+  if (!ready) return { hasRole: false, ready: false };
 
   // Return whether the user has one of the allowed roles
   return { hasRole: allowedRoleIds.includes(user.role_id), ready: ready };
