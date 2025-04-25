@@ -110,7 +110,7 @@ const Admin = () => {
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-4">
           <header className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-echo-maroon">{activeSection}</h1>
+            <h1 className="text-2xl font-bold text-echo-maroon border-b-4 border-echo-gold">{activeSection}</h1>
             <button
               className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200"
               onClick={() => setIsPopupOpen(true)}
