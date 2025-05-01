@@ -8,19 +8,19 @@ Meteor.methods({
     async 'sessions.insert'(data) {
         check(data, Match.ObjectIncluding({
             sessionTitle: String,
-            casePresenter: String,
-            facilitator: String,
-            supportingFacilitator: String,
-            presentingSpecialist: String,
-            participantGroup: String,
+            // casePresenter: String,
+            // facilitator: String,
+            // supportingFacilitator: String,
+            // presentingSpecialist: String,
+            // participantGroup: String,
             dateTime: Date,
-            presentationsDue: Date,
-            newMaterial: Boolean,
-            color: String,
-            topic: String,
-            notes: String,
-            semester: String,
-            series: String
+            // presentationsDue: Date,
+            // newMaterial: Boolean,
+            // color: String,
+            // topic: String,
+            // notes: String,
+            // semester: String,
+            // series: String
         }));
         
         const sessionsId = await SessionsCollection.insertAsync({
@@ -37,19 +37,19 @@ Meteor.methods({
         check(sessionsId, String);
         check(data, Match.ObjectIncluding({
             sessionTitle: String,
-            casePresenter: String,
-            facilitator: String,
-            supportingFacilitator: String,
-            presentingSpecialist: String,
-            participantGroup: String,
+            // casePresenter: String,
+            // facilitator: String,
+            // supportingFacilitator: String,
+            // presentingSpecialist: String,
+            // participantGroup: String,
             dateTime: Date,
-            presentationsDue: Date,
-            newMaterial: Boolean,
-            color: String,
-            topic: String,
-            notes: String,
-            semester: String,
-            series: String
+            // presentationsDue: Date,
+            // newMaterial: Boolean,
+            // color: String,
+            // topic: String,
+            // notes: String,
+            // semester: String,
+            // series: String
         }));
         return await SessionsCollection.updateAsync(sessionsId, {
             $set: data

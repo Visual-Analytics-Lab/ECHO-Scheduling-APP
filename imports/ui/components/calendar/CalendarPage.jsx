@@ -1,28 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTracker } from 'meteor/react-meteor-data';
 import SessionModal from "./SessionModal";
 import Navbar from "../navbar/Navbar";
 import CalendarSidebar from "./CalendarSidebar";
+
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { SessionsCollection } from "../../../api/collections";
+
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css'; // ensure styles are bundled
+import 'tippy.js/dist/border.css';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
+
+import {
+  SessionsCollection,
+  SpecialistsCollection,
+  ParticipantGroupsCollection,
+  SemesterCollection,
+  SeriesCollection,
+  TopicsCollection,
+  RolesCollection
+} from "../../../api/collections";
+import { buildSessionTooltip } from "../../utils/tooltipHelpers";
 import { Meteor } from "meteor/meteor";
 import { printExcel } from "./Printing";
 
-const Calendar = () => {
+const CalendarPage = () => {
   const [activeOption, setActiveOption] = useState("Print Option 1");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
 
-  const sessions = useTracker(() => {
-    Meteor.subscribe('sessions');
-    return SessionsCollection.find().fetch()
-  });
+  // Subscribe to collections
+  useEffect(() => {
+    const subscriptions = [
+      Meteor.subscribe('sessions'),
+      // Meteor.subscribe("users"),
+      Meteor.subscribe("specialists"),
+      Meteor.subscribe("participantGroups"),
+      // Meteor.subscribe("semesters"),
+      // Meteor.subscribe("series"),
+      Meteor.subscribe("topics"),
+      // Meteor.subscribe("roles"),
+    ];
+    return () => subscriptions.forEach(sub => sub.stop());
+  }, []);
+
+  const sessions = useTracker(() => SessionsCollection.find().fetch());
+  const specialists = useTracker(() => SpecialistsCollection.find().fetch());
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  // const semesters = useTracker(() => SemesterCollection.find().fetch());
+  // const series = useTracker(() => SeriesCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
+  // const roles = useTracker(() => RolesCollection.find().fetch());
+
 
   const handleSidebarClick = (option) => {
     setActiveOption(option);
@@ -122,43 +156,62 @@ const Calendar = () => {
             "Topics by Participant Groups",
           ]}
         />
+
         <main className="flex-1 p-4">
           <div className="w-[55vw] rounded-lg shadow-full-border">
             <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-300">
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
             <div className="bg-white rounded-b-lg border border-gray-300 p-2 h-[calc(100vh-145px)]">
+
               <FullCalendar
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  headerToolbar={{
-                      left: "prev,next today",
-                      center: "title",
-                      right: "dayGridMonth,timeGridWeek,timeGridDay",
-                  }}
-                  height="100%"
-                  editable={true}
-                  selectable={true}
-                  select={handleDateClick}
-                  eventClick={handleEventClick} 
-                  eventDrop={handleEventDrop}
-                  events={sessions?.map(session => {
-                    const start = new Date(session.dateTime);
-                    const end = new Date(start);
-                    end.setHours(end.getHours() + 1); // Add 1 hour
-                  
-                    return {
-                      title: session.sessionTitle,
-                      start: start.toISOString(),
-                      end: end.toISOString(),
-                      backgroundColor: session.color,
-                      borderColor: session.color,
-                      extendedProps: {
-                        sessionId: session._id
-                      }
-                    };
-                  })}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay',
+                }}
+                height="100%"
+                editable={true}
+                selectable={true}
+                select={handleDateClick}
+                eventClick={handleEventClick}
+                eventDrop={handleEventDrop}
+                events={ sessions?.map(session => {
+                  const start = new Date(session.dateTime);
+                  const end = new Date(start);
+                  end.setHours(end.getHours() + 1);
+                  return {
+                    title: session.sessionTitle,
+                    start: start.toISOString(),
+                    end:   end.toISOString(),
+                    backgroundColor: session.color,
+                    borderColor:     session.color,
+                    extendedProps: {
+                      sessionId: session._id,
+                      color: session.color,
+                      presentingSpecialist: session.presentingSpecialist,
+                      supportingSpecialist1: session.supportingSpecialist1,
+                      supportingSpecialist2: session.supportingSpecialist2,
+                      participantGroup: session.participantGroup,
+                      topic: session.topic,
+                    },
+                  };
+                })}
+
+                // Build tooltip on Hover
+                eventDidMount={({ el, event }) => {
+                  tippy(el, {
+                    allowHTML: true,
+                    content: buildSessionTooltip({ event }),
+                    theme: "custom",
+                    placement: "top",
+                    arrow: true,
+                  });
+                }}
               />
+
               <SessionModal
                 isOpen={isModalOpen}
                 onClose={() => {
@@ -178,4 +231,4 @@ const Calendar = () => {
   );
 };
 
-export default Calendar;
+export default CalendarPage;

@@ -5,7 +5,7 @@ import { PrivateRoute } from "./components/authorization/PrivateRoute";
 import { Dashboard } from "./components/dashboard/Dashboard";
 import { NotFound } from "./components/page_not_found/PageNotFound";
 import Admin from "./components/admin/Admin";
-import Calendar from "./components/calendar/Calendar";
+import CalendarPage from "./components/calendar/CalendarPage";
 import { Landing } from "./components/landing/LandingPage";
 import Navbar from "./components/navbar/Navbar";
 import { ToastContainer } from "react-toastify";
@@ -44,7 +44,7 @@ export const App = () => (
               path="/calendar" 
               element={
                 <PrivateRoute>
-                    <Calendar allowedRoles={["admin", "Admin"]}/>
+                    <CalendarPage allowedRoles={["admin", "Admin"]}/>
                 </PrivateRoute>
               } 
             />

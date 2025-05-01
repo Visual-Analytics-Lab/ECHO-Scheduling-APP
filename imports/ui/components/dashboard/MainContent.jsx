@@ -1,21 +1,57 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Meteor } from "meteor/meteor";
 import { useTracker } from "meteor/react-meteor-data";
-import Navbar from "../navbar/Navbar"; // if you have a separate navbar
+
+import Navbar from "../navbar/Navbar";
+import DashboardSidebar from "./DashboardSidebar";
+import AlertsSidebar from "./AlertsSidebar";
+
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { SessionsCollection } from "../../../api/collections";
+
+import {
+  SessionsCollection,
+  SpecialistsCollection,
+  ParticipantGroupsCollection,
+  SemesterCollection,
+  SeriesCollection,
+  TopicsCollection,
+  RolesCollection
+} from "../../../api/collections";
+import { buildSessionTooltip } from "../../utils/tooltipHelpers";
+
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css'; // ensure styles are bundled
+import 'tippy.js/dist/border.css';
 import "react-toastify/dist/ReactToastify.css";
-import { Meteor } from "meteor/meteor";
-import DashboardSidebar from "./DashboardSidebar";
-import AlertsSidebar from "./AlertsSidebar";
+
 
 const MainContent = () => {
-  const sessions = useTracker(() => {
-    Meteor.subscribe("sessions");
-    return SessionsCollection.find().fetch();
-  });
+
+  // Subscribe to collections
+  useEffect(() => {
+    const subscriptions = [
+      Meteor.subscribe('sessions'),
+      // Meteor.subscribe("users"),
+      Meteor.subscribe("specialists"),
+      Meteor.subscribe("participantGroups"),
+      // Meteor.subscribe("semesters"),
+      // Meteor.subscribe("series"),
+      Meteor.subscribe("topics"),
+      // Meteor.subscribe("roles"),
+    ];
+    return () => subscriptions.forEach(sub => sub.stop());
+  }, []);
+
+  const sessions = useTracker(() => SessionsCollection.find().fetch());
+  const specialists = useTracker(() => SpecialistsCollection.find().fetch());
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  // const semesters = useTracker(() => SemesterCollection.find().fetch());
+  // const series = useTracker(() => SeriesCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
+  // const roles = useTracker(() => RolesCollection.find().fetch());
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 shadow-full-border">
@@ -40,20 +76,38 @@ const MainContent = () => {
                   right: "dayGridMonth,timeGridWeek,timeGridDay",
                 }}
                 height="100%"
-                events={
-                  sessions?.map((session) => ({
+                events={ sessions?.map(session => {
+                  const start = new Date(session.dateTime);
+                  const end = new Date(start);
+                  end.setHours(end.getHours() + 1);
+                  return {
                     title: session.sessionTitle,
-                    start: new Date(session.dateTime).toISOString(),
-                    end: session.presentationsDue
-                      ? new Date(session.presentationsDue).toISOString()
-                      : null,
+                    start: start.toISOString(),
+                    end:   end.toISOString(),
                     backgroundColor: session.color,
-                    borderColor: session.color,
+                    borderColor:     session.color,
                     extendedProps: {
                       sessionId: session._id,
+                      color: session.color,
+                      presentingSpecialist: session.presentingSpecialist,
+                      supportingSpecialist1: session.supportingSpecialist1,
+                      supportingSpecialist2: session.supportingSpecialist2,
+                      participantGroup: session.participantGroup,
+                      topic: session.topic,
                     },
-                  })) || []
-                }
+                  };
+                })}
+                  
+                // Build tooltip on Hover
+                eventDidMount={({ el, event }) => {
+                  tippy(el, {
+                    allowHTML: true,
+                    content: buildSessionTooltip({ event }),
+                    theme: "custom",
+                    placement: "top",
+                    arrow: true,
+                  });
+                }}
               />
             </div>
           </div>
