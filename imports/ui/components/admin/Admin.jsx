@@ -26,6 +26,7 @@ import "react-toastify/dist/ReactToastify.css";
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("Users");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [rowData, setRowData] = useState({});
 
   // Subscribe to collections
@@ -81,6 +82,7 @@ const Admin = () => {
   const openEditPopUp = (data) => {
     setRowData(data);
     setIsPopupOpen(true);
+    setIsReadOnly(false);
   }  
 
   const handleDelete = async (id) => {
@@ -102,6 +104,11 @@ const Admin = () => {
     return activeSection && ['Series'].includes(activeSection) 
       ? `${start} ${activeSection}` 
       : `${start} ${activeSection.slice(0, -1)}`
+  }
+  const handleShow = (data) => {
+    setRowData(data);
+    setIsReadOnly(true);
+    setIsPopupOpen(true);
   }
 
   return (
@@ -125,6 +132,7 @@ const Admin = () => {
             fields={currentSection.tableFields() || []}
             onEdit={openEditPopUp}
             onDelete={handleDelete}
+            onShow = {handleShow}
           />
 
           <PopupForm
@@ -137,6 +145,7 @@ const Admin = () => {
             fieldData={currentSection.fieldContext}
             title={getPopUpTitle()}
             alertSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
+            isReadOnly = {isReadOnly}
           />
         </main>
       </div>

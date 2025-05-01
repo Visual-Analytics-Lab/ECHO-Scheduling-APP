@@ -14,7 +14,7 @@ import { MdSearch, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md
 import { createColumnHelper } from "@tanstack/react-table";
 
 
-const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
+const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [error, setError] = useState("");
@@ -184,6 +184,12 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
       setIsSubmitting(false);
     }
   };
+  const handleRowClick = (item, e) => {
+    if (e.target.closest('button') || e.target.tagName == 'BUTTON') {
+      return;
+    }
+    onShow(item);
+  }
 
   return (
     <>
@@ -236,7 +242,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
 
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b">
+              <tr key={row.id} className="border-b" onClick={(e) => handleRowClick(row.original, e)}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="p-3">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -244,10 +250,15 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete }) => {
                 ))}
                 <td className="p-3 w-[1%]">
                   <div className="flex space-x-2">
-                    <TealButton  onClick={() => onEdit(row.original)}>
+                    <TealButton  onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(row.original);}}>
                       Edit
                     </TealButton>
-                    <RedButton onClick={() => handleDeleteClick(row.original)}>
+                    <RedButton onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(row.original);
+                      }}>
                       Delete
                     </RedButton>
                   </div>

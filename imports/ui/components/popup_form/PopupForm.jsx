@@ -17,10 +17,9 @@ const PopupForm = ({
   fieldData,
   title,
   alertSuccess,
-
+  isReadOnly,
 }) => {
   const [errors, setErrors] = useState({});
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -53,6 +52,13 @@ const PopupForm = ({
     // Extracts local YYYY-MM-DD and HH:MM
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
+  const formatDisplayDateTime  = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    
+    return date.toLocaleString();
+  };
 
   const getOptionLabels = (field) => {
     if (field.name) return
@@ -73,6 +79,8 @@ const PopupForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if(isReadOnly) return;
     if (!validateForm()) return; // Prevent submission if validation fails
   
     // Set method to update if _id already exists, otherwise insert
@@ -90,10 +98,26 @@ const PopupForm = ({
     });
   };
   const handleClose = (e) => {
-    if (e) e.preventDefault()
+    if (e) e.preventDefault();
     setFormData({});
     setErrors({});
     setIsOpen(false);
+  }
+  const getDisplayValue = (fieldName, value) => {
+    if(!value) return 'N/A';
+
+    const options = fieldData[fieldName] || [];
+    if (Array.isArray(value)) {
+      if (value.length === 0) return 'None';
+      
+      return value.map(val => {
+        const option = options.find(opt => opt._id === val);
+        if (!option) return val;
+        return option.firstName && option.lastName 
+          ? `${option.firstName} ${option.lastName}` 
+          : option.title || option.name;
+      }).join(', ');
+    }
   }
 
   if (!isOpen) return null;
@@ -102,7 +126,7 @@ const PopupForm = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">{title}</h2>
+          <h2 className="text-xl font-bold">{isReadOnly? `View ${title}`: title}</h2>
           <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
@@ -126,6 +150,57 @@ const PopupForm = ({
               })) || [];
 
               let inputElement;
+              if(isReadOnly) {
+                switch (inputType) {
+                  case "multiSelect":
+                  case "select":
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50">
+                        {getDisplayValue(name, formData[name])}
+                      </div>
+                    );
+                    break;
+                  case "color":
+                    inputElement = (
+                      <div className="flex items-center">
+                        <div 
+                          className="w-8 h-8 rounded-lg border border-gray-300" 
+                          style={{ backgroundColor: formData[name] || '#FFFFFF' }}
+                        />
+                        <span className="text-gray-800 ml-2">{formData[name] || 'N/A'}</span>
+                      </div>
+                    );
+                    break;
+                  case "dateTime":
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50">
+                        {formatDisplayDateTime(formData[name])}
+                      </div>
+                    );
+                    break;
+                  case "textArea":
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {formData[name] || 'N/A'}
+                      </div>
+                    );
+                    break;
+                  case "number":
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50">
+                        {formData[name] || 'N/A'}
+                      </div>
+                    );
+                    break;
+                  default:
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50">
+                        {formData[name] || 'N/A'}
+                      </div>
+                    );
+                    break;
+                }
+              } else {
               switch (inputType) {
                 case "multiSelect":
                   inputElement = (
@@ -258,6 +333,7 @@ const PopupForm = ({
                   );
                   break;
               }
+            }
 
               let displayClass = '';
               if (['color'].includes(inputType)) displayClass = "flex items-center gap-5 mt-4"
@@ -278,8 +354,8 @@ const PopupForm = ({
           </div>
 
           <div className="flex justify-end gap-2 mt-6">
-            <GrayButton onClick={handleClose}>Cancel</GrayButton>
-            <GreenButton type="submit">Save</GreenButton>
+            <GrayButton onClick={handleClose}>{isReadOnly? 'Close': 'Cancel'}</GrayButton>
+            {!isReadOnly && <GreenButton type="submit">Save</GreenButton>}
           </div>
         </form>
       </div>
