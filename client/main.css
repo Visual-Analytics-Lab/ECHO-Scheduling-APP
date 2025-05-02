@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+@import 'tippy.js/dist/border.css';
 
 /* Import Tailwind's base, components, and utilities */
 @tailwind base;
@@ -10,6 +11,19 @@
 * {
   font-family: 'Montserrat', sans-serif;
 }
+
+
+/* Custom Tippy.js tooltip style */
+.tippy-box[data-theme~='custom'] {
+  background: white;
+  color: black;
+  border: 1px solid #ccc;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
+}
+.tippy-box[data-theme~='custom'] > .tippy-arrow::before {
+  color: white;
+}
+
 
 /* .custom-dropdown .p-dropdown {
   @apply w-full shadow border border-gray-400 rounded text-gray-700 leading-tight;
