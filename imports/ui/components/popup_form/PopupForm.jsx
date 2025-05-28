@@ -61,7 +61,7 @@ const PopupForm = ({
   };
 
   const getOptionLabels = (field) => {
-    if (field.name) return
+    if (field.name) return;
   }
 
   const validateForm = () => {

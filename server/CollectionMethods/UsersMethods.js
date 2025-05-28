@@ -10,7 +10,8 @@ Meteor.methods({
             username: String,
             email: String,
             password: String,
-            role_id: String
+            role_id: String,
+            specialist_id: [String]
         }));
         
         try {
@@ -20,6 +21,7 @@ Meteor.methods({
             email: data.email,
             password: data.password,
             role_id: data.role_id,
+            specialist_id: [String],
             createdAt: new Date(),
           });
         } 
@@ -46,6 +48,7 @@ Meteor.methods({
             username: String,
             email: String,
             role_id: String,
+            specialist_id: [String],
 
         }));
         
@@ -53,7 +56,8 @@ Meteor.methods({
             $set: {
                 username: data.username,
                 'emails.0.address': data.email,
-                role_id: data.role_id
+                role_id: data.role_id,
+                specialist_id: data.specialist_id
 
             }
         });
