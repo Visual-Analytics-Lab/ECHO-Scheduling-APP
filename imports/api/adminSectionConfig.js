@@ -23,14 +23,16 @@ const getSectionConfig = (collections, colData, rowData) => ({
       const fields = [
         { name: "username", label: "Username", type: "text" },
         { name: "email",    label: "Email",    type: "email" },
+        { name: "specialist_id",    label: "Specialist",    type: "multiSelect" },
         { name: "role_id",  label: "Role",     parentCollection: collections.roles },
-      ];
+      ]
       return fields;
     },
     popupFields: () => {
       const fields = [
         { name: "username", label: "Username", required: true },
         { name: "email",    label: "Email",    required: true },
+        { name: "specialist_id", label: "Specialist", required: true, inputType: "multiSelect" },
       ];
       // Show roles as long as user isn't editting their own
       if (Meteor.user() && rowData._id !== Meteor.user()._id)
@@ -40,7 +42,10 @@ const getSectionConfig = (collections, colData, rowData) => ({
         fields.push({ name: "password", label: "Password", required: true });
       return fields;
     },
-    fieldContext: { role_id: colData.roles },
+    fieldContext: { 
+      role_id: colData.roles,
+      specialist_id: colData.specialists
+    },
   },
 
   Roles: {
