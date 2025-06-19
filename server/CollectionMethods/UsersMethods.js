@@ -21,7 +21,7 @@ Meteor.methods({
             email: data.email,
             password: data.password,
             role_id: data.role_id,
-            specialist_id: [String],
+            specialist_id: data.specialist_id,
             createdAt: new Date(),
           });
         } 
