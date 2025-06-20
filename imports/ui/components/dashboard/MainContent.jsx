@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Meteor } from "meteor/meteor";
 import { useTracker } from "meteor/react-meteor-data";
 
@@ -27,8 +27,10 @@ import 'tippy.js/dist/tippy.css'; // ensure styles are bundled
 import 'tippy.js/dist/border.css';
 import "react-toastify/dist/ReactToastify.css";
 
-
 const MainContent = () => {
+  // State to track the currently viewed week/date
+  const [currentViewDate, setCurrentViewDate] = useState(new Date());
+  const calendarRef = useRef(null);
 
   // Subscribe to collections
   useEffect(() => {
@@ -53,6 +55,12 @@ const MainContent = () => {
   const topics = useTracker(() => TopicsCollection.find().fetch());
   // const roles = useTracker(() => RolesCollection.find().fetch());
 
+  // Handle calendar view changes (when user navigates to different weeks/dates)
+  const handleDatesSet = (arg) => {
+    // arg.start is the start date of the current view
+    setCurrentViewDate(new Date(arg.start));
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 shadow-full-border">
 
@@ -60,7 +68,7 @@ const MainContent = () => {
         <h1 className="text-3xl font-bold text-[#721D35]">Dashboard</h1>
       </header>
       <div className="flex flex-1">
-        <DashboardSidebar />
+        <DashboardSidebar selectedDate={currentViewDate} />
         <main className="flex-1 p-4">
           <div className="bg-white border border-gray-300 rounded-lg shadow-full-border">
             <div className="text-center text-black py-3 px-4 rounded-t-lg">
@@ -68,6 +76,7 @@ const MainContent = () => {
             </div>
             <div className="p-4 h-[calc(100vh-180px)] overflow-y-auto">
               <FullCalendar
+                ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
                 headerToolbar={{
@@ -108,11 +117,14 @@ const MainContent = () => {
                     arrow: true,
                   });
                 }}
+
+                // Track when the user navigates to different dates/weeks
+                datesSet={handleDatesSet}
               />
             </div>
           </div>
         </main>
-        <AlertsSidebar />
+        <AlertsSidebar selectedDate={currentViewDate} />
       </div>
     </div>
   );
