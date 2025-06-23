@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
 
       // Subscribe for access to custom fields like role
       const userSub = Meteor.subscribe('currentUser');
+      const specialistSub = Meteor.subscribe('specialists');
+      const sessionSub = Meteor.subscribe('sessions');
       const tracker = Tracker.autorun(() => {
         const meteorUser = Meteor.user();
         const loggingIn = Meteor.loggingIn();
@@ -37,6 +39,8 @@ export const AuthProvider = ({ children }) => {
       return () => {
         tracker.stop();
         userSub.stop();
+        specialistSub.stop();
+        sessionSub.stop();
       };
     }, []);
 

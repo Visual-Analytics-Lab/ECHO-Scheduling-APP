@@ -38,6 +38,13 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           <nav className="flex space-x-4">
             <NavLink
+              to="/mysessions"
+              className={navLinkClass}
+            >
+              My Sessions
+            </NavLink>
+
+            <NavLink
               to="/dashboard"
               className={navLinkClass}
             >

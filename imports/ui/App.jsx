@@ -8,6 +8,7 @@ import Admin from "./components/admin/Admin";
 import CalendarPage from "./components/calendar/CalendarPage";
 import { Landing } from "./components/landing/LandingPage";
 import Navbar from "./components/navbar/Navbar";
+import { MySessions } from "./components/my_sessions/MySessions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -45,6 +46,15 @@ export const App = () => (
               element={
                 <PrivateRoute>
                     <CalendarPage allowedRoles={["admin", "Admin"]}/>
+                </PrivateRoute>
+              } 
+            />
+
+            <Route 
+              path="/mysessions" 
+              element={
+                <PrivateRoute>
+                    <MySessions />
                 </PrivateRoute>
               } 
             />

@@ -30,7 +30,8 @@ Meteor.publish('currentUser', function () {
       username: 1,
       emails: 1,
       createdAt: 1,
-      role_id: 1,  // Custom field
+      role_id: 1, 
+      specialist_id: 1,
     }
   });
 });
