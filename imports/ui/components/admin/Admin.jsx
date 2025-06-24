@@ -28,6 +28,7 @@ const Admin = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [rowData, setRowData] = useState({});
+  const [popupSectionOverride, setPopupSectionOverride] = useState(null);
 
   // Subscribe to collections
   useEffect(() => {
@@ -42,6 +43,28 @@ const Admin = () => {
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
+
+  useEffect(() => {
+  const handleOpenAddUser = (e) => {
+    const userData = e.detail;
+
+    setRowData({
+      email: userData.email?.trim().toLowerCase() || '',
+    });
+
+    setPopupSectionOverride("Users");
+    setIsReadOnly(false);
+    setIsPopupOpen(true);
+  };
+
+
+  window.addEventListener("open-add-user-popup", handleOpenAddUser);
+  
+  return () => {
+    window.removeEventListener("open-add-user-popup", handleOpenAddUser);
+  };
+}, []);
+
 
   // Fetch from collections after subscribing
   const users = useTracker(() => 
@@ -74,7 +97,7 @@ const Admin = () => {
 
   // Fetch current section config dynamically
   const sectionConfig = getSectionConfig(collections, colData, rowData);
-  const currentSection = sectionConfig[activeSection] || {};
+  const currentSection = sectionConfig[popupSectionOverride || activeSection] || {};
 
   // Return "(collectionName).(operation)""
   const getMethodName = (operation) => `${currentSection.collectionName}.${operation}`;
@@ -137,15 +160,23 @@ const Admin = () => {
 
           <PopupForm
             isOpen={isPopupOpen}
-            setIsOpen={setIsPopupOpen}
+            setIsOpen={(val) => {
+              if (!val) {
+                setPopupSectionOverride(null);
+              }
+              setIsPopupOpen(val);
+            }}
             collection={currentSection.collectionName || ""}
             formData={rowData}
             setFormData={setRowData}
             fields={currentSection.popupFields() || []}
             fieldData={currentSection.fieldContext}
             title={getPopUpTitle()}
-            alertSuccess={(action) => { toast.success(`Item successfully ${action}!`); }}
-            isReadOnly = {isReadOnly}
+            alertSuccess={(action) => {
+              toast.success(`Item successfully ${action}!`);
+              setPopupSectionOverride(null);
+            }}
+            isReadOnly={isReadOnly}
           />
         </main>
       </div>
