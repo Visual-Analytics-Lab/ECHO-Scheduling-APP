@@ -79,22 +79,25 @@ const CalendarPage = () => {
   // Sort filtered sessions by date
   const sortedFilteredSessions = [...filteredSessions].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-  // Get specialist name by ID
-  const getSpecialistName = (specialistId) => {
-    const specialist = specialists.find(s => s._id === specialistId);
-    return specialist ? `${specialist.firstName} ${specialist.lastName}` : 'Unknown';
-  };
-
-  // Get topic name by ID
+  // Get topic name by ID - with better error handling
   const getTopicName = (topicId) => {
+    if (!topicId) return 'No topic';
     const topic = topics.find(t => t._id === topicId);
-    return topic ? topic.name : 'Unknown';
+    return topic ? topic.title : `Topic ID: ${topicId}`;
   };
 
-  // Get participant group name by ID
+  // Get participant group name by ID - with better error handling
   const getParticipantGroupName = (groupId) => {
+    if (!groupId) return 'No group';
     const group = participantGroups.find(g => g._id === groupId);
-    return group ? group.name : 'Unknown';
+    return group ? group.name : `Group ID: ${groupId}`;
+  };
+
+  // Get specialist name by ID - with better error handling
+  const getSpecialistName = (specialistId) => {
+    if (!specialistId) return 'No specialist';
+    const specialist = specialists.find(s => s._id === specialistId);
+    return specialist ? `${specialist.firstName} ${specialist.lastName}` : `Specialist ID: ${specialistId}`;
   };
 
   // Generate specialist schedule for printing/export
@@ -155,7 +158,7 @@ const CalendarPage = () => {
                   <tr>
                     <td>${formattedDate} at ${formattedTime}</td>
                     <td>${session.sessionTitle}</td>
-                    <td>${getTopicName(session.topic)}</td>
+                                                    <td>${getTopicName(session.topic)}</td>
                     <td>${getParticipantGroupName(session.participantGroup)}</td>
                     <td class="role">${role}</td>
                   </tr>
@@ -386,7 +389,7 @@ const CalendarPage = () => {
                       <option value="">All Topics</option>
                       {topics.map(topic => (
                         <option key={topic._id} value={topic._id}>
-                          {topic.name}
+                          {topic.title}
                         </option>
                       ))}
                     </select>
@@ -440,6 +443,10 @@ const CalendarPage = () => {
               <div className="p-4 h-[calc(100vh-400px)] overflow-y-auto">
                 <div className="mb-3 text-sm text-gray-600">
                   Showing {sortedFilteredSessions.length} of {sessions.length} sessions
+                  {/* Debug info - remove this later */}
+                  <div className="text-xs text-gray-400 mt-1">
+                    Topics loaded: {topics.length} | Specialists: {specialists.length} | Groups: {participantGroups.length}
+                  </div>
                 </div>
                 
                 <div className="space-y-3">
@@ -464,9 +471,9 @@ const CalendarPage = () => {
                             </h3>
                             <div className="text-sm text-gray-600 space-y-1">
                               <div>📅 {formattedDate} at {formattedTime}</div>
-                              <div>📚 {getTopicName(session.topic)}</div>
-                              <div>👥 {getParticipantGroupName(session.participantGroup)}</div>
-                              <div>🎯 {getSpecialistName(session.presentingSpecialist)}</div>
+                              <div>📚 {session.topic ? getTopicName(session.topic) : 'No topic assigned'}</div>
+                              <div>👥 {session.participantGroup ? getParticipantGroupName(session.participantGroup) : 'No group assigned'}</div>
+                              <div>🎯 {session.presentingSpecialist ? getSpecialistName(session.presentingSpecialist) : 'No specialist assigned'}</div>
                             </div>
                           </div>
                           <div
