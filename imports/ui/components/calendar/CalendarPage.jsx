@@ -79,6 +79,13 @@ const CalendarPage = () => {
   // Sort filtered sessions by date
   const sortedFilteredSessions = [...filteredSessions].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
+  // Get specialist name by ID - with better error handling
+  const getSpecialistName = (specialistId) => {
+    if (!specialistId) return 'No specialist';
+    const specialist = specialists.find(s => s._id === specialistId);
+    return specialist ? `${specialist.firstName} ${specialist.lastName}` : `Specialist ID: ${specialistId}`;
+  };
+
   // Get topic name by ID - with better error handling
   const getTopicName = (topicId) => {
     if (!topicId) return 'No topic';
@@ -91,13 +98,6 @@ const CalendarPage = () => {
     if (!groupId) return 'No group';
     const group = participantGroups.find(g => g._id === groupId);
     return group ? group.name : `Group ID: ${groupId}`;
-  };
-
-  // Get specialist name by ID - with better error handling
-  const getSpecialistName = (specialistId) => {
-    if (!specialistId) return 'No specialist';
-    const specialist = specialists.find(s => s._id === specialistId);
-    return specialist ? `${specialist.firstName} ${specialist.lastName}` : `Specialist ID: ${specialistId}`;
   };
 
   // Generate specialist schedule for printing/export
@@ -148,6 +148,7 @@ const CalendarPage = () => {
                 const date = new Date(session.dateTime);
                 const formattedDate = date.toLocaleDateString();
                 const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const formattedDateTime = `${formattedDate} at ${formattedTime}`;
                 
                 let role = '';
                 if (session.presentingSpecialist === selectedSpecialist) role = 'Presenting';
@@ -156,9 +157,9 @@ const CalendarPage = () => {
                 
                 return `
                   <tr>
-                    <td>${formattedDate} at ${formattedTime}</td>
+                    <td>${formattedDateTime}</td>
                     <td>${session.sessionTitle}</td>
-                                                    <td>${getTopicName(session.topic)}</td>
+                    <td>${getTopicName(session.topic)}</td>
                     <td>${getParticipantGroupName(session.participantGroup)}</td>
                     <td class="role">${role}</td>
                   </tr>
@@ -177,6 +178,72 @@ const CalendarPage = () => {
   const handleSidebarClick = (option) => {
     setActiveOption(option);
     handlePrint(option);
+  };
+
+  const handlePrint = (option) => {
+    console.log(`Printing option: ${option}`);
+    
+    // For semester-based reports, we need all data, not just current week
+    if (option.includes("Semester") || option.includes("by Semester")) {
+      console.log("Semester-based report detected, fetching all data...");
+      // Pass null dates to get all sessions for the semester
+      Meteor.call("exportExcelByOption", option, null, null, (error, base64) => {
+        if (error) {
+          console.error("Error exporting Excel:", error);
+          toast.error(`Failed to export ${option}: ${error.reason || error.message}`);
+        } else {
+          console.log("Export successful, downloading file...");
+          downloadExcelFile(base64, option);
+        }
+      });
+    } else {
+      // For weekly reports, use date range
+      console.log("Weekly-based report detected, using date range...");
+      const today = new Date();
+      const firstDayOfWeek = new Date(today);
+      firstDayOfWeek.setDate(today.getDate() - today.getDay());
+      firstDayOfWeek.setHours(0, 0, 0, 0);
+      const lastDayOfWeek = new Date(today);
+      lastDayOfWeek.setDate(today.getDate() - today.getDay() + 6);
+      lastDayOfWeek.setHours(23, 59, 59, 999);
+      
+      Meteor.call("exportExcelByOption", option, firstDayOfWeek, lastDayOfWeek, (error, base64) => {
+        if (error) {
+          console.error("Error exporting Excel:", error);
+          toast.error(`Failed to export ${option}: ${error.reason || error.message}`);
+        } else {
+          downloadExcelFile(base64, option);
+        }
+      });
+    }
+  };
+
+  const downloadExcelFile = (base64, filename) => {
+    try {
+      console.log(`Downloading file: ${filename}.xlsx`);
+      // Convert the base64 string back to a binary ArrayBuffer
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filename}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`${filename}.xlsx downloaded successfully`);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      toast.error("Failed to download file");
+    }
   };
  
   // When clicking to create new event, populate date field with selected
@@ -219,10 +286,6 @@ const CalendarPage = () => {
     session.dateTime = updatedDateTime
     handleSubmit(session, sessionId);
   };
-
-  const handlePrint = (option) => {
-    printExcel(option);
-  };  
   
   const handleSubmit = (formData, sessionId) => {
     if (sessionId) {
