@@ -33,6 +33,12 @@ const CalendarPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
+  
+  // New filtering states
+  const [selectedSpecialist, setSelectedSpecialist] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedParticipantGroup, setSelectedParticipantGroup] = useState('');
+  const [showSessionsList, setShowSessionsList] = useState(true);
 
   // Subscribe to collections
   useEffect(() => {
@@ -57,6 +63,113 @@ const CalendarPage = () => {
   const topics = useTracker(() => TopicsCollection.find().fetch());
   // const roles = useTracker(() => RolesCollection.find().fetch());
 
+  // Filter sessions based on selected filters
+  const filteredSessions = sessions.filter(session => {
+    const matchesSpecialist = !selectedSpecialist || 
+      session.presentingSpecialist === selectedSpecialist ||
+      session.supportingSpecialist1 === selectedSpecialist ||
+      session.supportingSpecialist2 === selectedSpecialist;
+    
+    const matchesTopic = !selectedTopic || session.topic === selectedTopic;
+    const matchesParticipantGroup = !selectedParticipantGroup || session.participantGroup === selectedParticipantGroup;
+    
+    return matchesSpecialist && matchesTopic && matchesParticipantGroup;
+  });
+
+  // Sort filtered sessions by date
+  const sortedFilteredSessions = [...filteredSessions].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+  // Get specialist name by ID
+  const getSpecialistName = (specialistId) => {
+    const specialist = specialists.find(s => s._id === specialistId);
+    return specialist ? `${specialist.firstName} ${specialist.lastName}` : 'Unknown';
+  };
+
+  // Get topic name by ID
+  const getTopicName = (topicId) => {
+    const topic = topics.find(t => t._id === topicId);
+    return topic ? topic.name : 'Unknown';
+  };
+
+  // Get participant group name by ID
+  const getParticipantGroupName = (groupId) => {
+    const group = participantGroups.find(g => g._id === groupId);
+    return group ? group.name : 'Unknown';
+  };
+
+  // Generate specialist schedule for printing/export
+  const generateSpecialistSchedule = () => {
+    if (!selectedSpecialist) {
+      toast.error('Please select a specialist first');
+      return;
+    }
+
+    const specialistName = getSpecialistName(selectedSpecialist);
+    const specialistSessions = filteredSessions.filter(session => 
+      session.presentingSpecialist === selectedSpecialist ||
+      session.supportingSpecialist1 === selectedSpecialist ||
+      session.supportingSpecialist2 === selectedSpecialist
+    ).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    // Create printable schedule
+    const scheduleWindow = window.open('', '_blank');
+    const scheduleHTML = `
+      <html>
+        <head>
+          <title>Schedule for ${specialistName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .role { font-weight: bold; color: #666; }
+          </style>
+        </head>
+        <body>
+          <h1>Schedule for ${specialistName}</h1>
+          <p><strong>Total Sessions:</strong> ${specialistSessions.length}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Session Title</th>
+                <th>Topic</th>
+                <th>Participant Group</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${specialistSessions.map(session => {
+                const date = new Date(session.dateTime);
+                const formattedDate = date.toLocaleDateString();
+                const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                let role = '';
+                if (session.presentingSpecialist === selectedSpecialist) role = 'Presenting';
+                else if (session.supportingSpecialist1 === selectedSpecialist) role = 'Supporting 1';
+                else if (session.supportingSpecialist2 === selectedSpecialist) role = 'Supporting 2';
+                
+                return `
+                  <tr>
+                    <td>${formattedDate} at ${formattedTime}</td>
+                    <td>${session.sessionTitle}</td>
+                    <td>${getTopicName(session.topic)}</td>
+                    <td>${getParticipantGroupName(session.participantGroup)}</td>
+                    <td class="role">${role}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    
+    scheduleWindow.document.write(scheduleHTML);
+    scheduleWindow.document.close();
+  };
 
   const handleSidebarClick = (option) => {
     setActiveOption(option);
@@ -108,7 +221,6 @@ const CalendarPage = () => {
     printExcel(option);
   };  
   
-  
   const handleSubmit = (formData, sessionId) => {
     if (sessionId) {
       // Update existing session
@@ -130,6 +242,7 @@ const CalendarPage = () => {
       });
     }
   };
+  
   const handleDelete = (sessionId) => {
     Meteor.call('sessions.remove', sessionId, (error) => {
       if (error) {
@@ -157,8 +270,9 @@ const CalendarPage = () => {
           ]}
         />
 
-        <main className="flex-1 p-4">
-          <div className="w-[55vw] rounded-lg shadow-full-border">
+        <main className="flex-1 p-4 flex gap-4">
+          {/* Calendar Section */}
+          <div className={`${showSessionsList ? 'w-3/5' : 'w-full'} rounded-lg shadow-full-border`}>
             <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-300">
                 <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
@@ -178,7 +292,7 @@ const CalendarPage = () => {
                 select={handleDateClick}
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
-                events={ sessions?.map(session => {
+                events={filteredSessions?.map(session => {
                   const start = new Date(session.dateTime);
                   const end = new Date(start);
                   end.setHours(end.getHours() + 1);
@@ -225,6 +339,164 @@ const CalendarPage = () => {
               />
             </div>
           </div>
+
+          {/* Sessions List Section */}
+          {showSessionsList && (
+            <div className="w-2/5 bg-white rounded-lg shadow-full-border border border-gray-300">
+              <div className="bg-white rounded-t-lg border-b border-gray-300 p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Sessions Filter & List</h2>
+                  <button
+                    onClick={() => setShowSessionsList(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                {/* Filters */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Specialist
+                    </label>
+                    <select
+                      value={selectedSpecialist}
+                      onChange={(e) => setSelectedSpecialist(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Specialists</option>
+                      {specialists.map(specialist => (
+                        <option key={specialist._id} value={specialist._id}>
+                          {specialist.firstName} {specialist.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Topic
+                    </label>
+                    <select
+                      value={selectedTopic}
+                      onChange={(e) => setSelectedTopic(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Topics</option>
+                      {topics.map(topic => (
+                        <option key={topic._id} value={topic._id}>
+                          {topic.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Participant Group
+                    </label>
+                    <select
+                      value={selectedParticipantGroup}
+                      onChange={(e) => setSelectedParticipantGroup(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Groups</option>
+                      {participantGroups.map(group => (
+                        <option key={group._id} value={group._id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedSpecialist('');
+                        setSelectedTopic('');
+                        setSelectedParticipantGroup('');
+                      }}
+                      className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                    <button
+                      onClick={generateSpecialistSchedule}
+                      disabled={!selectedSpecialist}
+                      className={`flex-1 px-3 py-2 rounded-md transition-colors ${
+                        selectedSpecialist 
+                          ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Print Schedule
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sessions List */}
+              <div className="p-4 h-[calc(100vh-400px)] overflow-y-auto">
+                <div className="mb-3 text-sm text-gray-600">
+                  Showing {sortedFilteredSessions.length} of {sessions.length} sessions
+                </div>
+                
+                <div className="space-y-3">
+                  {sortedFilteredSessions.map(session => {
+                    const date = new Date(session.dateTime);
+                    const formattedDate = date.toLocaleDateString();
+                    const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    return (
+                      <div
+                        key={session._id}
+                        className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setSelectedSession(session);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">
+                              {session.sessionTitle}
+                            </h3>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>📅 {formattedDate} at {formattedTime}</div>
+                              <div>📚 {getTopicName(session.topic)}</div>
+                              <div>👥 {getParticipantGroupName(session.participantGroup)}</div>
+                              <div>🎯 {getSpecialistName(session.presentingSpecialist)}</div>
+                            </div>
+                          </div>
+                          <div
+                            className="w-4 h-4 rounded-full ml-2 mt-1"
+                            style={{ backgroundColor: session.color }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {sortedFilteredSessions.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    No sessions match the selected filters
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Toggle button when sessions list is hidden */}
+          {!showSessionsList && (
+            <button
+              onClick={() => setShowSessionsList(true)}
+              className="fixed right-4 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white p-3 rounded-l-lg shadow-lg hover:bg-blue-600 transition-colors"
+            >
+              📋
+            </button>
+          )}
         </main>
       </div>
     </div>
