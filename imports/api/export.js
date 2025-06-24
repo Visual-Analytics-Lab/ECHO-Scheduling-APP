@@ -1,20 +1,34 @@
 import { Meteor } from 'meteor/meteor';
-import { check } from 'meteor/check';
+import { check, Match } from 'meteor/check';
 import ExcelJS from 'exceljs';
 import { SessionsCollection } from './collections';
 
 Meteor.methods({
   async exportExcelByOption(option, fromDate, toDate) {
     check(option, String);
-    check(fromDate, Date);
-    check(toDate, Date);
+    // Allow null dates for semester reports
+    check(fromDate, Match.OneOf(Date, null));
+    check(toDate, Match.OneOf(Date, null));
 
-    const startStr = new Date(fromDate.toISOString().slice(0, 16));
-    const endStr = new Date(toDate.toISOString().slice(0, 16));
+    console.log(`Export request: ${option}`);
+    console.log(`Date range: ${fromDate} to ${toDate}`);
+
+    // Build the match criteria based on whether dates are provided
+    let matchCriteria = {};
+    
+    // Only apply date filtering if both dates are provided
+    if (fromDate && toDate) {
+      const startStr = new Date(fromDate.toISOString().slice(0, 16));
+      const endStr = new Date(toDate.toISOString().slice(0, 16));
+      matchCriteria.dateTime = { $gte: startStr, $lte: endStr };
+      console.log(`Filtering by date range: ${startStr} to ${endStr}`);
+    } else {
+      console.log('No date filtering applied - getting all sessions');
+    }
 
     const data = await SessionsCollection.rawCollection().aggregate([
       { 
-        $match: { dateTime: { $gte: startStr, $lte: endStr } } 
+        $match: matchCriteria
       },
       {
         $lookup: {
@@ -88,7 +102,6 @@ Meteor.methods({
           as: "seriesDetails"
         }
       },
-      // TODO: Fix this
       {
         $project: {
           sessionTitle: 1,
@@ -127,37 +140,65 @@ Meteor.methods({
           semester: { $arrayElemAt: ["$semesterDetails.title", 0] },
           series: { $arrayElemAt: ["$seriesDetails.title", 0] }
         }
+      },
+      {
+        $sort: { dateTime: 1 } // Sort by date/time
       }      
     ]).toArray();
 
+    console.log(`Found ${data.length} sessions`);
+
     if (!data.length) {
-      throw new Meteor.Error('no-data', 'No data for the specified dates');
+      throw new Meteor.Error('no-data', 'No data found for the specified criteria');
     }
+
+    // Helper function to format date/time properly
+    const formatDateTime = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      return d.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
 
     const workbook = new ExcelJS.Workbook();
 
     // A helper to add a standard worksheet of session details
     const addSessionRows = (worksheet, sessions) => {
       worksheet.columns = [
-        { header: "Session Title", key: "sessionTitle", width: 20 },
+        { header: "Session Title", key: "sessionTitle", width: 25 },
         { header: "Case Presenter", key: "casePresenter", width: 20 },
         { header: "Lead Facilitator", key: "facilitator", width: 20 },
         { header: "Supporting Facilitator", key: "supportingFacilitator", width: 20 },
-        { header: "Presenting Specialist", key: "presentingSpecialist", width: 20 },
-        { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
-        { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 },
+        { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
+        { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
+        { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 25 },
         { header: "Participant Group", key: "participantGroup", width: 20 },
-        { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
-        { header: "Presentations Due", key: "presentationsDue", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
-        { header: "New Material", key: "newMaterial", width: 20 },
-        { header: "Color", key: "color", width: 20 },
+{ header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+        { header: "Presentations Due", key: "presentationsDue", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+        { header: "New Material", key: "newMaterial", width: 15 },
+        { header: "Color", key: "color", width: 15 },
         { header: "Topic", key: "topic", width: 20 },
         { header: "Notes", key: "notes", width: 30 },
-        { header: "Semester", key: "semester", width: 30 },
-        { header: "Series", key: "series", width: 30 },
-        { header: "Created At", key: "createdAt", width: 20 , style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }}
+        { header: "Semester", key: "semester", width: 20 },
+        { header: "Series", key: "series", width: 20 },
+        { header: "Created At", key: "createdAt", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }}
       ];
-      sessions.forEach(session => worksheet.addRow(session));
+      
+      sessions.forEach(session => {
+        const formattedSession = {
+          ...session,
+          dateTime: formatDateTime(session.dateTime),
+          presentationsDue: formatDateTime(session.presentationsDue),
+          createdAt: formatDateTime(session.createdAt)
+        };
+        worksheet.addRow(formattedSession);
+      });
     };
 
     // Switch based on the chosen option
@@ -176,7 +217,7 @@ Meteor.methods({
           groups[group].push(session);
         });
         Object.keys(groups).forEach(group => {
-          const ws = workbook.addWorksheet(`Group ${group}`);
+          const ws = workbook.addWorksheet(`Group ${group}`.substring(0, 31)); // Excel sheet name limit
           addSessionRows(ws, groups[group]);
         });
         break;
@@ -190,33 +231,37 @@ Meteor.methods({
           groups[semester].push(session);
         });
         Object.keys(groups).forEach(semester => {
-          const ws = workbook.addWorksheet(`Semester ${semester}`);
+          const ws = workbook.addWorksheet(`Semester ${semester}`.substring(0, 31));
           addSessionRows(ws, groups[semester]);
         });
         break;
       }
       case "Specialists by Semester": {
+        console.log('Processing Specialists by Semester...');
         // Group by semester and show specialist info only
         const groups = {};
-        data.forEach(session => {
+        data.forEach((session, index) => {
+          console.log(`Processing session ${index + 1}/${data.length}: ${session.sessionTitle}`);
           const semester = session.semester || "Unknown Semester";
           groups[semester] = groups[semester] || [];
           groups[semester].push({
             sessionTitle: session.sessionTitle,
-            dateTime: session.dateTime,
-            presentingSpecialist: session.presentingSpecialist,
-            supportingSpecialist1: session.supportingSpecialist1,
-            supportingSpecialist2: session.supportingSpecialist2
+            dateTime: formatDateTime(session.dateTime), // Format the date/time here
+            presentingSpecialist: session.presentingSpecialist || 'Not assigned',
+            supportingSpecialist1: session.supportingSpecialist1 || 'Not assigned',
+            supportingSpecialist2: session.supportingSpecialist2 || 'Not assigned'
           });
         });
+        
         Object.keys(groups).forEach(semester => {
-          const ws = workbook.addWorksheet(`Specialists ${semester}`);
+          console.log(`Creating worksheet for semester: ${semester} with ${groups[semester].length} sessions`);
+          const ws = workbook.addWorksheet(`Specialists ${semester}`.substring(0, 31));
           ws.columns = [
-            { header: "Session Title", key: "sessionTitle", width: 20 },
-            { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
-            { header: "Presenting Specialist", key: "presentingSpecialist", width: 20 },
-            { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
-            { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 }
+{ header: "Session Title", key: "sessionTitle", width: 25 },
+            { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+            { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
+            { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
+            { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 25 }
           ];
           groups[semester].forEach(row => ws.addRow(row));
         });
@@ -230,16 +275,16 @@ Meteor.methods({
           groups[semester] = groups[semester] || [];
           groups[semester].push({
             sessionTitle: session.sessionTitle,
-            dateTime: session.dateTime,
-            topic: session.topic
+            dateTime: formatDateTime(session.dateTime),
+            topic: session.topic || 'No topic assigned'
           });
         });
         Object.keys(groups).forEach(semester => {
-          const ws = workbook.addWorksheet(`Topics ${semester}`);
+          const ws = workbook.addWorksheet(`Topics ${semester}`.substring(0, 31));
           ws.columns = [
-            { header: "Session Title", key: "sessionTitle", width: 20 },
-            { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
-            { header: "Topic", key: "topic", width: 20 }
+{ header: "Session Title", key: "sessionTitle", width: 25 },
+            { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+            { header: "Topic", key: "topic", width: 25 }
           ];
           groups[semester].forEach(row => ws.addRow(row));
         });
@@ -256,7 +301,7 @@ Meteor.methods({
           agencyGroups[agency][semester].push(session);
         });
         Object.keys(agencyGroups).forEach(agency => {
-          const ws = workbook.addWorksheet(`Agency ${agency}`);
+          const ws = workbook.addWorksheet(`Agency ${agency}`.substring(0, 31));
           Object.keys(agencyGroups[agency]).forEach(semester => {
             // Write a header row for the semester
             ws.addRow([`Semester: ${semester}`]);
@@ -290,15 +335,15 @@ Meteor.methods({
                 session.supportingSpecialist1,
                 session.supportingSpecialist2,
                 session.participantGroup,
-                session.dateTime,
-                session.presentationsDue,
+                formatDateTime(session.dateTime),
+                formatDateTime(session.presentationsDue),
                 session.newMaterial,
                 session.color,
                 session.topic,
                 session.notes,
                 session.semester,
                 session.series,
-                session.createdAt
+                formatDateTime(session.createdAt)
               ]);
             });
             // Add an empty row for separation
@@ -318,12 +363,12 @@ Meteor.methods({
           groupTopic[group][topic].push(session);
         });
         Object.keys(groupTopic).forEach(group => {
-          const ws = workbook.addWorksheet(`Group ${group}`);
+          const ws = workbook.addWorksheet(`Group ${group}`.substring(0, 31));
           Object.keys(groupTopic[group]).forEach(topic => {
             ws.addRow([`Topic: ${topic}`]);
             ws.addRow(["Session Title", "Date Time"]);
             groupTopic[group][topic].forEach(session => {
-              ws.addRow([session.sessionTitle, session.dateTime]);
+              ws.addRow([session.sessionTitle, formatDateTime(session.dateTime)]);
             });
             ws.addRow([]);
           });
@@ -334,6 +379,8 @@ Meteor.methods({
         throw new Meteor.Error("invalid-option", "Invalid print option");
     }
 
+    console.log('Export completed successfully');
+    
     // Write the workbook to a buffer and return as a base64 string
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer.toString("base64");
