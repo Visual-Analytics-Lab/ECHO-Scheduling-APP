@@ -30,13 +30,17 @@ export const MySessions = () => {
 
   const userSessions = useTracker(() => {
     const userId = Meteor.userId();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // set to start of today
 
     return SessionsCollection.find({
+      dateTime: { $gte: today }, // Only sessions from today onward
       $or: [
         { presentingSpecialist: { $in: specialistIds } },
         { supportingSpecialist1: { $in: specialistIds } },
         { supportingSpecialist2: { $in: specialistIds } },
-        { facilitator: userId }
+        { facilitator: userId },
+        { supportingFacilitator: userId }
       ]
     }).fetch();
   }, [specialistIds]);
@@ -78,6 +82,7 @@ export const MySessions = () => {
             if (specialistIds.includes(session.supportingSpecialist1)) matchedRoles.push('Support 1');
             if (specialistIds.includes(session.supportingSpecialist2)) matchedRoles.push('Support 2');
             if (session.facilitator === Meteor.userId()) matchedRoles.push('Facilitator');
+            if (session.supportingFacilitator === Meteor.userId()) matchedRoles.push('Supporting Facilitator');
 
             return (
               <li key={session._id} className="border p-4 rounded shadow">
@@ -89,6 +94,7 @@ export const MySessions = () => {
                 <p><strong>🤝 Support 1:</strong> {getSpecialistNameById(session.supportingSpecialist1)}</p>
                 <p><strong>🤝 Support 2:</strong> {getSpecialistNameById(session.supportingSpecialist2)}</p>
                 <p><strong>🧭 Facilitator:</strong> {getUsernameById(session.facilitator)}</p>
+                <p><strong>🧭 Supporting Facilitator:</strong> {getUsernameById(session.supportingFacilitator)}</p>
 
                 <p><strong>🏷️ Topic:</strong> {getTopicNameById(session.topic)}</p>
                 <p><strong>👥 Participant Group:</strong> {getGroupNameById(session.participantGroup)}</p>
