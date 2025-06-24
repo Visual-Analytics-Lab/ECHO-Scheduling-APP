@@ -147,15 +147,15 @@ Meteor.methods({
         { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
         { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 },
         { header: "Participant Group", key: "participantGroup", width: 20 },
-        { header: "Date Time", key: "dateTime", width: 20 },
-        { header: "Presentations Due", key: "presentationsDue", width: 20 },
+        { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+        { header: "Presentations Due", key: "presentationsDue", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
         { header: "New Material", key: "newMaterial", width: 20 },
         { header: "Color", key: "color", width: 20 },
         { header: "Topic", key: "topic", width: 20 },
         { header: "Notes", key: "notes", width: 30 },
         { header: "Semester", key: "semester", width: 30 },
         { header: "Series", key: "series", width: 30 },
-        { header: "Created At", key: "createdAt", width: 20 }
+        { header: "Created At", key: "createdAt", width: 20 , style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }}
       ];
       sessions.forEach(session => worksheet.addRow(session));
     };
@@ -213,7 +213,7 @@ Meteor.methods({
           const ws = workbook.addWorksheet(`Specialists ${semester}`);
           ws.columns = [
             { header: "Session Title", key: "sessionTitle", width: 20 },
-            { header: "Date Time", key: "dateTime", width: 20 },
+            { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Presenting Specialist", key: "presentingSpecialist", width: 20 },
             { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
             { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 }
@@ -238,7 +238,7 @@ Meteor.methods({
           const ws = workbook.addWorksheet(`Topics ${semester}`);
           ws.columns = [
             { header: "Session Title", key: "sessionTitle", width: 20 },
-            { header: "Date Time", key: "dateTime", width: 20 },
+            { header: "Date Time", key: "dateTime", width: 20, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Topic", key: "topic", width: 20 }
           ];
           groups[semester].forEach(row => ws.addRow(row));

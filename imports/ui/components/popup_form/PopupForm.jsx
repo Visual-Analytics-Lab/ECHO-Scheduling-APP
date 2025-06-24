@@ -6,6 +6,9 @@ import { MultiSelect } from 'primereact/multiselect';
 import { Dropdown } from 'primereact/dropdown';
 import { MdEdit } from 'react-icons/md';
 
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const PopupForm = ({ 
   isOpen, 
@@ -90,7 +93,23 @@ const PopupForm = ({
   
     Meteor.call(method, ...args, (error, result) => {
       if (error) {
-        console.error("PopupForm submission error:", error);
+        if (error.error === 'user-not-found') {
+          console.warn("User not found. Opening add-user form.");
+          toast.error("User not found. Opening 'Add User' form.");
+
+          // Notify Admin.jsx to open the Add User popup
+          if (typeof window !== 'undefined' && window.dispatchEvent) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('open-add-user-popup', { detail: formData }));
+            }, 100);
+          }
+
+          // Also close the current specialist form
+          handleClose();
+        } else {
+          console.error("PopupForm submission error:", error);
+          toast.error(error.reason || "Error submitting form");
+        }
       } else {
         alertSuccess(formData._id ? 'updated' : 'added');
         handleClose();

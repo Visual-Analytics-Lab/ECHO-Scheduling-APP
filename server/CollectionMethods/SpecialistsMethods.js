@@ -11,6 +11,15 @@ Meteor.methods({
           lastName: String,
           email: String,
         }));
+        const email = data.email.trim().toLowerCase();
+        const existingUser = await Meteor.users.rawCollection().findOne({ 'emails.address': email });
+
+        if (!existingUser) {
+          throw new Meteor.Error('user-not-found', `No user exists with email ${email}`);
+        }
+
+        // Normalize and store
+        data.email = email;
         
         const specialistId = await SpecialistsCollection.insertAsync({
             ...data,
