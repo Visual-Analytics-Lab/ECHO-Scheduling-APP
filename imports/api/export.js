@@ -171,23 +171,23 @@ Meteor.methods({
     // A helper to add a standard worksheet of session details
     const addSessionRows = (worksheet, sessions) => {
       worksheet.columns = [
-        { header: "Session Title", key: "sessionTitle", width: 20 },
+        { header: "Session Title", key: "sessionTitle", width: 25 },
         { header: "Case Presenter", key: "casePresenter", width: 20 },
         { header: "Lead Facilitator", key: "facilitator", width: 20 },
         { header: "Supporting Facilitator", key: "supportingFacilitator", width: 20 },
-        { header: "Presenting Specialist", key: "presentingSpecialist", width: 20 },
-        { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 20 },
-        { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 20 },
+        { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
+        { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
+        { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 25 },
         { header: "Participant Group", key: "participantGroup", width: 20 },
-        { header: "Date Time", key: "dateTime", width: 25 },
-        { header: "Presentations Due", key: "presentationsDue", width: 25 },
+        { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+        { header: "Presentations Due", key: "presentationsDue", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
         { header: "New Material", key: "newMaterial", width: 15 },
         { header: "Color", key: "color", width: 15 },
         { header: "Topic", key: "topic", width: 20 },
         { header: "Notes", key: "notes", width: 30 },
         { header: "Semester", key: "semester", width: 20 },
         { header: "Series", key: "series", width: 20 },
-        { header: "Created At", key: "createdAt", width: 25 }
+        { header: "Created At", key: "createdAt", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }}
       ];
       
       sessions.forEach(session => {
@@ -258,7 +258,7 @@ Meteor.methods({
           const ws = workbook.addWorksheet(`Specialists ${semester}`.substring(0, 31));
           ws.columns = [
             { header: "Session Title", key: "sessionTitle", width: 25 },
-            { header: "Date Time", key: "dateTime", width: 25 },
+            { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
             { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
             { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 25 }
@@ -283,7 +283,7 @@ Meteor.methods({
           const ws = workbook.addWorksheet(`Topics ${semester}`.substring(0, 31));
           ws.columns = [
             { header: "Session Title", key: "sessionTitle", width: 25 },
-            { header: "Date Time", key: "dateTime", width: 25 },
+            { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Topic", key: "topic", width: 25 }
           ];
           groups[semester].forEach(row => ws.addRow(row));
