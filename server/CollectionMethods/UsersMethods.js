@@ -1,65 +1,143 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
-import { list } from 'postcss';
+import { SpecialistsCollection } from '../../imports/api/collections';
 
-// Required fields and their type must be included in the insert and update method checks
-// TODO: update required checks
 Meteor.methods({
-    async 'users.insert'(data) {
-        check(data, Match.ObjectIncluding({
-            username: String,
-            email: String,
-            password: String,
-            role_id: String,
-            specialist_id: [String]
-        }));
-        
-        try {
-          // Try to create a user
-          return Accounts.createUser({
-            username: data.username,
-            email: data.email,
-            password: data.password,
-            role_id: data.role_id,
-            specialist_id: data.specialist_id,
-            createdAt: new Date(),
-          });
-        } 
-        // TODO: Implement these errors into the user adding somehow
-        catch (error) {
-          if (error.error === 403) {
-            // Example: Error due to duplicate username or email
-            throw new Meteor.Error('duplicate-credentials', 'The username or email is already taken.');
-          } else if (error.error === 400) {
-            // Example: Invalid password or other issues
-            throw new Meteor.Error('invalid-password', 'Password must meet the required criteria.');
-          }
-          // Generic error message for other unhandled errors
-          throw new Meteor.Error('unknown-error', 'An unknown error occurred while creating the user.');
+  async 'users.insert'(data) {
+    check(data, Match.ObjectIncluding({
+      firstName: String,
+      lastName: String,
+      username: String,
+      email: String,
+      password: String,
+      role_id: String,
+    }));
+
+    try {
+      const email = data.email.trim().toLowerCase();
+
+      // Step 1: Create the user without using `profile`
+      const userId = await Accounts.createUser({
+        username: data.username,
+        email: email,
+        password: data.password,
+      });
+
+      // Step 2: Update user with root-level fields
+      await Meteor.users.updateAsync(userId, {
+        $set: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role_id: data.role_id,
+          // specialist_id: data.specialist_id,
+          createdAt: new Date(),
         }
-    },
-    async 'users.remove'(userId) {
-        check(userId, String);
-        return await Meteor.users.removeAsync(userId);
-    },
-    async 'users.update'(userId, data) {
-        check(userId, String);
-        check(data, Match.ObjectIncluding({
-            username: String,
-            email: String,
-            role_id: String,
-            specialist_id: [String],
+      });
 
-        }));
-        
-        return await Meteor.users.updateAsync(userId, {
-            $set: {
-                username: data.username,
-                'emails.0.address': data.email,
-                role_id: data.role_id,
-                specialist_id: data.specialist_id
+      // Step 3: Insert into SpecialistsCollection if applicable
+      const specialistRoleId = 'jDkfrfcuYsHazRMbD';
+      if (data.role_id === specialistRoleId) {
+        console.log("✅ User has specialist role, inserting into SpecialistsCollection");
 
-            }
+        const specialistId = await SpecialistsCollection.insertAsync({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: email,
+          userId: userId,
+          createdAt: new Date()
         });
+
+        await Meteor.users.updateAsync(userId, {
+          $set: {
+            specialist_id: [specialistId]
+          }
+        });
+      } else {
+        console.log("ℹ️ User role is not specialist, skipping insert into SpecialistsCollection");
+      }
+
+      return userId;
+
+    } catch (error) {
+      console.error("❌ Error in users.insert:", {
+        message: error.message,
+        stack: error.stack,
+        error
+      });
+
+      if (error.error === 403) {
+        throw new Meteor.Error('duplicate-credentials', 'The username or email is already taken.');
+      } else if (error.error === 400) {
+        throw new Meteor.Error('invalid-password', 'Password must meet the required criteria.');
+      }
+
+      throw new Meteor.Error('unknown-error', 'An unknown error occurred while creating the user.');
     }
+  },
+
+  async 'users.remove'(userId) {
+    check(userId, String);
+
+    await SpecialistsCollection.removeAsync({ userId });
+    return await Meteor.users.removeAsync(userId);
+  },
+
+  async 'users.update'(userId, data) {
+    check(userId, String);
+    check(data, Match.ObjectIncluding({
+      firstName: String,
+      lastName: String,
+      username: String,
+      email: String,
+      role_id: String,
+    }));
+
+    const specialistRoleId = 'jDkfrfcuYsHazRMbD';
+
+    const oldUser = await Meteor.users.findOneAsync(userId);
+    const wasSpecialist = oldUser?.role_id === specialistRoleId;
+    const isNowSpecialist = data.role_id === specialistRoleId;
+
+    const updateFields = {
+      username: data.username,
+      'emails.0.address': data.email,
+      role_id: data.role_id,
+      // specialist_id: data.specialist_id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+    };
+
+    const userUpdateResult = await Meteor.users.updateAsync(userId, {
+      $set: updateFields
+    });
+
+    if (wasSpecialist && !isNowSpecialist) {
+      // Role changed from specialist to something else, remove from SpecialistsCollection
+      await SpecialistsCollection.removeAsync({ userId });
+    } else if (isNowSpecialist) {
+      const specialist = await SpecialistsCollection.findOneAsync({ userId });
+      if (specialist) {
+        await SpecialistsCollection.updateAsync(
+          { userId },
+          {
+            $set: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email
+            }
+          }
+        );
+      } else {
+        await SpecialistsCollection.insertAsync({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          userId: userId,
+          createdAt: new Date()
+        });
+      }
+    }
+
+    return userUpdateResult;
+  }
 });
