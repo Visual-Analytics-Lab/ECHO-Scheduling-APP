@@ -32,11 +32,18 @@ Meteor.methods({
     async 'specialists.remove'(specialistId) {
       check(specialistId, String);
       // Remove the specialist from the SpecialistsCollection
+      const specialist = await SpecialistsCollection.findOneAsync(specialistId);
+      if (!specialist) {
+        throw new Meteor.Error('not-found', 'Specialist not found');
+      }
       const specialistRemoved = await SpecialistsCollection.removeAsync(specialistId);
       
       if (specialistRemoved) {
         // Define the array of collections that need to be updated
         // Make sure these are imported at the top
+        if (specialist.userId) {
+          await Meteor.users.removeAsync(specialist.userId);
+        }
         const collectionsToUpdate = [
           TopicsCollection,
         ];
@@ -51,17 +58,38 @@ Meteor.methods({
         }
         return true;
       }
+      return false;
     },
 
     async 'specialists.update'(specialistId, data) {
-        check(specialistId, String);
-        check(data, Match.ObjectIncluding({
-          firstName: String,
-          lastName: String,
-          email: String,
-        }));
-        return await SpecialistsCollection.updateAsync(specialistId, {
-            $set: data
+      check(specialistId, String);
+      check(data, Match.ObjectIncluding({
+        firstName: String,
+        lastName: String,
+        email: String,
+      }));
+
+      const email = data.email.trim().toLowerCase();
+      data.email = email;
+
+      // Update the specialist
+      const specialistUpdateResult = await SpecialistsCollection.updateAsync(specialistId, {
+        $set: data
+      });
+
+      // Find the specialist to get the userId
+      const specialist = await SpecialistsCollection.findOneAsync(specialistId);
+      if (specialist?.userId) {
+        await Meteor.users.updateAsync(specialist.userId, {
+          $set: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            'emails.0.address': email
+          }
         });
+      }
+
+      return specialistUpdateResult;
     }
+
 });

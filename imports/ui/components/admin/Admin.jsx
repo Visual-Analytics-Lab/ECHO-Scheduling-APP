@@ -73,6 +73,8 @@ const Admin = () => {
       username: user.username,
       email: user.emails?.[0]?.address || 'No email', // Email address is structured like email: [address : 'here']
       role_id: user.role_id,
+      firstName: user.firstName || user.profile?.firstName || '',
+      lastName: user.lastName || '', 
     }))
   );
   //console.log(users);
@@ -103,6 +105,7 @@ const Admin = () => {
   const getMethodName = (operation) => `${currentSection.collectionName}.${operation}`;
   // Populate RowData/FormData then open pop up for editting
   const openEditPopUp = (data) => {
+    console.log('Editing row data:', data);
     setRowData(data);
     setIsPopupOpen(true);
     setIsReadOnly(false);
