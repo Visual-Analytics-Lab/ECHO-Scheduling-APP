@@ -1,59 +1,85 @@
-import React from "react";
+import React, { useMemo, useEffect } from "react";
 import { useTracker } from "meteor/react-meteor-data";
 import { SpecialistsCollection, SessionsCollection } from "../../../api/collections";
 import { Meteor } from "meteor/meteor";
 
 const DashboardSidebar = ({ selectedDate }) => {
-  Meteor.subscribe("specialists");
-  Meteor.subscribe("sessions");
+  // Move subscriptions to useEffect to avoid calling on every render
+  useEffect(() => {
+    const sub1 = Meteor.subscribe("specialists");
+    const sub2 = Meteor.subscribe("sessions");
+    
+    return () => {
+      sub1.stop();
+      sub2.stop();
+    };
+  }, []);
 
-  // Use selectedDate if provided, otherwise fall back to current date
-  const referenceDate = selectedDate ? new Date(selectedDate) : new Date();
+  // Memoize the date calculations to avoid recalculating on every render
+  const { startOfWeek, endOfWeek, referenceDate } = useMemo(() => {
+    // Use selectedDate if provided, otherwise fall back to current date
+    const refDate = selectedDate ? new Date(selectedDate) : new Date();
 
-  // Set to Sunday (start of the week) based on the selected/reference date
-  const startOfWeek = new Date(referenceDate);
-  startOfWeek.setDate(referenceDate.getDate() - referenceDate.getDay()); // Sunday
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  // Set to Saturday (end of the week)
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
-  endOfWeek.setHours(23, 59, 59, 999);
+    // Set to Sunday (start of the week) based on the selected/reference date
+    const start = new Date(refDate);
+    start.setDate(refDate.getDate() - refDate.getDay()); // Sunday
+    start.setHours(0, 0, 0, 0);
+    
+    // Set to Saturday (end of the week)
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6); // Saturday
+    end.setHours(23, 59, 59, 999);
+
+    return {
+      startOfWeek: start,
+      endOfWeek: end,
+      referenceDate: refDate
+    };
+  }, [selectedDate]);
 
   const sessions = useTracker(() =>
     SessionsCollection.find({
       dateTime: { $gte: startOfWeek, $lte: endOfWeek },
     }).fetch(),
-    [selectedDate] // Add selectedDate to dependency array
+    [startOfWeek.getTime(), endOfWeek.getTime()] // Use timestamps for stable comparison
   );
 
-  const sessionCountMap = {};
-  const sessionSpecialistIds = [];
-  
-  sessions.forEach((session) => {
-    const ids = [
-      session.presentingSpecialist,
-      session.supportingSpecialist1,
-      session.supportingSpecialist2
-    ];
-  
-    ids.forEach(id => {
-      if (id) {
-        sessionCountMap[id] = (sessionCountMap[id] || 0) + 1;
-        sessionSpecialistIds.push(id);
-      }
+  // Memoize the specialist processing to avoid recalculation
+  const { sessionCountMap, uniqueSpecialistIds } = useMemo(() => {
+    const countMap = {};
+    const specialistIds = [];
+    
+    sessions.forEach((session) => {
+      const ids = [
+        session.presentingSpecialist,
+        session.supportingSpecialist1,
+        session.supportingSpecialist2
+      ];
+    
+      ids.forEach(id => {
+        if (id) {
+          countMap[id] = (countMap[id] || 0) + 1;
+          specialistIds.push(id);
+        }
+      });
     });
-  });
 
-  // Using set to remove duplicates
-  const uniqueSpecialistIds = [...new Set(sessionSpecialistIds)];
+    // Using set to remove duplicates
+    const uniqueIds = [...new Set(specialistIds)];
 
-  const specialists = useTracker(() =>
-    SpecialistsCollection.find({
+    return {
+      sessionCountMap: countMap,
+      uniqueSpecialistIds: uniqueIds
+    };
+  }, [sessions]);
+
+  const specialists = useTracker(() => {
+    if (uniqueSpecialistIds.length === 0) return [];
+    
+    return SpecialistsCollection.find({
       _id: { $in: uniqueSpecialistIds },
-    }).fetch(),
-    [uniqueSpecialistIds] // Add dependency for specialists query
-  );
+    }).fetch();
+  }, [uniqueSpecialistIds.join(',')]); // Use string join for stable comparison
 
   // Helper function to get week display text
   const getWeekDisplayText = () => {
