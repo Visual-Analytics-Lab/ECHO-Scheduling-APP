@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import {
@@ -21,7 +21,7 @@ export const MySessions = () => {
   }, []);
 
   const user = useTracker(() => Meteor.user(), []);
-  const specialistIds = user?.specialist_id || [];
+  const specialistIds = useMemo(() => user?.specialist_id || [], [user]);
 
   const allSpecialists = useTracker(() => SpecialistsCollection.find().fetch(), []);
   const topics = useTracker(() => TopicsCollection.find().fetch(), []);
