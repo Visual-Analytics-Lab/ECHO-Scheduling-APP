@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
-import { SpecialistsCollection, TopicsCollection } from '../../imports/api/collections';
+import { SpecialistsCollection, TopicsCollection, CategoriesCollection } from '../../imports/api/collections';
 
 // Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
@@ -46,6 +46,7 @@ Meteor.methods({
         }
         const collectionsToUpdate = [
           TopicsCollection,
+          CategoriesCollection,
         ];
   
         // Iterate over each collection and remove the specialistId from the specialists_ids array

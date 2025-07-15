@@ -1,4 +1,4 @@
-import { SpecialistsCollection, ParticipantGroupsCollection, TopicsCollection } from "../../api/collections";
+import { SpecialistsCollection, ParticipantGroupsCollection, TopicsCollection, CategoriesCollection } from "../../api/collections";
 
 
 export const getSpecialistName = (id) => {
@@ -28,4 +28,10 @@ export const getTopicName = (id) => {
   if (!id) return "";
   const topic = TopicsCollection.findOne(id);
   return topic?.title || "Unknown Topic";
+};
+
+export const getCategoryName = (id) => {
+  if (!id) return "";
+  const category = CategoriesCollection.findOne(id);
+  return category?.title || "Unknown Category";
 };

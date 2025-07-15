@@ -9,6 +9,7 @@ const AdminSidebar = ({ activeSection, setActiveSection }) => {
     "Semesters",
     "Series",
     "Topics",
+    "Categories",
   ];
 
   return (

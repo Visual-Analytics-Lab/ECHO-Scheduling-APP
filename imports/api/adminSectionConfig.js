@@ -72,7 +72,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "fullName", label: "Name" },
       { name: "profession", label: "Profession" },
       { name: "email", label: "Email" },
-      { name: "phone", label: "Phone Number" },
+      { name: "phoneCombined", label: "Phone Number" },
       { name: "institute", label: "Institute" },
     ],
     popupFields: () => [
@@ -86,13 +86,14 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "participantGroups_id", label: "Preferred Audience",              inputType: "select"                  },
       { name: "profession",           label: "Profession",                                                colSpan: 1 },
       { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
-      { name: "topics_ids",           label: "Topics of Expertise",             inputType: "multiSelect"             },
-      { name: "areasOfExpertise",     label: "Major Areas of Expertise"                                              },
+      { name: "topics_ids",           label: "Presentation Titles",             inputType: "multiSelect"             },
+      { name: "categories_ids",        label: "Categories of Expertise",         inputType: "multiSelect"             },
       // TODO: Add a resume and bio upload somehow
     ],
     fieldContext: { 
       participantGroups_id: colData.participantGroups,
       topics_ids: colData.topics,
+      categories_ids:colData.categories,
     },
   },
 
@@ -176,6 +177,20 @@ const getSectionConfig = (collections, colData, rowData) => ({
     popupFields: () => [
       { name: "title",           label: "Title", required: true },
       { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect" },
+      { name: "description",     label: "Description",           inputType: "textArea" },
+    ],
+    fieldContext: { specialists_ids: colData.specialists },
+  },
+
+  Categories: {
+    collectionName: "categories",
+    collectionData: colData.categories,
+    tableFields: () => [
+      { name: "title",           label: "Title" },
+      { name: "description",     label: "Description" },
+    ],
+    popupFields: () => [
+      { name: "title",           label: "Title", required: true },
       { name: "description",     label: "Description",           inputType: "textArea" },
     ],
     fieldContext: { specialists_ids: colData.specialists },

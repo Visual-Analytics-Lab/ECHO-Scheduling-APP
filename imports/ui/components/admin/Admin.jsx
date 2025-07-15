@@ -15,7 +15,8 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
-  RolesCollection
+  RolesCollection,
+  CategoriesCollection
 } from "../../../api/collections";
 // Other
 import { toast } from "react-toastify";
@@ -40,6 +41,7 @@ const Admin = () => {
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
       Meteor.subscribe("roles"),
+      Meteor.subscribe("categories"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -84,6 +86,7 @@ const Admin = () => {
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
+  const categories = useTracker(() => CategoriesCollection.find().fetch());
   const collections = { 
     users: Meteor.users, 
     specialists: SpecialistsCollection, 
@@ -91,9 +94,10 @@ const Admin = () => {
     semesters: SemesterCollection, 
     series: SeriesCollection, 
     topics: TopicsCollection, 
-    roles: RolesCollection 
+    roles: RolesCollection,
+    categories: CategoriesCollection
   };
-  const colData = { users, specialists, participantGroups, semesters, series, topics, roles };
+  const colData = { users, specialists, participantGroups, semesters, series, topics, roles, categories};
 
 
 

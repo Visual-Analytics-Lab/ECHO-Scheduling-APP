@@ -6,6 +6,7 @@ import {
   getParticipantGroupName, 
   getParticipantGroupColor,
   getTopicName,
+  getCategoryName,
 } from './collectionHelpers';
 
 
@@ -20,6 +21,7 @@ export const buildSessionTooltip = ({ event }) => {
     supportingSpecialist2,
     participantGroup,
     topic,
+    category,
   } = event.extendedProps;
 
   // Helper to get name + color wrapped in a styled span
@@ -42,6 +44,7 @@ export const buildSessionTooltip = ({ event }) => {
   const styledGroup = `<div style="color: ${groupColor};">${groupName}</div>`;
 
   const topicName = getTopicName(topic);
+  const categoryName = getCategoryName(cateogry);
 
   return `
     <div style="max-width:220px; line-height:1.3;">
@@ -57,6 +60,7 @@ export const buildSessionTooltip = ({ event }) => {
         <strong>Participant Group:</strong><br/>
         ${styledGroup}<br/>
         <strong>Topic:</strong> ${topicName || "TBD"}
+        <strong>Category:</strong> ${categoryName || "TBD"}
       </div>
     </div>
   `;

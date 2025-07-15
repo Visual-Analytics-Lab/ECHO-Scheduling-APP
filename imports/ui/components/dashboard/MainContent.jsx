@@ -18,6 +18,7 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
+  CategoriesCollection,
   RolesCollection
 } from "../../../api/collections";
 import { buildSessionTooltip } from "../../utils/tooltipHelpers";
@@ -42,6 +43,7 @@ const MainContent = () => {
       // Meteor.subscribe("semesters"),
       // Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
+      Meteor.subscribe("categories"),
       // Meteor.subscribe("roles"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
@@ -53,6 +55,7 @@ const MainContent = () => {
   // const semesters = useTracker(() => SemesterCollection.find().fetch());
   // const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
+  const categories = useTracker(() => CategoriesCollection.find().fetch());
   // const roles = useTracker(() => RolesCollection.find().fetch());
 
   // Handle calendar view changes (when user navigates to different weeks/dates)
@@ -103,6 +106,7 @@ const MainContent = () => {
                       supportingSpecialist2: session.supportingSpecialist2,
                       participantGroup: session.participantGroup,
                       topic: session.topic,
+                      category: session.category,
                     },
                   };
                 })}

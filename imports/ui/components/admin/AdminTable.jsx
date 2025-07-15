@@ -67,6 +67,20 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
               filterFn: nameFilterFn,
             }
           );
+        case "phoneCombined":
+        return columnHelper.accessor(
+          row => `${row.phone1 || ""}\n${row.phone2 || ""}`,
+          {
+            id: "phoneCombined",
+            header: "Phone Numbers",
+            cell: ({ row }) => (
+              <span>
+                {row.original.phone1}<br />
+                {row.original.phone2}
+              </span>
+            ),
+          }
+        );
         case "name":
         case "title":
           return {
