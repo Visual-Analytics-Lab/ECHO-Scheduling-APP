@@ -106,7 +106,6 @@ const MainContent = () => {
                       supportingSpecialist2: session.supportingSpecialist2,
                       participantGroup: session.participantGroup,
                       topic: session.topic,
-                      category: session.category,
                     },
                   };
                 })}

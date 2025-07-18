@@ -55,7 +55,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     newMaterial: false,
     color: '',
     topic: '',
-    category: '',
     notes: '',
     semester: '',
     series: ''
@@ -78,7 +77,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         newMaterial: existingSession.newMaterial,
         color: existingSession.color,
         topic: existingSession.topic,
-        category: existingSession.category,
         notes: existingSession.notes,
         semester: existingSession.semester,
         series: existingSession.series
@@ -99,7 +97,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         newMaterial: false,
         color: '',
         topic: '',
-        category: '',
         notes: '',
         semester: '',
         series: ''
@@ -389,24 +386,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Category */}
-            <div className="form-group md:col-span-2">
-              <label className="block font-medium">Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                className={`${defaultInputStyle}`}
-              >
-                <option value="">Select Category</option>
-                {categories?.map(category => (
-                  <option key={category._id} value={category._id}>
-                    {category.title}
-                  </option>
-                ))}
-              </select>
-            </div>        
             {/* New Material */}
             <div className="form-group md:col-span-2 flex items-center justify-center gap-5 mt-4">
               <label className="font-medium">New Material</label>

@@ -47,9 +47,12 @@ export const MySessions = () => {
 
   const getSpecialistNameById = (id) => {
     const match = allSpecialists.find((s) => s._id === id);
-    return match?.firstName && match?.lastName
+    return {
+      name: match?.firstName && match?.lastName
       ? `${match.firstName} ${match.lastName}`
-      : `Unknown (${id})`;
+      : `Unknown (${id})`,
+      color:match?.nameColor || '#000000'
+    };
   };
 
   const getUsernameById = (id) => {
@@ -64,9 +67,11 @@ export const MySessions = () => {
   };
 
   const getGroupNameById = (id) => {
-    if (!id) return 'Unknown Group (missing ID)';
     const group = participantGroups.find((g) => g._id === id);
-    return group?.name || `Unknown Group (${id})`;
+    return {
+      name: group?.name || `Unknown Group (${id})`,
+      color: group?.nameColor || '#000000'
+    };
   };
 
   return (
@@ -86,18 +91,31 @@ export const MySessions = () => {
 
             return (
               <li key={session._id} className="border p-4 rounded shadow">
-                <p><strong>📌 Title:</strong> {session.sessionTitle || 'Untitled'}</p>
-                <p><strong>📅 Date & Time:</strong> {new Date(session.dateTime).toLocaleString()}</p>
-                <p><strong>🧾 Your Role(s):</strong> {matchedRoles.join(', ') || 'None'}</p>
+                {(() => {
+                  const { name, color } = getSpecialistNameById(session.presentingSpecialist);
+                  return <p><strong>🎙️ Presenting Specialist:</strong> <span style={{ color }}>{name}</span></p>;
+                })()}
 
-                <p><strong>🎙️ Presenting Specialist:</strong> {getSpecialistNameById(session.presentingSpecialist)}</p>
-                <p><strong>🤝 Support 1:</strong> {getSpecialistNameById(session.supportingSpecialist1)}</p>
-                <p><strong>🤝 Support 2:</strong> {getSpecialistNameById(session.supportingSpecialist2)}</p>
+                {(() => {
+                  const { name, color } = getSpecialistNameById(session.supportingSpecialist1);
+                  return <p><strong>🤝 Support 1:</strong> <span style={{ color }}>{name}</span></p>;
+                })()}
+
+                {(() => {
+                  const { name, color } = getSpecialistNameById(session.supportingSpecialist2);
+                  return <p><strong>🤝 Support 2:</strong> <span style={{ color }}>{name}</span></p>;
+                })()}
+
                 <p><strong>🧭 Facilitator:</strong> {getUsernameById(session.facilitator)}</p>
                 <p><strong>🧭 Supporting Facilitator:</strong> {getUsernameById(session.supportingFacilitator)}</p>
 
                 <p><strong>🏷️ Topic:</strong> {getTopicNameById(session.topic)}</p>
-                <p><strong>👥 Participant Group:</strong> {getGroupNameById(session.participantGroup)}</p>
+
+                {(() => {
+                  const { name, color } = getGroupNameById(session.participantGroup);
+                  return <p><strong>👥 Participant Group:</strong> <span style={{ color }}>{name}</span></p>;
+                })()}
+
 
                 {session.notes && (
                   <p><strong>📝 Notes:</strong> {session.notes}</p>

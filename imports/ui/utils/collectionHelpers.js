@@ -29,9 +29,3 @@ export const getTopicName = (id) => {
   const topic = TopicsCollection.findOne(id);
   return topic?.title || "Unknown Topic";
 };
-
-export const getCategoryName = (id) => {
-  if (!id) return "";
-  const category = CategoriesCollection.findOne(id);
-  return category?.title || "Unknown Category";
-};

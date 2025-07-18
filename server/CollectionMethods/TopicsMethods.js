@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
-import { TopicsCollection } from '../../imports/api/collections';
+import { SpecialistsCollection, TopicsCollection } from '../../imports/api/collections';
 
 // Required fields and their type must be included in the insert and update method checks
 Meteor.methods({
@@ -19,7 +19,25 @@ Meteor.methods({
     },
     async 'topics.remove'(topicsId) {
         check(topicsId, String);
-        return await TopicsCollection.removeAsync(topicsId);
+
+        const topic = await TopicsCollection.findOneAsync(topicsId);
+        if (!topic) {
+            throw new Meteor.Error('not-found', 'Topic not found');
+        }
+
+        // Remove the topic document
+        const result = await TopicsCollection.removeAsync(topicsId);
+
+        if (result) {
+            // Remove the topic ID from all specialists
+            await SpecialistsCollection.updateAsync(
+            { topics_ids: topicsId },
+            { $pull: { topics_ids: topicsId } },
+            { multi: true }
+            );
+        }
+
+        return result;
     },
     async 'topics.update'(topicsId, data) {
         check(topicsId, String);
