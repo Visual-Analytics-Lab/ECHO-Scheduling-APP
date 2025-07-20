@@ -83,7 +83,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "phone2",               label: "Secondary Phone Number",                                    colSpan: 1 },
       { name: "nameColor",            label: "Name Color",                      inputType: "color",       colSpan: 1 },
       { name: "sessionPreferrence",   label: "Preferred Sessions Per Week",     inputType: "number",      colSpan: 1 },
-      { name: "participantGroups_id", label: "Preferred Audience",              inputType: "select"                  },
+      { name: "participantGroups_id", label: "Preferred Audience",              inputType: "multiCreatable"          },
       { name: "profession",           label: "Profession",                                                colSpan: 1 },
       { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
       { name: "topics_ids",           label: "Presentation Titles",             inputType: "multiSelect"             },

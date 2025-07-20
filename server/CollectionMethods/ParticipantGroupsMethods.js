@@ -8,9 +8,9 @@ Meteor.methods({
         //console.log('Received data:', data);
         check(data, Match.ObjectIncluding({
             name: String,
-            agency: String,
-            focus: String,
-            famOrPro: String,
+            agency: Match.Optional(String),
+            focus: Match.Optional(String),
+            famOrPro: Match.Optional(String),
         }));
         
         const participantGroupsId = await ParticipantGroupsCollection.insertAsync({
@@ -28,9 +28,9 @@ Meteor.methods({
         check(participantGroupsId, String);
         check(data, Match.ObjectIncluding({
           name: String,
-          agency: String,
-          focus: String,
-          famOrPro: String,
+          agency: Match.Optional(String),
+          focus: Match.Optional(String),
+          famOrPro: Match.Optional(String),
         }));
         return await ParticipantGroupsCollection.updateAsync(participantGroupsId, {
             $set: data
