@@ -19,6 +19,7 @@
     "@types/react-router-dom": "^5.3.3",
     "classnames": "^2.5.1",
     "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "json2csv": "^6.0.0-alpha.2",
     "meteor-node-stubs": "^1.2.5",
     "primeicons": "^7.0.0",
