@@ -134,7 +134,21 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
               },
             };
           }
-  
+          return {
+            header: label,
+            accessorKey: name,
+            cell: ({ row }) => {
+              const value = row.original[name];
+              if (name === "description") {
+                return (
+                  <div style={{ whiteSpace: "pre-wrap" }}>
+                    {value}
+                  </div>
+                );
+              }
+              return value;
+            },
+          };
           // Default case for general fields
           return {
             header: label,

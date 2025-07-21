@@ -87,7 +87,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "profession",           label: "Profession",                                                colSpan: 1 },
       { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
       { name: "topics_ids",           label: "Presentation Titles",             inputType: "multiSelect"             },
-      { name: "categories_ids",        label: "Categories of Expertise",         inputType: "multiSelect"             },
+      { name: "categories_ids",        label: "Categories of Expertise",         inputType: "multiSelect"            },
       // TODO: Add a resume and bio upload somehow
     ],
     fieldContext: { 
@@ -171,15 +171,19 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionData: colData.topics,
     tableFields: () => [
       { name: "title",           label: "Title" },
+      { name: "categories_ids", label: "Category", parentCollection: collections.categories },
       { name: "specialists_ids", label: "Preferred Specialists", parentCollection: collections.specialists },
       { name: "description",     label: "Description" },
     ],
     popupFields: () => [
       { name: "title",           label: "Title", required: true },
+      { name: "categories_ids", label: "Categories of Expertise",  inputType: "multiSelect"},
       { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect" },
       { name: "description",     label: "Description",           inputType: "textArea" },
     ],
-    fieldContext: { specialists_ids: colData.specialists },
+    fieldContext: { specialists_ids: colData.specialists,
+      categories_ids:colData.categories,
+    },
   },
 
   Categories: {
