@@ -1,4 +1,4 @@
-import { SpecialistsCollection, ParticipantGroupsCollection, TopicsCollection } from "../../api/collections";
+import { SpecialistsCollection, ParticipantGroupsCollection, TopicsCollection, CategoriesCollection } from "../../api/collections";
 
 
 export const getSpecialistName = (id) => {

@@ -7,6 +7,7 @@ import './CollectionMethods/ParticipantGroupsMethods';
 import './CollectionMethods/SemesterMethods';
 import './CollectionMethods/SeriesMethods';
 import './CollectionMethods/TopicsMethods';
+import './CollectionMethods/CategoriesMethods';
 import './CollectionMethods/UsersMethods';
 import './CollectionMethods/SessionsMethods';
 import './CollectionMethods/RolesMethods';

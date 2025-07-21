@@ -57,6 +57,7 @@ export const buildSessionTooltip = ({ event }) => {
         <strong>Participant Group:</strong><br/>
         ${styledGroup}<br/>
         <strong>Topic:</strong> ${topicName || "TBD"}
+        
       </div>
     </div>
   `;

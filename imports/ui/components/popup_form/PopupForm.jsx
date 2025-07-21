@@ -5,6 +5,7 @@ import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 import { MultiSelect } from 'primereact/multiselect';
 import { Dropdown } from 'primereact/dropdown';
 import { MdEdit } from 'react-icons/md';
+import CreatableSelect from 'react-select/creatable';
 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -143,7 +144,7 @@ const PopupForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{isReadOnly? `View ${title}`: title}</h2>
           <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
@@ -221,6 +222,54 @@ const PopupForm = ({
                 }
               } else {
               switch (inputType) {
+                case "multiCreatable":
+                  const selectOptions = processedOptions.map(opt => ({
+                    label: opt.processedName,
+                    value: opt._id,
+                  }));
+
+                  const selectedValues = (formData[name] || []).map(id => {
+                    const matched = selectOptions.find(o => o.value === id);
+                    return matched || { label: id, value: id }; // fallback if value was newly created
+                  });
+
+                  inputElement = (
+                    <CreatableSelect
+                      isMulti
+                      options={selectOptions}
+                      value={selectedValues}
+                      onChange={(newValue) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          [name]: newValue.map(v => v.value)
+                        }));
+                      }}
+                      onCreateOption={(inputValue) => {
+                        Meteor.call('participantGroups.insert', { name: inputValue }, (err, newId) => {
+                          if (err) {
+                            toast.error("Error creating new audience group");
+                            return;
+                          }
+
+                          // Create new option and add to fieldData[name]
+                          const newOption = {
+                            _id: newId,
+                            processedName: inputValue,
+                          };
+
+                          fieldData[name] = [...(fieldData[name] || []), newOption];
+
+                          setFormData(prev => ({
+                            ...prev,
+                            [name]: [...(prev[name] || []), newId]
+                          }));
+                        });
+                      }}
+                      placeholder={`Select or type ${label}`}
+                      classNamePrefix="react-select"
+                    />
+                  );
+                  break;
                 case "multiSelect":
                   inputElement = (
                     <MultiSelect

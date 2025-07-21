@@ -7,7 +7,8 @@ import {
   TopicsCollection,
   RolesCollection,
   SemesterCollection,
-  SeriesCollection
+  SeriesCollection,
+  CategoriesCollection
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
 import { MdEdit } from 'react-icons/md';
@@ -25,6 +26,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       Meteor.subscribe("semesters"),
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
+      Meteor.subscribe("categories"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -37,6 +39,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
+  const categories = useTracker(() => CategoriesCollection.find().fetch());
 
   const [formData, setFormData] = useState({
     sessionTitle: '',
@@ -382,7 +385,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                   </option>
                 ))}
               </select>
-            </div>           
+            </div>
             {/* New Material */}
             <div className="form-group md:col-span-2 flex items-center justify-center gap-5 mt-4">
               <label className="font-medium">New Material</label>

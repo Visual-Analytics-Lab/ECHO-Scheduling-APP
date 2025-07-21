@@ -6,7 +6,8 @@ import {
     SeriesCollection,
     SessionsCollection,
     TopicsCollection,
-    RolesCollection
+    RolesCollection,
+    CategoriesCollection
 } from '../imports/api/collections';
 
 Meteor.publish('users', async function () {
@@ -60,4 +61,7 @@ Meteor.publish('sessions', function() {
 });
 Meteor.publish('roles', function() {
   return RolesCollection.find();
+});
+Meteor.publish('categories', function() {
+  return CategoriesCollection.find();
 });

@@ -15,7 +15,8 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
-  RolesCollection
+  RolesCollection,
+  CategoriesCollection
 } from "../../../api/collections";
 // Other
 import { toast } from "react-toastify";
@@ -40,6 +41,7 @@ const Admin = () => {
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
       Meteor.subscribe("roles"),
+      Meteor.subscribe("categories"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -84,6 +86,7 @@ const Admin = () => {
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
+  const categories = useTracker(() => CategoriesCollection.find().fetch());
   const collections = { 
     users: Meteor.users, 
     specialists: SpecialistsCollection, 
@@ -91,9 +94,10 @@ const Admin = () => {
     semesters: SemesterCollection, 
     series: SeriesCollection, 
     topics: TopicsCollection, 
-    roles: RolesCollection 
+    roles: RolesCollection,
+    categories: CategoriesCollection
   };
-  const colData = { users, specialists, participantGroups, semesters, series, topics, roles };
+  const colData = { users, specialists, participantGroups, semesters, series, topics, roles, categories};
 
 
 
@@ -136,6 +140,16 @@ const Admin = () => {
     setIsReadOnly(true);
     setIsPopupOpen(true);
   }
+  const sectionDisplayNames = {
+    Users: "Users",
+    Roles: "Roles",
+    Specialists: "Specialists",
+    "Participant Groups": "Participant Groups",
+    Semesters: "Semesters",
+    Series: "Series",
+    Topics: "Presentation Titles", 
+    Categories: "Categories",
+  };
 
   return (
     <div className="bg-bg-light flex flex-col h-screen">
@@ -143,7 +157,7 @@ const Admin = () => {
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-4">
           <header className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-echo-maroon border-b-4 border-echo-gold">{activeSection}</h1>
+            <h1 className="text-2xl font-bold text-echo-maroon border-b-4 border-echo-gold"> {sectionDisplayNames[activeSection] || activeSection}</h1>
             <button
               className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200"
               onClick={() => setIsPopupOpen(true)}
