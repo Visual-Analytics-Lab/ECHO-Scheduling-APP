@@ -140,6 +140,16 @@ const Admin = () => {
     setIsReadOnly(true);
     setIsPopupOpen(true);
   }
+  const sectionDisplayNames = {
+    Users: "Users",
+    Roles: "Roles",
+    Specialists: "Specialists",
+    "Participant Groups": "Participant Groups",
+    Semesters: "Semesters",
+    Series: "Series",
+    Topics: "Presentation Titles", 
+    Categories: "Categories",
+  };
 
   return (
     <div className="bg-bg-light flex flex-col h-screen">
@@ -147,7 +157,7 @@ const Admin = () => {
         <AdminSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
         <main className="flex-1 p-4">
           <header className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-echo-maroon border-b-4 border-echo-gold">{activeSection}</h1>
+            <h1 className="text-2xl font-bold text-echo-maroon border-b-4 border-echo-gold"> {sectionDisplayNames[activeSection] || activeSection}</h1>
             <button
               className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200"
               onClick={() => setIsPopupOpen(true)}
