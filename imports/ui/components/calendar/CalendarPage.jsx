@@ -40,6 +40,13 @@ const CalendarPage = () => {
   const [selectedParticipantGroup, setSelectedParticipantGroup] = useState('');
   const [showSessionsList, setShowSessionsList] = useState(true);
 
+  // New states for timeframe filtering and pagination
+  const [timeframeFilter, setTimeframeFilter] = useState('upcoming'); // 'all', 'upcoming', 'past', 'thisWeek', 'thisMonth', 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sessionsPerPage] = useState(10); // You can make this configurable
+
   // Subscribe to collections
   useEffect(() => {
     const subscriptions = [
@@ -63,8 +70,41 @@ const CalendarPage = () => {
   const topics = useTracker(() => TopicsCollection.find().fetch());
   // const roles = useTracker(() => RolesCollection.find().fetch());
 
-  // Filter sessions based on selected filters
+  // Helper function to get date ranges for different timeframes
+  const getTimeframeRange = (timeframe) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (timeframe) {
+      case 'upcoming':
+        return { start: now, end: null }; // From now onwards
+      case 'past':
+        return { start: null, end: now }; // Up to now
+      case 'thisWeek':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return { start: startOfWeek, end: endOfWeek };
+      case 'thisMonth':
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        return { start: startOfMonth, end: endOfMonth };
+      case 'custom':
+        return {
+          start: customStartDate ? new Date(customStartDate) : null,
+          end: customEndDate ? new Date(customEndDate + 'T23:59:59') : null
+        };
+      default: // 'all'
+        return { start: null, end: null };
+    }
+  };
+
+  // Filter sessions based on selected filters and timeframe
   const filteredSessions = sessions.filter(session => {
+    // Existing filters
     const matchesSpecialist = !selectedSpecialist || 
       session.presentingSpecialist === selectedSpecialist ||
       session.supportingSpecialist1 === selectedSpecialist ||
@@ -73,17 +113,48 @@ const CalendarPage = () => {
     const matchesTopic = !selectedTopic || session.topic === selectedTopic;
     const matchesParticipantGroup = !selectedParticipantGroup || session.participantGroup === selectedParticipantGroup;
     
-    return matchesSpecialist && matchesTopic && matchesParticipantGroup;
+    // Timeframe filter
+    const sessionDate = new Date(session.dateTime);
+    const { start, end } = getTimeframeRange(timeframeFilter);
+    
+    let matchesTimeframe = true;
+    if (start && sessionDate < start) matchesTimeframe = false;
+    if (end && sessionDate > end) matchesTimeframe = false;
+    
+    return matchesSpecialist && matchesTopic && matchesParticipantGroup && matchesTimeframe;
   });
 
   // Sort filtered sessions by date
-  const sortedFilteredSessions = [...filteredSessions].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+  const sortedFilteredSessions = [...filteredSessions].sort((a, b) => {
+    if (timeframeFilter === 'past') {
+      return new Date(b.dateTime) - new Date(a.dateTime); // Most recent first for past sessions
+    }
+    return new Date(a.dateTime) - new Date(b.dateTime); // Chronological for upcoming
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedFilteredSessions.length / sessionsPerPage);
+  const startIndex = (currentPage - 1) * sessionsPerPage;
+  const endIndex = startIndex + sessionsPerPage;
+  const paginatedSessions = sortedFilteredSessions.slice(startIndex, endIndex);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedSpecialist, selectedTopic, selectedParticipantGroup, timeframeFilter, customStartDate, customEndDate]);
 
   // Get specialist name by ID - with better error handling
   const getSpecialistName = (specialistId) => {
     if (!specialistId) return 'No specialist';
     const specialist = specialists.find(s => s._id === specialistId);
     return specialist ? `${specialist.firstName} ${specialist.lastName}` : `Specialist ID: ${specialistId}`;
+  };
+
+  // Get specialist color by ID
+  const getSpecialistColor = (specialistId) => {
+    if (!specialistId) return '#000000';
+    const specialist = specialists.find(s => s._id === specialistId);
+    return specialist ? (specialist.nameColor || '#000000') : '#000000';
   };
 
   // Get topic name by ID - with better error handling
@@ -98,6 +169,13 @@ const CalendarPage = () => {
     if (!groupId) return 'No group';
     const group = participantGroups.find(g => g._id === groupId);
     return group ? group.name : `Group ID: ${groupId}`;
+  };
+
+  // Get participant group color by ID
+  const getParticipantGroupColor = (groupId) => {
+    if (!groupId) return '#000000';
+    const group = participantGroups.find(g => g._id === groupId);
+    return group ? (group.nameColor || '#000000') : '#000000';
   };
 
   // Generate specialist schedule for printing/export
@@ -420,7 +498,50 @@ const CalendarPage = () => {
                   </button>
                 </div>
                 
-                {/* Filters */}
+                {/* Timeframe Filter */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time Period
+                  </label>
+                  <select
+                    value={timeframeFilter}
+                    onChange={(e) => setTimeframeFilter(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+                  >
+                    <option value="upcoming">Upcoming Sessions</option>
+                    <option value="past">Past Sessions</option>
+                    <option value="thisWeek">This Week</option>
+                    <option value="thisMonth">This Month</option>
+                    <option value="custom">Custom Range</option>
+                    <option value="all">All Sessions</option>
+                  </select>
+
+                  {/* Custom date range inputs */}
+                  {timeframeFilter === 'custom' && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Existing Filters */}
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -482,6 +603,9 @@ const CalendarPage = () => {
                         setSelectedSpecialist('');
                         setSelectedTopic('');
                         setSelectedParticipantGroup('');
+                        setTimeframeFilter('upcoming');
+                        setCustomStartDate('');
+                        setCustomEndDate('');
                       }}
                       className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors"
                     >
@@ -503,9 +627,10 @@ const CalendarPage = () => {
               </div>
 
               {/* Sessions List */}
-              <div className="p-4 h-[calc(100vh-400px)] overflow-y-auto">
+              <div className="p-4 h-[calc(100vh-500px)] overflow-y-auto">
                 <div className="mb-3 text-sm text-gray-600">
-                  Showing {sortedFilteredSessions.length} of {sessions.length} sessions
+                  Showing {paginatedSessions.length} of {sortedFilteredSessions.length} sessions
+                  {sortedFilteredSessions.length !== sessions.length && ` (${sessions.length} total)`}
                   {/* Debug info - remove this later */}
                   <div className="text-xs text-gray-400 mt-1">
                     Topics loaded: {topics.length} | Specialists: {specialists.length} | Groups: {participantGroups.length}
@@ -513,7 +638,7 @@ const CalendarPage = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {sortedFilteredSessions.map(session => {
+                  {paginatedSessions.map(session => {
                     const date = new Date(session.dateTime);
                     const formattedDate = date.toLocaleDateString();
                     const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -535,8 +660,31 @@ const CalendarPage = () => {
                             <div className="text-sm text-gray-600 space-y-1">
                               <div>📅 {formattedDate} at {formattedTime}</div>
                               <div>📚 {session.topic ? getTopicName(session.topic) : 'No topic assigned'}</div>
-                              <div>👥 {session.participantGroup ? getParticipantGroupName(session.participantGroup) : 'No group assigned'}</div>
-                              <div>🎯 {session.presentingSpecialist ? getSpecialistName(session.presentingSpecialist) : 'No specialist assigned'}</div>
+                              <div>
+                                👥 <span style={{ color: getParticipantGroupColor(session.participantGroup), fontWeight: '500' }}>
+                                  {session.participantGroup ? getParticipantGroupName(session.participantGroup) : 'No group assigned'}
+                                </span>
+                              </div>
+                              <div>
+                                🎯 <span style={{ color: getSpecialistColor(session.presentingSpecialist), fontWeight: '500' }}>
+                                  {session.presentingSpecialist ? getSpecialistName(session.presentingSpecialist) : 'No specialist assigned'}
+                                </span>
+                              </div>
+                              {/* Show supporting specialists if they exist */}
+                              {session.supportingSpecialist1 && (
+                                <div>
+                                  🤝 <span style={{ color: getSpecialistColor(session.supportingSpecialist1), fontWeight: '500' }}>
+                                    {getSpecialistName(session.supportingSpecialist1)} (Support)
+                                  </span>
+                                </div>
+                              )}
+                              {session.supportingSpecialist2 && (
+                                <div>
+                                  🤝 <span style={{ color: getSpecialistColor(session.supportingSpecialist2), fontWeight: '500' }}>
+                                    {getSpecialistName(session.supportingSpecialist2)} (Support)
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div
@@ -552,6 +700,68 @@ const CalendarPage = () => {
                 {sortedFilteredSessions.length === 0 && (
                   <div className="text-center text-gray-500 py-8">
                     No sessions match the selected filters
+                  </div>
+                )}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between border-t pt-4">
+                    <div className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 rounded text-sm ${
+                          currentPage === 1 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      
+                      {/* Page numbers */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 rounded text-sm ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-1 rounded text-sm ${
+                          currentPage === totalPages 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
