@@ -163,11 +163,22 @@ const PopupForm = ({
               const defaultInputStyle = `w-full shadow border border-gray-400 focus:border-echo-teal focus:ring-echo-teal rounded text-gray-700 leading-tight`
 
               // Preprocess options to show correct label given name, title, firstName + lastName
-              const processedOptions = fieldData[name]?.map((s) => ({
-                ...s,
-                key: s._id,
-                processedName: s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.title || s.name
-              })) || [];
+              const rawOptions = fieldData?.[name];
+              const processedOptions = Array.isArray(rawOptions)
+                ? rawOptions.map((s) => ({
+                    ...s,
+                    key: s._id,
+                    processedName: s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.title || s.name,
+                  }))
+                : typeof rawOptions === 'object' && rawOptions !== null
+                  ? [{
+                      ...rawOptions,
+                      key: rawOptions._id,
+                      processedName: rawOptions.firstName && rawOptions.lastName 
+                        ? `${rawOptions.firstName} ${rawOptions.lastName}` 
+                        : rawOptions.title || rawOptions.name
+                    }]
+                  : [];
 
               let inputElement;
               if(isReadOnly) {
@@ -228,7 +239,14 @@ const PopupForm = ({
                     value: opt._id,
                   }));
 
-                  const selectedValues = (formData[name] || []).map(id => {
+                  const rawValue = formData[name];
+                  const selectedArray = Array.isArray(rawValue)
+                    ? rawValue
+                    : rawValue !== undefined && rawValue !== null
+                      ? [rawValue]
+                      : [];
+
+                  const selectedValues = selectedArray.map(id => {
                     const matched = selectOptions.find(o => o.value === id);
                     return matched || { label: id, value: id }; // fallback if value was newly created
                   });
@@ -369,7 +387,7 @@ const PopupForm = ({
                 case "dateTime":
                   inputElement = (
                     <input
-                      type="dateTime-local"
+                      type="datetime-local"
                       name={name}
                       value={formatLocalDateTime(formData[name])}
                       onChange={handleDateChange}
