@@ -122,7 +122,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       series_ids: colData.series,
       focus: [
         { _id: "Education", title: "Education" },
-        { _id: "Social Work", title: "Social Work" },
+        { _id: "Social Work", title: "Social Services" },
       ],
       famOrPro: [
         { _id: "Families", title: "Families" },
@@ -177,7 +177,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
     ],
     popupFields: () => [
       { name: "title",           label: "Title", required: true },
-      { name: "categories_ids", label: "Categories of Expertise",  inputType: "multiSelect"},
+      { name: "categories_ids", label: "Category",  inputType: "multiSelect"},
       { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect" },
       { name: "description",     label: "Description",           inputType: "textArea" },
     ],
@@ -190,11 +190,11 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionName: "categories",
     collectionData: colData.categories,
     tableFields: () => [
-      { name: "title",           label: "Title" },
+      { name: "title",           label: "Category" },
       { name: "description",     label: "Description" },
     ],
     popupFields: () => [
-      { name: "title",           label: "Title", required: true },
+      { name: "title",           label: "Category", required: true },
       { name: "description",     label: "Description",           inputType: "textArea" },
     ],
     fieldContext: { specialists_ids: colData.specialists },
