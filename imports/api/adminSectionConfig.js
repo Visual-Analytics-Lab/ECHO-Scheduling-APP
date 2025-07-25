@@ -87,7 +87,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "profession",           label: "Profession",                                                colSpan: 1 },
       { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
       { name: "topics_ids",           label: "Presentation Titles",             inputType: "multiSelect"             },
-      { name: "categories_ids",        label: "Categories of Expertise",         inputType: "multiSelect"            },
+      { name: "categories_ids",        label: "Areas of Expertise",         inputType: "multiSelect"            },
       // TODO: Add a resume and bio upload somehow
     ],
     fieldContext: { 
