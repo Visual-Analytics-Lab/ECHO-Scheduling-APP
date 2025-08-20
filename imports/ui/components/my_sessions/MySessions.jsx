@@ -43,7 +43,7 @@ export const MySessions = () => {
         { facilitator: userId },
         { supportingFacilitator: userId }
       ]
-    }).fetch();
+    }, { sort: { dateTime: 1 } }).fetch(); // Sort by dateTime ascending
   }, [specialistIds]);
 
   const getSpecialistNameById = (id) => {
@@ -72,6 +72,17 @@ export const MySessions = () => {
     return {
       name: group?.name || `Unknown Group (${id})`,
       color: group?.nameColor || '#000000'
+    };
+  };
+
+  const formatDateTime = (dateTime) => {
+    if (!dateTime) return 'Date not set';
+    
+    const date = new Date(dateTime);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      full: date.toLocaleString()
     };
   };
 
@@ -108,8 +119,12 @@ export const MySessions = () => {
       ) : (
         <ul className="space-y-4">
           {userSessions.map((session) => {
+            const dateTime = formatDateTime(session.dateTime);
             return (
               <li key={session._id} className="border p-4 rounded shadow">
+                <p className="font-bold text-lg mb-2">
+                  📅 {dateTime.date} at 🕒 {dateTime.time}
+                </p>
                 {(() => {
                   const { name, color } = getSpecialistNameById(session.presentingSpecialist);
                   return <p><strong>🎙️ Presenting Specialist:</strong> <span style={{ color }}>{name}</span></p>;

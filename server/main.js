@@ -12,6 +12,7 @@ import './CollectionMethods/UsersMethods';
 import './CollectionMethods/SessionsMethods';
 import './CollectionMethods/RolesMethods';
 import './CollectionMethods/Accounts';
+import './CollectionMethods/backfill';
 import '../imports/api/export';
 
 // if (Meteor.isServer) {

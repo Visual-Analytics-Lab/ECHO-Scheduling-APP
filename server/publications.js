@@ -20,7 +20,8 @@ Meteor.publish('users', async function () {
         createdAt: 1,
         role_id: 1,
         firstName: 1,
-        lastName: 1
+        lastName: 1,
+        specialist_id: 1
       }
     });
   }
