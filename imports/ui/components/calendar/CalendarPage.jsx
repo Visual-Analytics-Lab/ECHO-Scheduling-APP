@@ -219,6 +219,7 @@ const CalendarPage = () => {
                 <th>Topic</th>
                 <th>Participant Group</th>
                 <th>Role</th>
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -240,6 +241,7 @@ const CalendarPage = () => {
                     <td>${getTopicName(session.topic)}</td>
                     <td>${getParticipantGroupName(session.participantGroup)}</td>
                     <td class="role">${role}</td>
+                    <td class="notes">${session.notes || ''}</td>
                   </tr>
                 `;
               }).join('')}
