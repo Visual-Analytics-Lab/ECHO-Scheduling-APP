@@ -14,7 +14,7 @@ import './CollectionMethods/RolesMethods';
 import './CollectionMethods/Accounts';
 import './CollectionMethods/backfill.js';
 import '../imports/api/export';
-
+import './passwordMethods.js';
 // if (Meteor.isServer) {
 //   Meteor.startup(async () => {
 //       const testUser = {
