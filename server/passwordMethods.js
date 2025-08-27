@@ -1,13 +1,14 @@
 // /server/passwordMethods.js
 import { Meteor } from 'meteor/meteor';
-import { Accounts } from 'meteor/accounts-base';
 import { check } from 'meteor/check';
 
 Meteor.methods({
-  // Admin/Specialist manual password reset
   async 'admin.resetUserPassword'(userId, newPassword) {
     check(userId, String);
     check(newPassword, String);
+    
+    console.log('Reset password called for userId:', userId);
+    console.log('New password length:', newPassword.length);
     
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'Must be logged in');
@@ -17,15 +18,41 @@ Meteor.methods({
       throw new Meteor.Error('password-too-short', 'Password must be at least 6 characters');
     }
     
+    const targetUser = await Meteor.users.findOneAsync(userId);
+    if (!targetUser) {
+      throw new Meteor.Error('user-not-found', 'User not found');
+    }
+    
+    console.log('Target user found:', targetUser.username || targetUser.emails?.[0]?.address);
+    
     try {
-      Accounts.setPassword(userId, newPassword);
+      // Clear the existing password first
+      await Meteor.users.updateAsync(userId, {
+        $unset: {
+          'services.password': 1
+        }
+      });
+      
+      // Use the standard method to create a new user with password
+      // Since we can't set password directly, we'll update the services field manually
+      const hashedPassword = Package.sha.SHA256(newPassword);
+      
+      await Meteor.users.updateAsync(userId, {
+        $set: {
+          'services.password': {
+            bcrypt: hashedPassword
+          }
+        }
+      });
+      
+      console.log('Password set successfully');
       return { success: true };
     } catch (error) {
-      throw new Meteor.Error('reset-failed', 'Failed to reset password');
+      console.error('Password update failed:', error);
+      throw new Meteor.Error('reset-failed', 'Failed to reset password: ' + error.message);
     }
   },
 
-  // Get user list - simplified permissions
   async 'admin.getUserList'() {
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'Must be logged in');
