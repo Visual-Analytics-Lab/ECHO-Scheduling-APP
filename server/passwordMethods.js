@@ -1,21 +1,14 @@
 // /server/passwordMethods.js
 import { Meteor } from 'meteor/meteor';
+import { Accounts } from 'meteor/accounts-base';
 import { check } from 'meteor/check';
 
 Meteor.methods({
-  async 'admin.resetUserPassword'(userId, newPassword) {
+  async 'admin.resetUserPassword'(userId) {
     check(userId, String);
-    check(newPassword, String);
-    
-    console.log('Reset password called for userId:', userId);
-    console.log('New password length:', newPassword.length);
     
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'Must be logged in');
-    }
-    
-    if (newPassword.length < 6) {
-      throw new Meteor.Error('password-too-short', 'Password must be at least 6 characters');
     }
     
     const targetUser = await Meteor.users.findOneAsync(userId);
@@ -23,33 +16,31 @@ Meteor.methods({
       throw new Meteor.Error('user-not-found', 'User not found');
     }
     
-    console.log('Target user found:', targetUser.username || targetUser.emails?.[0]?.address);
-    
     try {
-      // Clear the existing password first
+      // Generate a password reset token
+      const token = Accounts._generateStampedLoginToken();
+      const tokenRecord = { ...token, reason: 'reset' };
+      
+      // Add the token to user's services
       await Meteor.users.updateAsync(userId, {
-        $unset: {
-          'services.password': 1
+        $push: {
+          'services.password.reset': tokenRecord
         }
       });
       
-      // Use the standard method to create a new user with password
-      // Since we can't set password directly, we'll update the services field manually
-      const hashedPassword = Package.sha.SHA256(newPassword);
+      // Return the reset URL that you can give to the user
+      const resetUrl = Meteor.absoluteUrl(`reset-password/${token.token}`);
       
-      await Meteor.users.updateAsync(userId, {
-        $set: {
-          'services.password': {
-            bcrypt: hashedPassword
-          }
-        }
-      });
+      return { 
+        success: true, 
+        resetToken: token.token,
+        resetUrl: resetUrl,
+        message: 'Reset token generated. User can use this URL to set a new password.'
+      };
       
-      console.log('Password set successfully');
-      return { success: true };
     } catch (error) {
-      console.error('Password update failed:', error);
-      throw new Meteor.Error('reset-failed', 'Failed to reset password: ' + error.message);
+      console.error('Reset token generation failed:', error);
+      throw new Meteor.Error('reset-failed', 'Failed to generate reset token: ' + error.message);
     }
   },
 
