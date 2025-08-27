@@ -13,7 +13,7 @@ import './CollectionMethods/SessionsMethods';
 import './CollectionMethods/RolesMethods';
 import './CollectionMethods/Accounts';
 import '../imports/api/export';
-//import './passwordMethods.js';
+import './passwordMethods.js';
 // if (Meteor.isServer) {
 //   Meteor.startup(async () => {
 //       const testUser = {
