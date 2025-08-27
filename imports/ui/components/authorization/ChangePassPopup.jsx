@@ -1,4 +1,3 @@
-// Replace your ChangePassPopup.jsx with this version
 import React, { useState } from 'react';
 import { Meteor } from 'meteor/meteor';
 import { toast } from "react-toastify";
@@ -13,8 +12,8 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   // Admin reset states
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
-  const [resetPassword, setResetPassword] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -49,23 +48,30 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError('');
 
-    if (!selectedUser || !resetPassword) {
-      setError('Please select a user and enter a password');
+    if (!selectedUser) {
+      setError('Please select a user');
       return;
     }
 
-    if (resetPassword.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    Meteor.call('admin.resetUserPassword', selectedUser, resetPassword, (error) => {
+    setIsResetting(true);
+    Meteor.call('admin.resetUserPassword', selectedUser, (error, result) => {
+      setIsResetting(false);
       if (error) {
-        setError('Failed to reset password: ' + error.reason);
+        setError('Failed to generate reset link: ' + error.reason);
       } else {
-        toast.success('Password reset successfully!');
+        const resetMessage = `Reset link generated! Copy this URL and give it to the user:\n\n${result.resetUrl}\n\nThey can use this link to set a new password.`;
+        
+        // Copy to clipboard if possible
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(result.resetUrl);
+          toast.success('Reset URL copied to clipboard! Give this link to the user.');
+        } else {
+          toast.success('Reset link generated! Check the console for the URL.');
+          console.log('Password Reset URL:', result.resetUrl);
+        }
+        
+        alert(resetMessage);
         setSelectedUser('');
-        setResetPassword('');
         setError('');
       }
     });
@@ -148,9 +154,13 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
         ) : (
           // Admin reset form
           <>
-            <h4 className="text-red-600 font-medium">Reset Any User's Password</h4>
+            <h4 className="text-red-600 font-medium">Generate Password Reset Link</h4>
+            <p className="text-sm text-gray-600">
+              Select a user to generate a secure password reset link for them.
+            </p>
             <form onSubmit={handleAdminReset} className="space-y-4">
               <div>
+                <label className="block text-sm text-gray-700 mb-1">Select User</label>
                 <select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
@@ -167,26 +177,29 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
                   ))}
                 </select>
               </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="New Password (min 6 characters)"
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-                />
-              </div>
               <button
                 type="submit"
-                className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition-colors"
-                disabled={!selectedUser || !resetPassword}
+                className={`w-full py-2 rounded transition-colors text-white ${
+                  isResetting || !selectedUser
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600'
+                }`}
+                disabled={!selectedUser || isResetting}
               >
-                Reset Password
+                {isResetting ? 'Generating Link...' : 'Generate Password Reset Link'}
               </button>
             </form>
-            <p className="text-xs text-gray-600">
-              Give the new password to the user securely.
-            </p>
+            <div className="text-xs text-gray-600 bg-yellow-50 p-3 rounded">
+              <strong>How it works:</strong>
+              <br />
+              1. Select a user and click the button
+              <br />
+              2. Copy the generated reset URL
+              <br />
+              3. Send the URL to the user securely
+              <br />
+              4. They can use the link to set a new password
+            </div>
           </>
         )}
       </div>
