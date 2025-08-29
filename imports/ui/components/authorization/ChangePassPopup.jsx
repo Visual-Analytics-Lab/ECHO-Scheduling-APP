@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Meteor } from 'meteor/meteor';
+import { Accounts } from 'meteor/accounts-base';   // 🔑 Needed for changePassword
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
@@ -17,9 +18,22 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
+
+    if (!oldPassword || !newPassword) {
+      setError('Please enter both current and new password.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters.');
+      return;
+    }
+
     Accounts.changePassword(oldPassword, newPassword, (err) => {
       if (err) {
-        setError(err.reason);
+        console.error("Change password error:", err);
+        setError(err.reason || 'Something went wrong. Please check your credentials.');
       } else {
         toast.success('Password successfully changed!');
         setError('');
@@ -61,7 +75,6 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
       } else {
         const resetMessage = `Reset link generated! Copy this URL and give it to the user:\n\n${result.resetUrl}\n\nThey can use this link to set a new password.`;
         
-        // Copy to clipboard if possible
         if (navigator.clipboard) {
           navigator.clipboard.writeText(result.resetUrl);
           toast.success('Reset URL copied to clipboard! Give this link to the user.');
@@ -92,7 +105,6 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
 
   return (
     <div className="absolute right-4 top-16 z-50 bg-white rounded-b-lg p-4 w-96 shadow-full-border max-h-96 overflow-y-auto">
-      {/* Close Button */}
       <div className="flex justify-end">
         <button
           onClick={onClose}
@@ -105,7 +117,6 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
       <div className="flex flex-col space-y-4">
         {error && <p style={{color: 'red'}}>{error}</p>}
         
-        {/* Tab buttons */}
         <div className="flex border-b">
           <button
             onClick={switchToNormal}
@@ -122,7 +133,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
         </div>
 
         {!showAdminReset ? (
-          // Normal password change
+          // 🔹 Self password change
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
@@ -152,7 +163,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
             </button>
           </form>
         ) : (
-          // Admin reset form
+          // 🔹 Admin reset
           <>
             <h4 className="text-red-600 font-medium">Generate Password Reset Link</h4>
             <p className="text-sm text-gray-600">
