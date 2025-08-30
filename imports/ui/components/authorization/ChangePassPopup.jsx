@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Meteor } from 'meteor/meteor';
-import { Accounts } from 'meteor/accounts-base';   // 🔑 Needed for changePassword
+import { Accounts } from 'meteor/accounts-base';
+import { useTracker } from 'meteor/react-meteor-data';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
 
@@ -15,6 +16,32 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   const [selectedUser, setSelectedUser] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  // Get current user
+  const currentUser = useTracker(() => Meteor.user());
+
+  // Check if current user is admin
+  const isAdmin = useTracker(() => {
+    if (!currentUser) return false;
+    
+    // List of admin usernames
+    const adminUsernames = ['as5142', 'EchoAdmin', 'Michelle G', 'Ruby', 'sg2222', 'sra116'];
+    
+    // Check by username
+    if (currentUser.username && adminUsernames.includes(currentUser.username)) {
+      return true;
+    }
+    
+    // Additional check by role_id if needed (adjust as necessary)
+    if (currentUser.role_id) {
+      const adminRoleIds = ['admin', 'Admin', 'administrator', 'ADMIN'];
+      if (adminRoleIds.includes(currentUser.role_id)) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,7 +72,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   };
 
   const loadUsers = () => {
-    if (users.length === 0) {
+    if (users.length === 0 && isAdmin) {
       setLoadingUsers(true);
       Meteor.call('admin.getUserList', (error, result) => {
         setLoadingUsers(false);
@@ -61,6 +88,11 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   const handleAdminReset = (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isAdmin) {
+      setError('Admin access required');
+      return;
+    }
 
     if (!selectedUser) {
       setError('Please select a user');
@@ -91,9 +123,13 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   };
 
   const switchToAdminReset = () => {
-    setShowAdminReset(true);
-    setError('');
-    loadUsers();
+    if (isAdmin) {
+      setShowAdminReset(true);
+      setError('');
+      loadUsers();
+    } else {
+      setError('Admin access required');
+    }
   };
 
   const switchToNormal = () => {
@@ -117,23 +153,28 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
       <div className="flex flex-col space-y-4">
         {error && <p style={{color: 'red'}}>{error}</p>}
         
-        <div className="flex border-b">
-          <button
-            onClick={switchToNormal}
-            className={`flex-1 py-2 text-sm ${!showAdminReset ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
-          >
-            Change My Password
-          </button>
-          <button
-            onClick={switchToAdminReset}
-            className={`flex-1 py-2 text-sm ${showAdminReset ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'}`}
-          >
-            Reset User Password
-          </button>
-        </div>
+        {/* Show admin tab if user is admin */}
+        {isAdmin ? (
+          <div className="flex border-b">
+            <button
+              onClick={switchToNormal}
+              className={`flex-1 py-2 text-sm ${!showAdminReset ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
+            >
+              Change My Password
+            </button>
+            <button
+              onClick={switchToAdminReset}
+              className={`flex-1 py-2 text-sm ${showAdminReset ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'}`}
+            >
+              Reset User Password
+            </button>
+          </div>
+        ) : (
+          <h4 className="font-medium text-center py-2 border-b border-gray-200">Change My Password</h4>
+        )}
 
         {!showAdminReset ? (
-          // 🔹 Self password change
+          // Self password change (available to everyone)
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
@@ -163,9 +204,9 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
             </button>
           </form>
         ) : (
-          // 🔹 Admin reset
+          // Admin reset (only for admins)
           <>
-            <h4 className="text-red-600 font-medium">Generate Password Reset Link</h4>
+            <h4 className="text-red-600 font-medium">Admin: Generate Password Reset Link</h4>
             <p className="text-sm text-gray-600">
               Select a user to generate a secure password reset link for them.
             </p>
@@ -193,7 +234,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
                 className={`w-full py-2 rounded transition-colors text-white ${
                   isResetting || !selectedUser
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-orange-500 hover:bg-orange-600'
+                    : 'bg-red-500 hover:bg-red-600'
                 }`}
                 disabled={!selectedUser || isResetting}
               >
@@ -201,15 +242,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
               </button>
             </form>
             <div className="text-xs text-gray-600 bg-yellow-50 p-3 rounded">
-              <strong>How it works:</strong>
-              <br />
-              1. Select a user and click the button
-              <br />
-              2. Copy the generated reset URL
-              <br />
-              3. Send the URL to the user securely
-              <br />
-              4. They can use the link to set a new password
+              <strong>Admin Only:</strong> This generates a secure reset link for the selected user.
             </div>
           </>
         )}
