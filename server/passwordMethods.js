@@ -2,13 +2,34 @@
 import { Meteor } from 'meteor/meteor';
 import { Accounts } from 'meteor/accounts-base';
 import { check } from 'meteor/check';
+import { RolesCollection } from '../imports/api/collections'; // Adjust path as needed
 
 Meteor.methods({
   async 'admin.resetUserPassword'(userId) {
     check(userId, String);
-
+    
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'Must be logged in');
+    }
+    
+    // Check if current user is admin
+    const currentUser = await Meteor.users.findOneAsync(this.userId);
+    if (!currentUser) {
+      throw new Meteor.Error('user-not-found', 'Current user not found');
+    }
+    
+    // Admin permission check - adjust this based on your role system
+    let isAdmin = false;
+    try {
+      const adminRole = await RolesCollection.findOneAsync({ title: 'Admin' });
+      isAdmin = adminRole && currentUser.role_id === adminRole._id;
+    } catch (error) {
+      // Fallback check if roles collection not available
+      isAdmin = currentUser.username === 'admin' || currentUser.isAdmin === true;
+    }
+    
+    if (!isAdmin) {
+      throw new Meteor.Error('not-authorized', 'Admin access required to reset user passwords');
     }
 
     const targetUser = await Meteor.users.findOneAsync(userId);
@@ -26,7 +47,7 @@ Meteor.methods({
       const stampedToken = Accounts._generateStampedLoginToken();
       const tokenRecord = {
         token: stampedToken.token,
-        email: email,         // REQUIRED for Accounts.resetPassword()
+        email: email,
         when: new Date(),
         reason: 'reset'
       };
@@ -57,6 +78,26 @@ Meteor.methods({
   async 'admin.getUserList'() {
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'Must be logged in');
+    }
+    
+    // Check if current user is admin
+    const currentUser = await Meteor.users.findOneAsync(this.userId);
+    if (!currentUser) {
+      throw new Meteor.Error('user-not-found', 'Current user not found');
+    }
+    
+    // Admin permission check - same logic as above
+    let isAdmin = false;
+    try {
+      const adminRole = await RolesCollection.findOneAsync({ title: 'Admin' });
+      isAdmin = adminRole && currentUser.role_id === adminRole._id;
+    } catch (error) {
+      // Fallback check if roles collection not available
+      isAdmin = currentUser.username === 'admin' || currentUser.isAdmin === true;
+    }
+    
+    if (!isAdmin) {
+      throw new Meteor.Error('not-authorized', 'Admin access required to view user list');
     }
 
     return Meteor.users.find({}, {
