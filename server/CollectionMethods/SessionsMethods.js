@@ -45,17 +45,45 @@ Meteor.methods({
 
     const user = await Meteor.users.findOneAsync(userId);
     const specialistIds = user?.specialist_id || [];
+    const userEmail = user?.emails?.[0]?.address;
 
-    const matchCriteria = {
-      dateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-      $or: [
-        { presentingSpecialist: { $in: specialistIds } },
-        { supportingSpecialist1: { $in: specialistIds } },
-        { supportingSpecialist2: { $in: specialistIds } },
-        { facilitator: userId },
-        { supportingFacilitator: userId }
-      ]
-    };
+    let matchCriteria;
+
+    // If user has specialist IDs, use them
+    if (specialistIds.length > 0) {
+      matchCriteria = {
+        dateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        $or: [
+          { presentingSpecialist: { $in: specialistIds } },
+          { supportingSpecialist1: { $in: specialistIds } },
+          { supportingSpecialist2: { $in: specialistIds } },
+          { facilitator: userId },
+          { supportingFacilitator: userId }
+        ]
+      };
+    }
+    // If user doesn't have specialist IDs but has an email, use email to find facilitator sessions
+    else if (userEmail) {
+      // Find all user IDs that have this email address
+      const matchingUsers = await Meteor.users.find(
+        { 'emails.address': userEmail },
+        { fields: { _id: 1 } }
+      ).fetchAsync();
+      
+      const matchingUserIds = matchingUsers.map(u => u._id);
+      
+      matchCriteria = {
+        dateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        $or: [
+          { facilitator: { $in: matchingUserIds } },
+          { supportingFacilitator: { $in: matchingUserIds } }
+        ]
+      };
+    }
+    // If no specialist IDs and no email, return empty result
+    else {
+      throw new Meteor.Error("no-data", "No sessions found. You don't have specialist IDs or a valid email.");
+    }
 
     const data = await SessionsCollection.rawCollection().aggregate([
       { $match: matchCriteria },
@@ -121,30 +149,65 @@ Meteor.methods({
           dateTime: 1,
           notes: 1,
           presentingSpecialist: {
-            $concat: [
-              { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$presentingSpecialistDetails.lastName", 0] }
+            $ifNull: [
+              {
+                $concat: [
+                  { $arrayElemAt: ["$presentingSpecialistDetails.firstName", 0] },
+                  " ",
+                  { $arrayElemAt: ["$presentingSpecialistDetails.lastName", 0] }
+                ]
+              },
+              "Not assigned"
             ]
           },
           supportingSpecialist1: {
-            $concat: [
-              { $arrayElemAt: ["$supportingSpecialist1Details.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$supportingSpecialist1Details.lastName", 0] }
+            $ifNull: [
+              {
+                $concat: [
+                  { $arrayElemAt: ["$supportingSpecialist1Details.firstName", 0] },
+                  " ",
+                  { $arrayElemAt: ["$supportingSpecialist1Details.lastName", 0] }
+                ]
+              },
+              "Not assigned"
             ]
           },
           supportingSpecialist2: {
-            $concat: [
-              { $arrayElemAt: ["$supportingSpecialist2Details.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$supportingSpecialist2Details.lastName", 0] }
+            $ifNull: [
+              {
+                $concat: [
+                  { $arrayElemAt: ["$supportingSpecialist2Details.firstName", 0] },
+                  " ",
+                  { $arrayElemAt: ["$supportingSpecialist2Details.lastName", 0] }
+                ]
+              },
+              "Not assigned"
             ]
           },
-          facilitator: { $arrayElemAt: ["$facilitatorDetails.username", 0] },
-          supportingFacilitator: { $arrayElemAt: ["$supportingFacilitatorDetails.username", 0] },
-          topic: { $arrayElemAt: ["$topicDetails.title", 0] },
-          participantGroup: { $arrayElemAt: ["$participantGroupDetails.name", 0] }
+          facilitator: { 
+            $ifNull: [
+              { $arrayElemAt: ["$facilitatorDetails.username", 0] },
+              "Not assigned"
+            ]
+          },
+          supportingFacilitator: { 
+            $ifNull: [
+              { $arrayElemAt: ["$supportingFacilitatorDetails.username", 0] },
+              "Not assigned"
+            ]
+          },
+          topic: { 
+            $ifNull: [
+              { $arrayElemAt: ["$topicDetails.title", 0] },
+              "Not assigned"
+            ]
+          },
+          participantGroup: { 
+            $ifNull: [
+              { $arrayElemAt: ["$participantGroupDetails.name", 0] },
+              "Not assigned"
+            ]
+          }
         }
       },
       { $sort: { dateTime: 1 } }
