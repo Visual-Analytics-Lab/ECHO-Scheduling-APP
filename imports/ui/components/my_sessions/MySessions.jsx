@@ -22,7 +22,9 @@ export const MySessions = () => {
   }, []);
 
   const user = useTracker(() => Meteor.user(), []);
+  // Get both specialist IDs and user email for fallback
   const specialistIds = useMemo(() => user?.specialist_id || [], [user]);
+  const userEmail = useMemo(() => user?.emails?.[0]?.address, [user]);
 
   const allSpecialists = useTracker(() => SpecialistsCollection.find().fetch(), []);
   const topics = useTracker(() => TopicsCollection.find().fetch(), []);
@@ -34,17 +36,39 @@ export const MySessions = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // set to start of today
 
-    return SessionsCollection.find({
-      dateTime: { $gte: today },
-      $or: [
-        { presentingSpecialist: { $in: specialistIds } },
-        { supportingSpecialist1: { $in: specialistIds } },
-        { supportingSpecialist2: { $in: specialistIds } },
-        { facilitator: userId },
-        { supportingFacilitator: userId }
-      ]
-    }, { sort: { dateTime: 1 } }).fetch(); // Sort by dateTime ascending
-  }, [specialistIds]);
+    // If user has specialist IDs, use them
+    if (specialistIds.length > 0) {
+      return SessionsCollection.find({
+        dateTime: { $gte: today },
+        $or: [
+          { presentingSpecialist: { $in: specialistIds } },
+          { supportingSpecialist1: { $in: specialistIds } },
+          { supportingSpecialist2: { $in: specialistIds } },
+          { facilitator: userId },
+          { supportingFacilitator: userId }
+        ]
+      }, { sort: { dateTime: 1 } }).fetch();
+    } 
+    // If user doesn't have specialist IDs, use email to find sessions where they're a facilitator
+    else if (userEmail) {
+      // Find user IDs that match the email (in case multiple users have same email)
+      const matchingUserIds = allUsers
+        .filter(u => u.emails?.some(email => email.address === userEmail))
+        .map(u => u._id);
+      
+      return SessionsCollection.find({
+        dateTime: { $gte: today },
+        $or: [
+          { facilitator: { $in: matchingUserIds } },
+          { supportingFacilitator: { $in: matchingUserIds } }
+        ]
+      }, { sort: { dateTime: 1 } }).fetch();
+    }
+    // If no specialist IDs and no email, return empty array
+    else {
+      return [];
+    }
+  }, [specialistIds, userEmail, allUsers]);
 
   const getSpecialistNameById = (id) => {
     const match = allSpecialists.find((s) => s._id === id);
