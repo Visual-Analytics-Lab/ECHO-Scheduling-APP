@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { saveAs } from 'file-saver';
@@ -16,59 +16,56 @@ export const MySessions = () => {
       Meteor.subscribe('specialists'),
       Meteor.subscribe('topics'),
       Meteor.subscribe('participantGroups'),
-      Meteor.subscribe('users'), // ✅ subscribe to users
+      Meteor.subscribe('users'),
     ];
     return () => handles.forEach((h) => h.stop());
   }, []);
 
   const user = useTracker(() => Meteor.user(), []);
-  // Get both specialist IDs and user email for fallback
-  const specialistIds = useMemo(() => user?.specialist_id || [], [user]);
-  const userEmail = useMemo(() => user?.emails?.[0]?.address, [user]);
+  const userId = user?._id;
+  const userEmail = user?.emails?.[0]?.address;
 
   const allSpecialists = useTracker(() => SpecialistsCollection.find().fetch(), []);
   const topics = useTracker(() => TopicsCollection.find().fetch(), []);
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch(), []);
   const allUsers = useTracker(() => Meteor.users.find().fetch(), []);
 
-  const userSessions = useTracker(() => {
-    const userId = Meteor.userId();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // set to start of today
+  // 1. Find the specialist profile that matches the user's email
+  const userSpecialistProfile = useTracker(() => {
+    if (!userEmail) return null;
+    return SpecialistsCollection.findOne({ email: userEmail });
+  }, [userEmail]);
 
-    // If user has specialist IDs, use them
-    if (specialistIds.length > 0) {
-      return SessionsCollection.find({
-        dateTime: { $gte: today },
-        $or: [
-          { presentingSpecialist: { $in: specialistIds } },
-          { supportingSpecialist1: { $in: specialistIds } },
-          { supportingSpecialist2: { $in: specialistIds } },
-          { facilitator: userId },
-          { supportingFacilitator: userId }
-        ]
-      }, { sort: { dateTime: 1 } }).fetch();
-    } 
-    // If user doesn't have specialist IDs, use email to find sessions where they're a facilitator
-    else if (userEmail) {
-      // Find user IDs that match the email (in case multiple users have same email)
-      const matchingUserIds = allUsers
-        .filter(u => u.emails?.some(email => email.address === userEmail))
-        .map(u => u._id);
-      
-      return SessionsCollection.find({
-        dateTime: { $gte: today },
-        $or: [
-          { facilitator: { $in: matchingUserIds } },
-          { supportingFacilitator: { $in: matchingUserIds } }
-        ]
-      }, { sort: { dateTime: 1 } }).fetch();
+  const userSessions = useTracker(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (!userId) return [];
+
+    // Build the query conditions
+    const $or = [];
+
+    // 2. Always find sessions where the user is a facilitator (using their user ID)
+    $or.push(
+      { facilitator: userId },
+      { supportingFacilitator: userId }
+    );
+
+    // 3. If a specialist profile was found by email, also find sessions where that specialist ID is used
+    if (userSpecialistProfile) {
+      const specialistId = userSpecialistProfile._id;
+      $or.push(
+        { presentingSpecialist: specialistId },
+        { supportingSpecialist1: specialistId },
+        { supportingSpecialist2: specialistId }
+      );
     }
-    // If no specialist IDs and no email, return empty array
-    else {
-      return [];
-    }
-  }, [specialistIds, userEmail, allUsers]);
+
+    // 4. Run the query combining both conditions
+    return SessionsCollection.find({
+      dateTime: { $gte: today },
+      $or: $or
+    }, { sort: { dateTime: 1 } }).fetch();
+  }, [userId, userSpecialistProfile]); // Rerun when userId or specialist profile changes
 
   const getSpecialistNameById = (id) => {
     const match = allSpecialists.find((s) => s._id === id);
@@ -138,8 +135,15 @@ export const MySessions = () => {
         📥 Export My Sessions
       </button>
 
+      {/* Optional: Show a note if the user is found in the specialists collection */}
+      {userSpecialistProfile && (
+        <p className="mb-4 text-sm text-gray-600">
+          👋 Logged in as <strong>{userSpecialistProfile.firstName} {userSpecialistProfile.lastName}</strong> (Specialist).
+        </p>
+      )}
+
       {userSessions.length === 0 ? (
-        <p>No sessions found for your account.</p>
+        <p>No upcoming sessions found for your account.</p>
       ) : (
         <ul className="space-y-4">
           {userSessions.map((session) => {
