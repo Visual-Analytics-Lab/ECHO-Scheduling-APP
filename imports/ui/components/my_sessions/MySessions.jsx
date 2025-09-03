@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
-import { saveAs } from 'file-saver';
 import {
   SessionsCollection,
   SpecialistsCollection,
@@ -107,33 +106,9 @@ export const MySessions = () => {
     };
   };
 
-  const handleExport = async () => {
-    try {
-      const base64 = await Meteor.callAsync('exportMySessionsExcel');
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      saveAs(blob, 'MySessions.xlsx');
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Export failed');
-    }
-  };
-
   return (
     <div className="p-4">
       <h2 className="text-2xl mb-4">My Schedule</h2>
-      <button
-        onClick={handleExport}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
-      >
-        📥 Export My Sessions
-      </button>
 
       {/* Optional: Show a note if the user is found in the specialists collection */}
       {userSpecialistProfile && (
