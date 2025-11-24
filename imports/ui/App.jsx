@@ -8,8 +8,8 @@ import Admin from "./components/admin/Admin";
 import CalendarPage from "./components/calendar/CalendarPage";
 import { Landing } from "./components/landing/LandingPage";
 import Navbar from "./components/navbar/Navbar";
-import { MySessions } from "./components/my_sessions/MySessions";
-import ResetPasswordPage from "./components/authorization/ResetPasswordPage"; // Add this import
+import MySessions from "./components/my_sessions/MySessions";  // ✅ REMOVE CURLY BRACES
+import ResetPasswordPage from "./components/authorization/ResetPasswordPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

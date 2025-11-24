@@ -1,157 +1,337 @@
-import React, { useEffect, useMemo } from 'react';
-import { useTracker } from 'meteor/react-meteor-data';
-import { Meteor } from 'meteor/meteor';
-import { saveAs } from 'file-saver';
+import React, { useEffect, useState, useRef } from "react";
+import { Meteor } from "meteor/meteor";
+import { useTracker } from "meteor/react-meteor-data";
+
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+
 import {
   SessionsCollection,
   SpecialistsCollection,
+  ParticipantGroupsCollection,
   TopicsCollection,
-  ParticipantGroupsCollection
-} from '../../../api/collections';
+} from "../../../api/collections";
+import { buildSessionTooltip } from "../../utils/tooltipHelpers";
 
-export const MySessions = () => {
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/dist/border.css';
+
+const MySessions = () => {
+  const [currentViewDate, setCurrentViewDate] = useState(new Date());
+  const [timePeriodFilter, setTimePeriodFilter] = useState("upcoming"); // "all", "past", "upcoming"
+  const calendarRef = useRef(null);
+
+  // Get current user
+  const currentUser = useTracker(() => Meteor.user());
+  
+  // Subscribe to collections
   useEffect(() => {
-    const handles = [
+    const subscriptions = [
       Meteor.subscribe('sessions'),
-      Meteor.subscribe('specialists'),
-      Meteor.subscribe('topics'),
-      Meteor.subscribe('participantGroups'),
-      Meteor.subscribe('users'), // ✅ subscribe to users
+      Meteor.subscribe("specialists"),
+      Meteor.subscribe("participantGroups"),
+      Meteor.subscribe("topics"),
     ];
-    return () => handles.forEach((h) => h.stop());
+    return () => subscriptions.forEach(sub => sub.stop());
   }, []);
 
-  const user = useTracker(() => Meteor.user(), []);
-  const specialistIds = useMemo(() => user?.specialist_id || [], [user]);
+  // Get current specialist info
+  const currentSpecialist = useTracker(() => {
+    if (!currentUser) return null;
+    return SpecialistsCollection.findOne({ userId: currentUser._id });
+  });
 
-  const allSpecialists = useTracker(() => SpecialistsCollection.find().fetch(), []);
-  const topics = useTracker(() => TopicsCollection.find().fetch(), []);
-  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch(), []);
-  const allUsers = useTracker(() => Meteor.users.find().fetch(), []);
-
-  const userSessions = useTracker(() => {
-    const userId = Meteor.userId();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // set to start of today
-
-    return SessionsCollection.find({
-      dateTime: { $gte: today },
-      $or: [
-        { presentingSpecialist: { $in: specialistIds } },
-        { supportingSpecialist1: { $in: specialistIds } },
-        { supportingSpecialist2: { $in: specialistIds } },
-        { facilitator: userId },
-        { supportingFacilitator: userId }
-      ]
-    }, { sort: { dateTime: 1 } }).fetch(); // Sort by dateTime ascending
-  }, [specialistIds]);
-
-  const getSpecialistNameById = (id) => {
-    const match = allSpecialists.find((s) => s._id === id);
-    return {
-      name: match?.firstName && match?.lastName
-        ? `${match.firstName} ${match.lastName}`
-        : `Unknown (${id})`,
-      color: match?.nameColor || '#000000'
-    };
-  };
-
-  const getUsernameById = (id) => {
-    const user = allUsers.find((u) => u._id === id);
-    return user?.username || `Unknown (${id})`;
-  };
-
-  const getTopicNameById = (id) => {
-    if (!id) return 'Unknown Topic (missing ID)';
-    const topic = topics.find((t) => t._id === id);
-    return topic?.title || `Unknown Topic (${id})`;
-  };
-
-  const getGroupNameById = (id) => {
-    const group = participantGroups.find((g) => g._id === id);
-    return {
-      name: group?.name || `Unknown Group (${id})`,
-      color: group?.nameColor || '#000000'
-    };
-  };
-
-  const formatDateTime = (dateTime) => {
-    if (!dateTime) return 'Date not set';
+  // Get all sessions where this specialist is involved
+  const allSpecialistSessions = useTracker(() => {
+    if (!currentSpecialist) return [];
     
-    const date = new Date(dateTime);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      full: date.toLocaleString()
-    };
+    return SessionsCollection.find({
+      $or: [
+        { presentingSpecialist: currentSpecialist._id },
+        { supportingSpecialist1: currentSpecialist._id },
+        { supportingSpecialist2: currentSpecialist._id }
+      ]
+    }).fetch();
+  });
+
+  const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
+  const topics = useTracker(() => TopicsCollection.find().fetch());
+
+  // Handle calendar view changes
+  const handleDatesSet = (arg) => {
+    setCurrentViewDate(new Date(arg.start));
   };
 
-  const handleExport = async () => {
-    try {
-      const base64 = await Meteor.callAsync('exportMySessionsExcel');
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      saveAs(blob, 'MySessions.xlsx');
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Export failed');
+  // Filter sessions based on time period
+  const getFilteredSessions = () => {
+    const now = new Date();
+    
+    switch (timePeriodFilter) {
+      case "past":
+        return allSpecialistSessions.filter(session => 
+          new Date(session.dateTime) < now
+        ).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime)); // Most recent first
+      
+      case "upcoming":
+        return allSpecialistSessions.filter(session => 
+          new Date(session.dateTime) >= now
+        ).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)); // Soonest first
+      
+      case "all":
+      default:
+        return allSpecialistSessions.sort((a, b) => 
+          new Date(a.dateTime) - new Date(b.dateTime)
+        ); // Chronological order
     }
   };
 
-  return (
-    <div className="p-4">
-      <h2 className="text-2xl mb-4">My Schedule</h2>
-      <button
-        onClick={handleExport}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
-      >
-        📥 Export My Sessions
-      </button>
+  // Get sessions for the current viewed week (for sidebar)
+  const getSessionsForCurrentWeek = () => {
+    const referenceDate = new Date(currentViewDate);
+    
+    const startOfWeek = new Date(referenceDate);
+    startOfWeek.setDate(referenceDate.getDate() - referenceDate.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
-      {userSessions.length === 0 ? (
-        <p>No sessions found for your account.</p>
-      ) : (
-        <ul className="space-y-4">
-          {userSessions.map((session) => {
-            const dateTime = formatDateTime(session.dateTime);
-            return (
-              <li key={session._id} className="border p-4 rounded shadow">
-                <p className="font-bold text-lg mb-2">
-                  📅 {dateTime.date} at 🕒 {dateTime.time}
-                </p>
-                {(() => {
-                  const { name, color } = getSpecialistNameById(session.presentingSpecialist);
-                  return <p><strong>🎙️ Presenting Specialist:</strong> <span style={{ color }}>{name}</span></p>;
-                })()}
-                {(() => {
-                  const { name, color } = getSpecialistNameById(session.supportingSpecialist1);
-                  return <p><strong>🤝 Support 1:</strong> <span style={{ color }}>{name}</span></p>;
-                })()}
-                {(() => {
-                  const { name, color } = getSpecialistNameById(session.supportingSpecialist2);
-                  return <p><strong>🤝 Support 2:</strong> <span style={{ color }}>{name}</span></p>;
-                })()}
-                <p><strong>🧭 Facilitator:</strong> {getUsernameById(session.facilitator)}</p>
-                <p><strong>🧭 Supporting Facilitator:</strong> {getUsernameById(session.supportingFacilitator)}</p>
-                <p><strong>🏷️ Topic:</strong> {getTopicNameById(session.topic)}</p>
-                {(() => {
-                  const { name, color } = getGroupNameById(session.participantGroup);
-                  return <p><strong>👥 Participant Group:</strong> <span style={{ color }}>{name}</span></p>;
-                })()}
-                {session.notes && (
-                  <p><strong>📝 Notes:</strong> {session.notes}</p>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    const filteredSessions = getFilteredSessions();
+    
+    return filteredSessions.filter(session => {
+      const sessionDate = new Date(session.dateTime);
+      return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
+    });
+  };
+
+  const weekSessions = getSessionsForCurrentWeek();
+  const filteredSessions = getFilteredSessions();
+
+  // Helper function to get specialist role in session
+  const getSpecialistRole = (session, specialistId) => {
+    if (session.presentingSpecialist === specialistId) return "Presenting";
+    if (session.supportingSpecialist1 === specialistId) return "Supporting 1";
+    if (session.supportingSpecialist2 === specialistId) return "Supporting 2";
+    return "Unknown";
+  };
+
+  // Format week display
+  const getWeekDisplayText = () => {
+    const referenceDate = new Date(currentViewDate);
+    const currentDate = new Date();
+    
+    const currentWeekStart = new Date(currentDate);
+    currentWeekStart.setDate(currentDate.getDate() - currentDate.getDay());
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    const selectedWeekStart = new Date(referenceDate);
+    selectedWeekStart.setDate(referenceDate.getDate() - referenceDate.getDay());
+    selectedWeekStart.setHours(0, 0, 0, 0);
+    
+    if (currentWeekStart.getTime() === selectedWeekStart.getTime()) {
+      return "This Week";
+    }
+    
+    const weekEnd = new Date(selectedWeekStart);
+    weekEnd.setDate(selectedWeekStart.getDate() + 6);
+    
+    const formatOptions = { month: 'short', day: 'numeric' };
+    const startStr = selectedWeekStart.toLocaleDateString('en-US', formatOptions);
+    const endStr = weekEnd.toLocaleDateString('en-US', formatOptions);
+    
+    return `${startStr} - ${endStr}`;
+  };
+
+  // Get time period display text
+  const getTimePeriodText = () => {
+    switch (timePeriodFilter) {
+      case "past":
+        return "Past Sessions";
+      case "upcoming":
+        return "Upcoming Sessions";
+      case "all":
+      default:
+        return "All Sessions";
+    }
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Please log in to view your sessions.</div>
+      </div>
+    );
+  }
+
+  if (!currentSpecialist) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Specialist profile not found.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-gray-200 text-center py-4">
+        <h1 className="text-3xl font-bold text-[#721D35]">
+          My Sessions - {currentSpecialist.firstName} {currentSpecialist.lastName}
+        </h1>
+      </header>
+
+      <div className="flex flex-1">
+        {/* Sidebar with session list */}
+        <aside className="w-80 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border flex flex-col">
+          <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
+            <h2 className="text-xl text-white">
+              My Sessions - {getWeekDisplayText()}
+            </h2>
+          </div>
+          
+          {/* Time Period Filter */}
+          <div className="p-4 border-b border-gray-200">
+            <label htmlFor="timePeriod" className="block text-sm font-medium text-gray-700 mb-2">
+              Time Period
+            </label>
+            <select
+              id="timePeriod"
+              value={timePeriodFilter}
+              onChange={(e) => setTimePeriodFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#721D35] focus:border-[#721D35]"
+            >
+              <option value="all">All Sessions</option>
+              <option value="upcoming">Upcoming Sessions</option>
+              <option value="past">Past Sessions</option>
+            </select>
+          </div>
+
+          {/* Sessions List */}
+          <div className="p-4 flex-1 overflow-y-auto">
+            <h3 className="font-semibold text-lg mb-3 text-gray-700">
+              {getTimePeriodText()} ({filteredSessions.length})
+            </h3>
+            
+            {filteredSessions.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                No {timePeriodFilter} sessions found.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {filteredSessions.map((session) => {
+                  const isPast = new Date(session.dateTime) < new Date();
+                  
+                  return (
+                    <div 
+                      key={session._id}
+                      className={`border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow ${
+                        isPast ? 'opacity-70' : ''
+                      }`}
+                      style={{ borderLeft: `4px solid ${session.color || '#721D35'}` }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="font-semibold text-lg flex-1" style={{ color: session.color || '#721D35' }}>
+                          {session.sessionTitle || "Untitled Session"}
+                        </div>
+                        {isPast && (
+                          <span className="ml-2 px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">
+                            Past
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                          <strong>Date & Time:</strong> {new Date(session.dateTime).toLocaleString()}
+                        </div>
+                        <div>
+                          <strong>My Role:</strong> 
+                          <span className="ml-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {getSpecialistRole(session, currentSpecialist._id)}
+                          </span>
+                        </div>
+                        {session.topic && (
+                          <div>
+                            <strong>Topic:</strong> {topics.find(t => t._id === session.topic)?.name || 'Unknown'}
+                          </div>
+                        )}
+                        {session.participantGroup && (
+                          <div>
+                            <strong>Group:</strong> {participantGroups.find(pg => pg._id === session.participantGroup)?.name || 'Unknown'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Main calendar area */}
+        <main className="flex-1 p-4">
+          <div className="bg-white border border-gray-300 rounded-lg shadow-full-border">
+            <div className="text-center text-black py-3 px-4 rounded-t-lg">
+              <h2 className="text-2xl">My Session Calendar</h2>
+            </div>
+            <div className="p-4 h-[calc(100vh-180px)] overflow-y-auto">
+              <FullCalendar
+                ref={calendarRef}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="timeGridWeek"
+                headerToolbar={{
+                  left: "prev,next today",
+                  center: "title",
+                  right: "dayGridMonth,timeGridWeek,timeGridDay",
+                }}
+                height="100%"
+                events={filteredSessions?.map(session => {
+                  const start = new Date(session.dateTime);
+                  const end = new Date(start);
+                  end.setHours(end.getHours() + 1);
+                  
+                  return {
+                    title: `${session.sessionTitle} (${getSpecialistRole(session, currentSpecialist._id)})`,
+                    start: start.toISOString(),
+                    end: end.toISOString(),
+                    backgroundColor: session.color,
+                    borderColor: session.color,
+                    extendedProps: {
+                      sessionId: session._id,
+                      color: session.color,
+                      presentingSpecialist: session.presentingSpecialist,
+                      supportingSpecialist1: session.supportingSpecialist1,
+                      supportingSpecialist2: session.supportingSpecialist2,
+                      participantGroup: session.participantGroup,
+                      topic: session.topic,
+                      specialistRole: getSpecialistRole(session, currentSpecialist._id),
+                    },
+                  };
+                })}
+                
+                eventDidMount={({ el, event }) => {
+                  tippy(el, {
+                    allowHTML: true,
+                    content: buildSessionTooltip({ event }),
+                    theme: "custom",
+                    placement: "top",
+                    arrow: true,
+                  });
+                }}
+
+                datesSet={handleDatesSet}
+              />
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
+
+export default MySessions;
