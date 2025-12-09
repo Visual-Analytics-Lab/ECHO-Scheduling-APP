@@ -5,6 +5,7 @@ import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 import { MultiSelect } from 'primereact/multiselect';
 import { Dropdown } from 'primereact/dropdown';
 import { MdEdit } from 'react-icons/md';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import CreatableSelect from 'react-select/creatable';
 
 import { toast } from "react-toastify";
@@ -24,6 +25,8 @@ const PopupForm = ({
   isReadOnly,
 }) => {
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -121,6 +124,7 @@ const PopupForm = ({
     if (e) e.preventDefault();
     setFormData({});
     setErrors({});
+    setShowPassword(false);
     setIsOpen(false);
   }
   const getDisplayValue = (fieldName, value) => {
@@ -143,7 +147,7 @@ const PopupForm = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{isReadOnly? `View ${title}`: title}</h2>
@@ -408,15 +412,39 @@ const PopupForm = ({
                   );
                   break;
                 default:
-                  inputElement = (
-                    <input
-                      type="text"
-                      name={name}
-                      value={formData[name] || ''}
-                      onChange={handleChange}
-                      className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
-                    />
-                  );
+                  // Special handling for password fields
+                  if (name === 'password') {
+                    inputElement = (
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name={name}
+                          value={formData[name] || ''}
+                          onChange={handleChange}
+                          className={`${defaultInputStyle} pr-10 ${hasError ? 'border-red-500' : ''}`}
+                          placeholder="Enter password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </button>
+                      </div>
+                    );
+                  } else {
+                    inputElement = (
+                      <input
+                        type="text"
+                        name={name}
+                        value={formData[name] || ''}
+                        onChange={handleChange}
+                        className={`${defaultInputStyle} ${hasError ? 'border-red-500' : ''}`}
+                      />
+                    );
+                  }
                   break;
               }
             }

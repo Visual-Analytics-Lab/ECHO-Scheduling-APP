@@ -1,4 +1,3 @@
-// /imports/ui/components/admin/AdminPasswordReset.jsx
 import React, { useState, useEffect } from 'react';
 import { Meteor } from 'meteor/meteor';
 import { toast } from 'react-toastify';
@@ -11,7 +10,6 @@ const AdminPasswordReset = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Get user list
     setIsLoading(true);
     Meteor.call('admin.getUserList', (error, result) => {
       setIsLoading(false);
@@ -89,8 +87,7 @@ const AdminPasswordReset = () => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             New Password
           </label>
-          <input
-            type="password"
+          <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Enter new password (min 6 characters)"

@@ -19,9 +19,13 @@ import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/border.css';
 
+// Import jsPDF for PDF generation
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+
 const MySessions = () => {
   const [currentViewDate, setCurrentViewDate] = useState(new Date());
-  const [timePeriodFilter, setTimePeriodFilter] = useState("upcoming"); // "all", "past", "upcoming"
+  const [timePeriodFilter, setTimePeriodFilter] = useState("upcoming");
   const calendarRef = useRef(null);
 
   // Get current user
@@ -73,42 +77,21 @@ const MySessions = () => {
       case "past":
         return allSpecialistSessions.filter(session => 
           new Date(session.dateTime) < now
-        ).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime)); // Most recent first
+        ).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
       
       case "upcoming":
         return allSpecialistSessions.filter(session => 
           new Date(session.dateTime) >= now
-        ).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)); // Soonest first
+        ).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
       
       case "all":
       default:
         return allSpecialistSessions.sort((a, b) => 
           new Date(a.dateTime) - new Date(b.dateTime)
-        ); // Chronological order
+        );
     }
   };
 
-  // Get sessions for the current viewed week (for sidebar)
-  const getSessionsForCurrentWeek = () => {
-    const referenceDate = new Date(currentViewDate);
-    
-    const startOfWeek = new Date(referenceDate);
-    startOfWeek.setDate(referenceDate.getDate() - referenceDate.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    const filteredSessions = getFilteredSessions();
-    
-    return filteredSessions.filter(session => {
-      const sessionDate = new Date(session.dateTime);
-      return sessionDate >= startOfWeek && sessionDate <= endOfWeek;
-    });
-  };
-
-  const weekSessions = getSessionsForCurrentWeek();
   const filteredSessions = getFilteredSessions();
 
   // Helper function to get specialist role in session
@@ -117,33 +100,6 @@ const MySessions = () => {
     if (session.supportingSpecialist1 === specialistId) return "Supporting 1";
     if (session.supportingSpecialist2 === specialistId) return "Supporting 2";
     return "Unknown";
-  };
-
-  // Format week display
-  const getWeekDisplayText = () => {
-    const referenceDate = new Date(currentViewDate);
-    const currentDate = new Date();
-    
-    const currentWeekStart = new Date(currentDate);
-    currentWeekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    currentWeekStart.setHours(0, 0, 0, 0);
-    
-    const selectedWeekStart = new Date(referenceDate);
-    selectedWeekStart.setDate(referenceDate.getDate() - referenceDate.getDay());
-    selectedWeekStart.setHours(0, 0, 0, 0);
-    
-    if (currentWeekStart.getTime() === selectedWeekStart.getTime()) {
-      return "This Week";
-    }
-    
-    const weekEnd = new Date(selectedWeekStart);
-    weekEnd.setDate(selectedWeekStart.getDate() + 6);
-    
-    const formatOptions = { month: 'short', day: 'numeric' };
-    const startStr = selectedWeekStart.toLocaleDateString('en-US', formatOptions);
-    const endStr = weekEnd.toLocaleDateString('en-US', formatOptions);
-    
-    return `${startStr} - ${endStr}`;
   };
 
   // Get time period display text
@@ -156,6 +112,99 @@ const MySessions = () => {
       case "all":
       default:
         return "All Sessions";
+    }
+  };
+
+  // Download PDF function
+  const downloadSessionsPDF = () => {
+    try {
+      console.log("Starting PDF generation...");
+      console.log("Filtered sessions:", filteredSessions);
+      
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.setTextColor(114, 29, 53); // ECHO maroon color
+      doc.text(`My Sessions - ${currentSpecialist.firstName} ${currentSpecialist.lastName}`, 14, 20);
+      
+      // Add subtitle
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${getTimePeriodText()} (${filteredSessions.length} total)`, 14, 28);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
+      
+      // Prepare table data
+      const tableData = filteredSessions.map((session) => {
+        const topic = topics.find(t => t._id === session.topic);
+        const group = participantGroups.find(pg => pg._id === session.participantGroup);
+        const role = getSpecialistRole(session, currentSpecialist._id);
+        const isPast = new Date(session.dateTime) < new Date();
+        
+        return [
+          session.sessionTitle || "Untitled Session",
+          new Date(session.dateTime).toLocaleString(),
+          role,
+          topic?.name || "N/A",
+          group?.name || "N/A",
+          isPast ? "Past" : "Upcoming"
+        ];
+      });
+      
+      console.log("Table data prepared:", tableData);
+      
+      // Add table
+      doc.autoTable({
+        head: [['Session Title', 'Date & Time', 'My Role', 'Topic', 'Group', 'Status']],
+        body: tableData,
+        startY: 40,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [114, 29, 53],
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fontSize: 9
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 20 }
+        },
+        margin: { top: 40 }
+      });
+      
+      // Add footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+      
+      // Save the PDF
+      const fileName = `MySessions_${currentSpecialist.firstName}_${currentSpecialist.lastName}_${getTimePeriodText().replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      console.log("Saving PDF as:", fileName);
+      doc.save(fileName);
+      
+      console.log("PDF download initiated successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please check the console for details.");
     }
   };
 
@@ -185,12 +234,11 @@ const MySessions = () => {
       </header>
 
       <div className="flex flex-1">
-        {/* Sidebar with session list */}
+        {/* Left Sidebar */}
         <aside className="w-80 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border flex flex-col">
+          {/* Sidebar Header */}
           <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
-            <h2 className="text-xl text-white">
-              My Sessions - {getWeekDisplayText()}
-            </h2>
+            <h2 className="text-xl text-white">My Sessions</h2>
           </div>
           
           {/* Time Period Filter */}
@@ -208,6 +256,31 @@ const MySessions = () => {
               <option value="upcoming">Upcoming Sessions</option>
               <option value="past">Past Sessions</option>
             </select>
+          </div>
+
+          {/* Download PDF Button */}
+          <div className="px-4 pt-3 pb-2">
+            <button
+              onClick={downloadSessionsPDF}
+              className="w-full px-4 py-2 bg-[#721D35] text-white rounded-md hover:bg-[#5a1729] transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={filteredSessions.length === 0}
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-5 w-5" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                />
+              </svg>
+              Download PDF
+            </button>
           </div>
 
           {/* Sessions List */}
@@ -284,6 +357,7 @@ const MySessions = () => {
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
+                firstDay={1}  // ADDED THIS LINE - Makes Monday the first day of the week
                 headerToolbar={{
                   left: "prev,next today",
                   center: "title",

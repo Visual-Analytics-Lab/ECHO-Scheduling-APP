@@ -82,6 +82,7 @@ const MainContent = () => {
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
+                firstDay={1}  // ADDED THIS LINE - Makes Monday the first day of the week
                 headerToolbar={{
                   left: "prev,next today",
                   center: "title",
