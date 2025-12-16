@@ -200,13 +200,23 @@ const getSectionConfig = (collections, colData, rowData) => ({
     collectionData: colData.categories,
     tableFields: () => [
       { name: "title",           label: "Category" },
+      { name: "focus",           label: "Focus" },
       { name: "description",     label: "Description" },
     ],
     popupFields: () => [
-      { name: "title",           label: "Category", required: true },
-      { name: "description",     label: "Description",           inputType: "textArea" },
+      { name: "title",           label: "Category", required: true, colSpan: 1 },
+      { name: "focus",           label: "Focus",    required: true, inputType: "select", colSpan: 1 },
+      { name: "description",     label: "Description", inputType: "textArea" },
     ],
-    fieldContext: { specialists_ids: colData.specialists },
+    fieldContext: { 
+      specialists_ids: colData.specialists,
+      focus: [
+        { _id: "Education", title: "Education" },
+        { _id: "Family Focus", title: "Family Focus" },
+        { _id: "Social Service", title: "Social Service" },
+        { _id: "Other", title: "Other" },
+      ]
+    },
   },
 });
 

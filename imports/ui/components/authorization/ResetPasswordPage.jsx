@@ -20,7 +20,8 @@ const ResetPasswordPage = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 6) {1
+      
       setError('Password must be at least 6 characters');
       return;
     }

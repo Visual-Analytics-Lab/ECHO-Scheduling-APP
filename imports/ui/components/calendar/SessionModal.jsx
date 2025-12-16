@@ -16,7 +16,6 @@ import DeleteModal from '../delete_modal/DeleteModal'
 
 
 const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, existingSession = null}) => {
-  // Subscribe to collections
   useEffect(() => {
     const subscriptions = [
       Meteor.subscribe("users"),
@@ -45,6 +44,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   const categories = useTracker(() => CategoriesCollection.find().fetch());
 
   const [formData, setFormData] = useState({
+    sessionNumber: '',
     sessionTitle: '',
     casePresenter: '',
     facilitator: '',
@@ -52,12 +52,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     presentingSpecialist: '',
     supportingSpecialist1: '',
     supportingSpecialist2: '',
+    supportingSpecialist3: '',
+    supportingSpecialist4: '',
     participantGroup: '',
     dateTime: '',
     presentationsDue: '',
     newMaterial: false,
     color: '',
-    topic: '',
+    presentationTitle: '',
+    topicSimple: '',
+    category: '',
     notes: '',
     semester: '',
     series: '',
@@ -67,15 +71,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     blankFieldsOnRecurrence: false
   });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [topicSearchQuery, setTopicSearchQuery] = useState('');
-  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
-  const topicDropdownRef = useRef(null);
+  const [presentationTitleSearchQuery, setPresentationTitleSearchQuery] = useState('');
+  const [showPresentationTitleDropdown, setShowPresentationTitleDropdown] = useState(false);
+  const presentationTitleDropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (topicDropdownRef.current && !topicDropdownRef.current.contains(event.target)) {
-        setShowTopicDropdown(false);
+      if (presentationTitleDropdownRef.current && !presentationTitleDropdownRef.current.contains(event.target)) {
+        setShowPresentationTitleDropdown(false);
       }
     };
 
@@ -86,6 +89,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   useEffect(() => {
     if (existingSession) {
       setFormData({
+        sessionNumber: existingSession.sessionNumber || '',
         sessionTitle: existingSession.sessionTitle || '',
         casePresenter: existingSession.casePresenter || '',
         facilitator: existingSession.facilitator || '',
@@ -93,12 +97,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         presentingSpecialist: existingSession.presentingSpecialist || '',
         supportingSpecialist1: existingSession.supportingSpecialist1 || '',
         supportingSpecialist2: existingSession.supportingSpecialist2 || '',
+        supportingSpecialist3: existingSession.supportingSpecialist3 || '',
+        supportingSpecialist4: existingSession.supportingSpecialist4 || '',
         participantGroup: existingSession.participantGroup || '',
         dateTime: formatLocalDateTime(existingSession.dateTime),
         presentationsDue: formatLocalDateTime(existingSession.presentationsDue),
         newMaterial: existingSession.newMaterial || false,
         color: existingSession.color || '',
-        topic: existingSession.topic || '',
+        presentationTitle: existingSession.presentationTitle || existingSession.topic || '',
+        topicSimple: existingSession.topicSimple || '',
+        category: existingSession.category || '',
         notes: existingSession.notes || '',
         semester: existingSession.semester || '',
         series: existingSession.series || '',
@@ -107,13 +115,13 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         recurrenceInterval: 'weekly',
         blankFieldsOnRecurrence: false
       });
-      // Set search query to selected topic title
-      const selectedTopic = topics.find(t => t._id === existingSession.topic);
+      const selectedTopic = topics.find(t => t._id === (existingSession.presentationTitle || existingSession.topic));
       if (selectedTopic) {
-        setTopicSearchQuery(selectedTopic.title);
+        setPresentationTitleSearchQuery(selectedTopic.title);
       }
     } else {
       setFormData({
+        sessionNumber: '',
         sessionTitle: '',
         casePresenter: '',
         facilitator: '',
@@ -121,12 +129,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         presentingSpecialist: '',
         supportingSpecialist1: '',
         supportingSpecialist2: '',
+        supportingSpecialist3: '',
+        supportingSpecialist4: '',
         participantGroup: '',
         dateTime: formatLocalDateTime(selectedDate),
-        presentationsDue: formatLocalDateTime(getWeekBefore(selectedDate)),
+        presentationsDue: formatLocalDateTime(getTwoBusinessDaysBefore(selectedDate)),
         newMaterial: false,
         color: '',
-        topic: '',
+        presentationTitle: '',
+        topicSimple: '',
+        category: '',
         notes: '',
         semester: '',
         series: '',
@@ -135,11 +147,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         recurrenceInterval: 'weekly',
         blankFieldsOnRecurrence: false
       });
-      setTopicSearchQuery('');
+      setPresentationTitleSearchQuery('');
     }
   }, [existingSession, selectedDate]);
 
-  // Get specialist's topics when specialist is selected
   const getSpecialistTopics = (specialistId) => {
     if (!specialistId) return [];
     return topics.filter(topic => 
@@ -147,16 +158,14 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     );
   };
 
-  // Get filtered topics for autocomplete
   const getFilteredTopics = () => {
-    if (!topicSearchQuery) return [];
+    if (!presentationTitleSearchQuery) return [];
     
-    const query = topicSearchQuery.toLowerCase();
+    const query = presentationTitleSearchQuery.toLowerCase();
     let filtered = topics.filter(topic => 
       topic.title.toLowerCase().includes(query)
     );
 
-    // If a presenting specialist is selected, prioritize their topics
     if (formData.presentingSpecialist) {
       const specialistTopics = filtered.filter(topic => 
         topic.specialists_ids && topic.specialists_ids.includes(formData.presentingSpecialist)
@@ -170,7 +179,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     return filtered;
   };
 
-  // UTC Date to Local Time
   const formatLocalDateTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -179,10 +187,29 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
-  const getWeekBefore = (dateString) => {
+  const getTwoBusinessDaysBefore = (dateString) => {
     const date = new Date(dateString);
-    const weekBefore = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return weekBefore;
+    let businessDaysToSubtract = 2;
+    let currentDate = new Date(date);
+
+    while (businessDaysToSubtract > 0) {
+      currentDate.setDate(currentDate.getDate() - 1);
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        businessDaysToSubtract--;
+      }
+    }
+
+    return currentDate;
+  };
+
+  const copyHexToClipboard = () => {
+    const hexValue = formData.color || '#0ea6b2';
+    navigator.clipboard.writeText(hexValue).then(() => {
+      alert(`HEX color ${hexValue} copied to clipboard!`);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
   };
 
   const handleChange = (e) => {
@@ -193,43 +220,38 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     }));
   };
 
-  // Handle topic search input
-  const handleTopicSearchChange = (e) => {
+  const handlePresentationTitleSearchChange = (e) => {
     const value = e.target.value;
-    setTopicSearchQuery(value);
-    setShowTopicDropdown(true);
-    setFormData(prev => ({ ...prev, topic: '' }));
+    setPresentationTitleSearchQuery(value);
+    setShowPresentationTitleDropdown(true);
+    setFormData(prev => ({ ...prev, presentationTitle: '' }));
   };
 
-  // Handle topic selection from dropdown
-  const handleTopicSelect = (topicId, topicTitle) => {
-    setFormData(prev => ({ ...prev, topic: topicId }));
-    setTopicSearchQuery(topicTitle);
-    setShowTopicDropdown(false);
+  const handlePresentationTitleSelect = (topicId, topicTitle) => {
+    setFormData(prev => ({ ...prev, presentationTitle: topicId }));
+    setPresentationTitleSearchQuery(topicTitle);
+    setShowPresentationTitleDropdown(false);
   };
 
-  // Handle creating a new topic
-  const handleCreateNewTopic = () => {
-    if (!topicSearchQuery.trim()) return;
+  const handleCreateNewPresentationTitle = () => {
+    if (!presentationTitleSearchQuery.trim()) return;
 
     Meteor.call('topics.insert', { 
-      title: topicSearchQuery.trim(),
+      title: presentationTitleSearchQuery.trim(),
       specialists_ids: formData.presentingSpecialist ? [formData.presentingSpecialist] : []
     }, (error, result) => {
       if (error) {
-        console.error('Error creating topic:', error);
-        alert('Error creating topic: ' + (error.reason || error.message));
+        console.error('Error creating presentation title:', error);
+        alert('Error creating presentation title: ' + (error.reason || error.message));
       } else {
-        setFormData(prev => ({ ...prev, topic: result }));
-        setShowTopicDropdown(false);
+        setFormData(prev => ({ ...prev, presentationTitle: result }));
+        setShowPresentationTitleDropdown(false);
       }
     });
   };
 
-  // On submit, convert dates and handle recurring sessions
   const handleSubmit = () => {
     if (formData.isRecurring && formData.recurrenceCount > 1) {
-      // Create multiple sessions
       const baseDate = new Date(formData.dateTime);
       const basePresentationsDue = formData.presentationsDue ? new Date(formData.presentationsDue) : null;
 
@@ -237,7 +259,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         const sessionDate = new Date(baseDate);
         let presentationsDueDate = basePresentationsDue ? new Date(basePresentationsDue) : null;
 
-        // Calculate date based on recurrence interval
         if (formData.recurrenceInterval === 'daily') {
           sessionDate.setDate(baseDate.getDate() + i);
           if (presentationsDueDate) presentationsDueDate.setDate(basePresentationsDue.getDate() + i);
@@ -257,8 +278,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           presentationsDue: presentationsDueDate,
           participantGroup: formData.participantGroup,
           color: formData.color,
-          // Include other fields only for first occurrence or if not blanking fields
           ...(i === 0 || !formData.blankFieldsOnRecurrence ? {
+            sessionNumber: formData.sessionNumber,
             sessionTitle: formData.sessionTitle,
             casePresenter: formData.casePresenter,
             facilitator: formData.facilitator,
@@ -266,12 +287,17 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             presentingSpecialist: formData.presentingSpecialist,
             supportingSpecialist1: formData.supportingSpecialist1,
             supportingSpecialist2: formData.supportingSpecialist2,
+            supportingSpecialist3: formData.supportingSpecialist3,
+            supportingSpecialist4: formData.supportingSpecialist4,
             newMaterial: formData.newMaterial,
-            topic: formData.topic,
+            presentationTitle: formData.presentationTitle,
+            topicSimple: formData.topicSimple,
+            category: formData.category,
             notes: formData.notes,
             semester: formData.semester,
             series: formData.series,
           } : {
+            sessionNumber: '',
             sessionTitle: '',
             casePresenter: '',
             facilitator: '',
@@ -279,8 +305,12 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             presentingSpecialist: '',
             supportingSpecialist1: '',
             supportingSpecialist2: '',
+            supportingSpecialist3: '',
+            supportingSpecialist4: '',
             newMaterial: false,
-            topic: '',
+            presentationTitle: '',
+            topicSimple: '',
+            category: '',
             notes: '',
             semester: '',
             series: '',
@@ -295,6 +325,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       }
     } else {
       const dataToSubmit = {
+        sessionNumber: formData.sessionNumber,
         sessionTitle: formData.sessionTitle,
         casePresenter: formData.casePresenter,
         facilitator: formData.facilitator,
@@ -302,12 +333,16 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         presentingSpecialist: formData.presentingSpecialist,
         supportingSpecialist1: formData.supportingSpecialist1,
         supportingSpecialist2: formData.supportingSpecialist2,
+        supportingSpecialist3: formData.supportingSpecialist3,
+        supportingSpecialist4: formData.supportingSpecialist4,
         participantGroup: formData.participantGroup,
         dateTime: new Date(formData.dateTime),
         presentationsDue: formData.presentationsDue ? new Date(formData.presentationsDue) : '',
         newMaterial: formData.newMaterial,
         color: formData.color,
-        topic: formData.topic,
+        presentationTitle: formData.presentationTitle,
+        topicSimple: formData.topicSimple,
+        category: formData.category,
         notes: formData.notes,
         semester: formData.semester,
         series: formData.series,
@@ -317,7 +352,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     }
     
     setFormData({});
-    setTopicSearchQuery('');
+    setPresentationTitleSearchQuery('');
     onClose();
   };
 
@@ -333,11 +368,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   const specialistTopics = formData.presentingSpecialist ? getSpecialistTopics(formData.presentingSpecialist) : [];
   const filteredTopics = getFilteredTopics();
-  const showCreateNewTopic = topicSearchQuery && (filteredTopics.length === 0 || !filteredTopics.some(t => t.title.toLowerCase() === topicSearchQuery.toLowerCase()));
-
+  const showCreateNewTopic = presentationTitleSearchQuery && (filteredTopics.length === 0 || !filteredTopics.some(t => t.title.toLowerCase() === presentationTitleSearchQuery.toLowerCase()));
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-6 relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10 text-2xl"
           onClick={onClose}
@@ -350,8 +384,20 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         </h2>
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            {/* Session Number */}
+            <div className="form-group md:col-span-1">
+              <label className="block font-medium mb-1">Session Number</label>
+              <input
+                type="text"
+                name="sessionNumber"
+                value={formData.sessionNumber}
+                onChange={handleChange}
+                className={defaultInputStyle}
+                placeholder="#"
+              />
+            </div>
             {/* Session Title */}
-            <div className="form-group md:col-span-5">
+            <div className="form-group md:col-span-4">
               <label className="block font-medium mb-1">Session Title</label>
               <input
                 type="text"
@@ -362,23 +408,33 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 className={defaultInputStyle}
               />
             </div>
-            {/* Color */}
-            <div className="form-group md:col-span-1 flex items-center justify-center gap-3 mt-6">
-              <label className="font-medium">Color</label>
-              <div className="relative w-10 h-10">
-                <input
-                  type="color"
-                  name="color"
-                  value={formData.color || '#0ea6b2'}
-                  onChange={handleChange}
-                  className="absolute opacity-0 w-full h-full cursor-pointer"
-                />
-                <div
-                  style={{ backgroundColor: formData.color || '#0ea6b2' }}
-                  className="w-full h-full shadow rounded-lg border border-gray-400 cursor-pointer flex items-center justify-center"
-                >
-                  <MdEdit size={20} className="text-white" />
+            {/* Color with Copy Button */}
+            <div className="form-group md:col-span-1 flex flex-col items-center justify-end gap-2">
+              <label className="font-medium text-sm">Color</label>
+              <div className="flex items-center gap-2">
+                <div className="relative w-10 h-10">
+                  <input
+                    type="color"
+                    name="color"
+                    value={formData.color || '#0ea6b2'}
+                    onChange={handleChange}
+                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                  />
+                  <div
+                    style={{ backgroundColor: formData.color || '#0ea6b2' }}
+                    className="w-full h-full shadow rounded-lg border border-gray-400 cursor-pointer flex items-center justify-center"
+                  >
+                    <MdEdit size={20} className="text-white" />
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={copyHexToClipboard}
+                  className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
+                  title="Copy HEX"
+                >
+                  Copy
+                </button>
               </div>
             </div>
             {/* Case Presenter */}
@@ -393,7 +449,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 className={defaultInputStyle}
               />
             </div>
-            {/* Facilitator */}
+            {/* Lead Facilitator */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Lead Facilitator</label>
               <select
@@ -413,7 +469,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* supportingFacilitator */}
+            {/* Supporting Facilitator */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Supporting Facilitator</label>
               <select
@@ -496,6 +552,48 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
+            {/* Supporting Specialist 3 */}
+            <div className="form-group md:col-span-2">
+              <label className="block font-medium mb-1">Supporting Specialist 3</label>
+              <select
+                name="supportingSpecialist3"
+                value={formData.supportingSpecialist3}
+                onChange={handleChange}
+                className={defaultInputStyle}
+                style={{
+                  color:
+                    specialists.find(g => g._id === formData.supportingSpecialist3)?.nameColor || '#000000'
+                }}
+              >
+                <option value="" style={{color: '#000000'}}>Select Supporting Specialist 3</option>
+                {specialists?.map(spec => (
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor || '#000000'}}>
+                    {spec.firstName} {spec.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Supporting Specialist 4 */}
+            <div className="form-group md:col-span-2">
+              <label className="block font-medium mb-1">Supporting Specialist 4</label>
+              <select
+                name="supportingSpecialist4"
+                value={formData.supportingSpecialist4}
+                onChange={handleChange}
+                className={defaultInputStyle}
+                style={{
+                  color:
+                    specialists.find(g => g._id === formData.supportingSpecialist4)?.nameColor || '#000000'
+                }}
+              >
+                <option value="" style={{color: '#000000'}}>Select Supporting Specialist 4</option>
+                {specialists?.map(spec => (
+                  <option key={spec._id} value={spec._id} style={{color: spec.nameColor || '#000000'}}>
+                    {spec.firstName} {spec.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
             {/* Date & Time */}
             <div className="form-group md:col-span-3">
               <label className="block font-medium mb-1">Date & Time</label>
@@ -541,24 +639,22 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Topic with Autocomplete */}
-            <div className="form-group md:col-span-2 relative" ref={topicDropdownRef}>
-              <label className="block font-medium mb-1">Presentation Title</label>
+            {/* Presentation Titles with Autocomplete */}
+            <div className="form-group md:col-span-2 relative" ref={presentationTitleDropdownRef}>
+              <label className="block font-medium mb-1">Presentation Titles</label>
               <input
                 type="text"
-                value={topicSearchQuery}
-                onChange={handleTopicSearchChange}
-                onFocus={() => setShowTopicDropdown(true)}
+                value={presentationTitleSearchQuery}
+                onChange={handlePresentationTitleSearchChange}
+                onFocus={() => setShowPresentationTitleDropdown(true)}
                 placeholder="Search or type new title..."
                 required
                 className={defaultInputStyle}
               />
               
-              {/* Autocomplete Dropdown */}
-              {showTopicDropdown && (topicSearchQuery || specialistTopics.length > 0) && (
+              {showPresentationTitleDropdown && (presentationTitleSearchQuery || specialistTopics.length > 0) && (
                 <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                  {/* Specialist's existing topics */}
-                  {specialistTopics.length > 0 && !topicSearchQuery && (
+                  {specialistTopics.length > 0 && !presentationTitleSearchQuery && (
                     <>
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 sticky top-0">
                         {specialists.find(s => s._id === formData.presentingSpecialist)?.firstName}'s Topics
@@ -566,7 +662,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                       {specialistTopics.map(topic => (
                         <div
                           key={topic._id}
-                          onClick={() => handleTopicSelect(topic._id, topic.title)}
+                          onClick={() => handlePresentationTitleSelect(topic._id, topic.title)}
                           className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
                         >
                           {topic.title}
@@ -575,8 +671,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                     </>
                   )}
                   
-                  {/* Filtered topics based on search */}
-                  {topicSearchQuery && filteredTopics.length > 0 && (
+                  {presentationTitleSearchQuery && filteredTopics.length > 0 && (
                     <>
                       {filteredTopics.some(t => t.specialists_ids?.includes(formData.presentingSpecialist)) && (
                         <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-blue-50 sticky top-0">
@@ -586,7 +681,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                       {filteredTopics.filter(t => t.specialists_ids?.includes(formData.presentingSpecialist)).map(topic => (
                         <div
                           key={topic._id}
-                          onClick={() => handleTopicSelect(topic._id, topic.title)}
+                          onClick={() => handlePresentationTitleSelect(topic._id, topic.title)}
                           className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
                         >
                           <strong>{topic.title}</strong>
@@ -601,7 +696,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                       {filteredTopics.filter(t => !t.specialists_ids?.includes(formData.presentingSpecialist)).map(topic => (
                         <div
                           key={topic._id}
-                          onClick={() => handleTopicSelect(topic._id, topic.title)}
+                          onClick={() => handlePresentationTitleSelect(topic._id, topic.title)}
                           className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
                         >
                           {topic.title}
@@ -610,23 +705,56 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                     </>
                   )}
                   
-                  {/* Create new topic option */}
-                  {topicSearchQuery && showCreateNewTopic && (
+                  {presentationTitleSearchQuery && showCreateNewTopic && (
                     <div
-                      onClick={handleCreateNewTopic}
+                      onClick={handleCreateNewPresentationTitle}
                       className="px-3 py-2 hover:bg-green-50 cursor-pointer text-green-600 font-medium border-t-2 border-green-200 sticky bottom-0 bg-white"
                     >
-                      + Create new: "{topicSearchQuery}"
+                      + Create new: "{presentationTitleSearchQuery}"
                     </div>
                   )}
                   
-                  {topicSearchQuery && filteredTopics.length === 0 && !showCreateNewTopic && (
+                  {presentationTitleSearchQuery && filteredTopics.length === 0 && !showCreateNewTopic && (
                     <div className="px-3 py-2 text-gray-500 text-sm">
                       No matching topics found
                     </div>
                   )}
                 </div>
               )}
+            </div>
+            {/* Topic - Simple Dropdown */}
+            <div className="form-group md:col-span-1">
+              <label className="block font-medium mb-1">Topic</label>
+              <select
+                name="topicSimple"
+                value={formData.topicSimple}
+                onChange={handleChange}
+                className={defaultInputStyle}
+              >
+                <option value="">Select Topic</option>
+                {topics?.map(topic => (
+                  <option key={topic._id} value={topic._id}>
+                    {topic.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Category */}
+            <div className="form-group md:col-span-1">
+              <label className="block font-medium mb-1">Category</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className={defaultInputStyle}
+              >
+                <option value="">Select Category</option>
+                {categories?.map(category => (
+                  <option key={category._id} value={category._id}>
+                    {category.title}
+                  </option>
+                ))}
+              </select>
             </div>
             {/* New Material */}
             <div className="form-group md:col-span-2 flex items-center justify-center gap-5 mt-4">
@@ -744,9 +872,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             </div>
           )}
 
-          {/* Notes */}
+          {/* Notes/Objectives */}
           <div className="form-group mt-4">
-            <label className="block font-medium mb-1">Notes</label>
+            <label className="block font-medium mb-1">Notes/Objectives</label>
             <textarea
               name="notes"
               value={formData.notes}
