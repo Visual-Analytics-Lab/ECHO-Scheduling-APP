@@ -21,27 +21,7 @@ const ChangePassPopup = ({ isOpen, onClose }) => {
   const currentUser = useTracker(() => Meteor.user());
 
   // Check if current user is admin
-  const isAdmin = useTracker(() => {
-    if (!currentUser) return false;
-    
-    // List of admin usernames
-    const adminUsernames = ['as5142', 'EchoAdmin', 'Michelle G', 'Ruby', 'sg2222', 'sra116'];
-    
-    // Check by username
-    if (currentUser.username && adminUsernames.includes(currentUser.username)) {
-      return true;
-    }
-    
-    // Additional check by role_id if needed (adjust as necessary)
-    if (currentUser.role_id) {
-      const adminRoleIds = ['admin', 'Admin', 'administrator', 'ADMIN'];
-      if (adminRoleIds.includes(currentUser.role_id)) {
-        return true;
-      }
-    }
-    
-    return false;
-  });
+  const isAdmin = currentUser.role_id === 'EqEX9TEzsMJ9eigay';
 
   const handleSubmit = (e) => {
     e.preventDefault();
