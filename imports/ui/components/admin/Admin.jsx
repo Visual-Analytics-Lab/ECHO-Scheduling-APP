@@ -127,14 +127,23 @@ const Admin = () => {
     }
   };
 
-  const getPopUpTitle = () =>
-  {
-    const start = rowData._id ? 'Edit' : 'Add New'
-    // Add any active selections into the array that are the same plural and singular
-    return activeSection && ['Series'].includes(activeSection) 
-      ? `${start} ${activeSection}` 
-      : `${start} ${activeSection.slice(0, -1)}`
+  const getPopUpTitle = () => {
+    const start = rowData._id ? 'Edit' : 'Add New';
+    const section = popupSectionOverride || activeSection;
+    
+    // Handle special cases for singular/plural conversion
+    if (section === 'Series') {
+      return `${start} ${section}`;
+    } else if (section === 'Categories') {
+      return `${start} Category`;
+    } else if (section === 'Topics') {
+      return `${start} Presentation Title`;
+    } else {
+      // Default: remove 's' from the end
+      return `${start} ${section.slice(0, -1)}`;
+    }
   }
+  
   const handleShow = (data) => {
     setRowData(data);
     setIsReadOnly(true);

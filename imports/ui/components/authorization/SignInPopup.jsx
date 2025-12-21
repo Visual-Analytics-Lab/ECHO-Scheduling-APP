@@ -15,8 +15,7 @@ const SignInPopup = ({ isOpen, onClose }) => {
         setError('');
         onClose();
       }
-  });
-    //console.log('Signing in with:', email, password);
+    });
   };
 
   if (!isOpen) return null;
@@ -25,37 +24,33 @@ const SignInPopup = ({ isOpen, onClose }) => {
     <div className="absolute right-4 top-16 z-50 bg-white rounded-b-lg p-6 w-96 shadow-full-border">
       <div className="flex flex-col space-y-4">
         {error && <p style={{color: 'red'}}>{error}</p>}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded bg-gray-100"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
-            >
-              Sign in
-            </button>
-          </form>
-          {/* <div className="text-sm text-blue-500 hover:underline cursor-pointer">
-            Forgot Password?
-          </div> */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+              required
+            />
+          </div>
+          <div>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full p-2 border border-gray-300 rounded bg-gray-100"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
+          >
+            Sign in
+          </button>
+        </form>
       </div>
     </div>
   );

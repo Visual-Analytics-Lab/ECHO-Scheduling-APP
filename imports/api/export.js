@@ -6,17 +6,14 @@ import { SessionsCollection } from './collections';
 Meteor.methods({
   async exportExcelByOption(option, fromDate, toDate) {
     check(option, String);
-    // Allow null dates for semester reports
     check(fromDate, Match.OneOf(Date, null));
     check(toDate, Match.OneOf(Date, null));
 
     console.log(`Export request: ${option}`);
     console.log(`Date range: ${fromDate} to ${toDate}`);
 
-    // Build the match criteria based on whether dates are provided
     let matchCriteria = {};
     
-    // Only apply date filtering if both dates are provided
     if (fromDate && toDate) {
       const startStr = new Date(fromDate.toISOString().slice(0, 16));
       const endStr = new Date(toDate.toISOString().slice(0, 16));
@@ -88,6 +85,30 @@ Meteor.methods({
       },
       {
         $lookup: {
+          from: "topics",
+          localField: "presentationTitle",
+          foreignField: "_id",
+          as: "presentationTitleDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "topics",
+          localField: "topicSimple",
+          foreignField: "_id",
+          as: "topicSimpleDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryDetails"
+        }
+      },
+      {
+        $lookup: {
           from: "semesters",
           localField: "semester",
           foreignField: "_id",
@@ -104,6 +125,7 @@ Meteor.methods({
       },
       {
         $project: {
+          sessionNumber: 1,
           sessionTitle: 1,
           casePresenter: 1,
           facilitator: { $arrayElemAt: ["$facilitatorDetails.username", 0] },
@@ -130,11 +152,16 @@ Meteor.methods({
             ]
           },
           participantGroup: { $arrayElemAt: ["$participantGroupDetails.name", 0] },
+          participantGroupFocus: { $arrayElemAt: ["$participantGroupDetails.focus", 0] },
           dateTime: 1,
           presentationsDue: 1,
           newMaterial: 1,
           color: 1,
           topic: { $arrayElemAt: ["$topicDetails.title", 0] },
+          presentationTitle: { $arrayElemAt: ["$presentationTitleDetails.title", 0] },
+          topicSimple: { $arrayElemAt: ["$topicSimpleDetails.title", 0] },
+          category: { $arrayElemAt: ["$categoryDetails.title", 0] },
+          categoryFocus: { $arrayElemAt: ["$categoryDetails.focus", 0] },
           notes: 1,
           createdAt: 1,
           semester: { $arrayElemAt: ["$semesterDetails.title", 0] },
@@ -142,7 +169,7 @@ Meteor.methods({
         }
       },
       {
-        $sort: { dateTime: 1 } // Sort by date/time
+        $sort: { dateTime: 1 }
       }      
     ]).toArray();
 
@@ -152,7 +179,6 @@ Meteor.methods({
       throw new Meteor.Error('no-data', 'No data found for the specified criteria');
     }
 
-    // Helper function to format date/time properly
     const formatDateTime = (date) => {
       if (!date) return '';
       const d = new Date(date);
@@ -168,7 +194,6 @@ Meteor.methods({
 
     const workbook = new ExcelJS.Workbook();
 
-    // A helper to add a standard worksheet of session details
     const addSessionRows = (worksheet, sessions) => {
       worksheet.columns = [
         { header: "Session Title", key: "sessionTitle", width: 25 },
@@ -179,7 +204,7 @@ Meteor.methods({
         { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
         { header: "Supporting Specialist 2", key: "supportingSpecialist2", width: 25 },
         { header: "Participant Group", key: "participantGroup", width: 20 },
-{ header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
+        { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
         { header: "Presentations Due", key: "presentationsDue", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
         { header: "New Material", key: "newMaterial", width: 15 },
         { header: "Color", key: "color", width: 15 },
@@ -201,7 +226,6 @@ Meteor.methods({
       });
     };
 
-    // Switch based on the chosen option
     switch (option) {
       case "Schedules by Week": {
         const ws = workbook.addWorksheet("Schedules by Week");
@@ -209,7 +233,6 @@ Meteor.methods({
         break;
       }
       case "Schedules by Participant Groups": {
-        // Group by participantGroup
         const groups = {};
         data.forEach(session => {
           const group = session.participantGroup || "Unknown";
@@ -217,13 +240,12 @@ Meteor.methods({
           groups[group].push(session);
         });
         Object.keys(groups).forEach(group => {
-          const ws = workbook.addWorksheet(`Group ${group}`.substring(0, 31)); // Excel sheet name limit
+          const ws = workbook.addWorksheet(`Group ${group}`.substring(0, 31));
           addSessionRows(ws, groups[group]);
         });
         break;
       }
       case "Participant Groups by Semester": {
-        // Group by semester (for participant groups)
         const groups = {};
         data.forEach(session => {
           const semester = session.semester || "Unknown Semester";
@@ -238,7 +260,6 @@ Meteor.methods({
       }
       case "Specialists by Semester": {
         console.log('Processing Specialists by Semester...');
-        // Group by semester and show specialist info only
         const groups = {};
         data.forEach((session, index) => {
           console.log(`Processing session ${index + 1}/${data.length}: ${session.sessionTitle}`);
@@ -246,7 +267,7 @@ Meteor.methods({
           groups[semester] = groups[semester] || [];
           groups[semester].push({
             sessionTitle: session.sessionTitle,
-            dateTime: formatDateTime(session.dateTime), // Format the date/time here
+            dateTime: formatDateTime(session.dateTime),
             presentingSpecialist: session.presentingSpecialist || 'Not assigned',
             supportingSpecialist1: session.supportingSpecialist1 || 'Not assigned',
             supportingSpecialist2: session.supportingSpecialist2 || 'Not assigned'
@@ -257,7 +278,7 @@ Meteor.methods({
           console.log(`Creating worksheet for semester: ${semester} with ${groups[semester].length} sessions`);
           const ws = workbook.addWorksheet(`Specialists ${semester}`.substring(0, 31));
           ws.columns = [
-{ header: "Session Title", key: "sessionTitle", width: 25 },
+            { header: "Session Title", key: "sessionTitle", width: 25 },
             { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
             { header: "Supporting Specialist 1", key: "supportingSpecialist1", width: 25 },
@@ -267,8 +288,35 @@ Meteor.methods({
         });
         break;
       }
+      case "Presentation Title, Topic, Category": {
+        console.log('Processing Presentation Title, Topic, Category...');
+        const ws = workbook.addWorksheet("Presentation Details");
+        ws.columns = [
+          { header: "Date Time", key: "dateTime", width: 25 },
+          { header: "Session #", key: "sessionNumber", width: 12 },
+          { header: "Presentation Title", key: "presentationTitle", width: 30 },
+          { header: "Presenting Specialist", key: "presentingSpecialist", width: 25 },
+          { header: "Topic", key: "topicSimple", width: 30 },
+          { header: "Category", key: "category", width: 20 },
+          { header: "Category Focus", key: "categoryFocus", width: 20 },
+          { header: "Participant Group Focus", key: "focus", width: 25 }
+        ];
+        
+        data.forEach(session => {
+          ws.addRow({
+            dateTime: formatDateTime(session.dateTime),
+            sessionNumber: session.sessionNumber || '',
+            presentationTitle: session.presentationTitle || session.topic || '',
+            presentingSpecialist: session.presentingSpecialist || 'Not assigned',
+            topicSimple: session.topicSimple || '',
+            category: session.category || '',
+            categoryFocus: session.categoryFocus || '',
+            focus: session.participantGroupFocus || ''
+          });
+        });
+        break;
+      }
       case "Topics by Semester": {
-        // Group by semester and focus on topics
         const groups = {};
         data.forEach(session => {
           const semester = session.semester || "Unknown Semester";
@@ -282,7 +330,7 @@ Meteor.methods({
         Object.keys(groups).forEach(semester => {
           const ws = workbook.addWorksheet(`Topics ${semester}`.substring(0, 31));
           ws.columns = [
-{ header: "Session Title", key: "sessionTitle", width: 25 },
+            { header: "Session Title", key: "sessionTitle", width: 25 },
             { header: "Date Time", key: "dateTime", width: 25, style: { numFmt: "mm/dd/yyyy hh:mm AM/PM" }},
             { header: "Topic", key: "topic", width: 25 }
           ];
@@ -291,7 +339,6 @@ Meteor.methods({
         break;
       }
       case "Semesters by Agency": {
-        // Group sessions first by agency then by semester.
         const agencyGroups = {};
         data.forEach(session => {
           const agency = session.agency || "Unknown Agency";
@@ -303,9 +350,7 @@ Meteor.methods({
         Object.keys(agencyGroups).forEach(agency => {
           const ws = workbook.addWorksheet(`Agency ${agency}`.substring(0, 31));
           Object.keys(agencyGroups[agency]).forEach(semester => {
-            // Write a header row for the semester
             ws.addRow([`Semester: ${semester}`]);
-            // Write a header row for session details
             ws.addRow([
               "Session Title",
               "Case Presenter",
@@ -346,14 +391,12 @@ Meteor.methods({
                 formatDateTime(session.createdAt)
               ]);
             });
-            // Add an empty row for separation
             ws.addRow([]);
           });
         });
         break;
       }
       case "Topics by Participant Groups": {
-        // Group by participant group then group by topic within each group
         const groupTopic = {};
         data.forEach(session => {
           const group = session.participantGroup || "Unknown";
@@ -381,7 +424,6 @@ Meteor.methods({
 
     console.log('Export completed successfully');
     
-    // Write the workbook to a buffer and return as a base64 string
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer.toString("base64");
   }

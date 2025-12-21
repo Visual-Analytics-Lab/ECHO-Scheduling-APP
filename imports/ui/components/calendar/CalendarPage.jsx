@@ -10,7 +10,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
 import tippy from 'tippy.js';
-import 'tippy.js/dist/tippy.css'; // ensure styles are bundled
+import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/border.css';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; 
@@ -34,30 +34,23 @@ const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   
-  // New filtering states
   const [selectedSpecialist, setSelectedSpecialist] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedParticipantGroup, setSelectedParticipantGroup] = useState('');
   const [showSessionsList, setShowSessionsList] = useState(true);
 
-  // New states for timeframe filtering and pagination
-  const [timeframeFilter, setTimeframeFilter] = useState('upcoming'); // 'all', 'upcoming', 'past', 'thisWeek', 'thisMonth', 'custom'
+  const [timeframeFilter, setTimeframeFilter] = useState('upcoming');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sessionsPerPage] = useState(10); // You can make this configurable
+  const [sessionsPerPage] = useState(10);
 
-  // Subscribe to collections
   useEffect(() => {
     const subscriptions = [
       Meteor.subscribe('sessions'),
-      // Meteor.subscribe("users"),
       Meteor.subscribe("specialists"),
       Meteor.subscribe("participantGroups"),
-      // Meteor.subscribe("semesters"),
-      // Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
-      // Meteor.subscribe("roles"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -65,21 +58,32 @@ const CalendarPage = () => {
   const sessions = useTracker(() => SessionsCollection.find().fetch());
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
-  // const semesters = useTracker(() => SemesterCollection.find().fetch());
-  // const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
-  // const roles = useTracker(() => RolesCollection.find().fetch());
 
-  // Helper function to get date ranges for different timeframes
+  // Sort specialists, topics, and participant groups alphabetically
+  const sortedSpecialists = [...specialists].sort((a, b) => {
+    const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
+  const sortedTopics = [...topics].sort((a, b) => 
+    a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+  );
+
+  const sortedParticipantGroups = [...participantGroups].sort((a, b) => 
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  );
+
   const getTimeframeRange = (timeframe) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     switch (timeframe) {
       case 'upcoming':
-        return { start: now, end: null }; // From now onwards
+        return { start: now, end: null };
       case 'past':
-        return { start: null, end: now }; // Up to now
+        return { start: null, end: now };
       case 'thisWeek':
         const startOfWeek = new Date(today);
         startOfWeek.setDate(today.getDate() - today.getDay());
@@ -97,23 +101,20 @@ const CalendarPage = () => {
           start: customStartDate ? new Date(customStartDate) : null,
           end: customEndDate ? new Date(customEndDate + 'T23:59:59') : null
         };
-      default: // 'all'
+      default:
         return { start: null, end: null };
     }
   };
 
-  // Filter sessions based on selected filters and timeframe
   const filteredSessions = sessions.filter(session => {
-    // Existing filters
     const matchesSpecialist = !selectedSpecialist || 
       session.presentingSpecialist === selectedSpecialist ||
       session.supportingSpecialist1 === selectedSpecialist ||
       session.supportingSpecialist2 === selectedSpecialist;
     
-    const matchesTopic = !selectedTopic || session.topic === selectedTopic;
+    const matchesTopic = !selectedTopic || session.topic === selectedTopic || session.presentationTitle === selectedTopic;
     const matchesParticipantGroup = !selectedParticipantGroup || session.participantGroup === selectedParticipantGroup;
     
-    // Timeframe filter
     const sessionDate = new Date(session.dateTime);
     const { start, end } = getTimeframeRange(timeframeFilter);
     
@@ -124,61 +125,52 @@ const CalendarPage = () => {
     return matchesSpecialist && matchesTopic && matchesParticipantGroup && matchesTimeframe;
   });
 
-  // Sort filtered sessions by date
   const sortedFilteredSessions = [...filteredSessions].sort((a, b) => {
     if (timeframeFilter === 'past') {
-      return new Date(b.dateTime) - new Date(a.dateTime); // Most recent first for past sessions
+      return new Date(b.dateTime) - new Date(a.dateTime);
     }
-    return new Date(a.dateTime) - new Date(b.dateTime); // Chronological for upcoming
+    return new Date(a.dateTime) - new Date(b.dateTime);
   });
 
-  // Pagination logic
   const totalPages = Math.ceil(sortedFilteredSessions.length / sessionsPerPage);
   const startIndex = (currentPage - 1) * sessionsPerPage;
   const endIndex = startIndex + sessionsPerPage;
   const paginatedSessions = sortedFilteredSessions.slice(startIndex, endIndex);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedSpecialist, selectedTopic, selectedParticipantGroup, timeframeFilter, customStartDate, customEndDate]);
 
-  // Get specialist name by ID - with better error handling
   const getSpecialistName = (specialistId) => {
     if (!specialistId) return 'No specialist';
     const specialist = specialists.find(s => s._id === specialistId);
     return specialist ? `${specialist.firstName} ${specialist.lastName}` : `Specialist ID: ${specialistId}`;
   };
 
-  // Get specialist color by ID
   const getSpecialistColor = (specialistId) => {
     if (!specialistId) return '#000000';
     const specialist = specialists.find(s => s._id === specialistId);
     return specialist ? (specialist.nameColor || '#000000') : '#000000';
   };
 
-  // Get topic name by ID - with better error handling
   const getTopicName = (topicId) => {
     if (!topicId) return 'No topic';
     const topic = topics.find(t => t._id === topicId);
     return topic ? topic.title : `Topic ID: ${topicId}`;
   };
 
-  // Get participant group name by ID - with better error handling
   const getParticipantGroupName = (groupId) => {
     if (!groupId) return 'No group';
     const group = participantGroups.find(g => g._id === groupId);
     return group ? group.name : `Group ID: ${groupId}`;
   };
 
-  // Get participant group color by ID
   const getParticipantGroupColor = (groupId) => {
     if (!groupId) return '#000000';
     const group = participantGroups.find(g => g._id === groupId);
     return group ? (group.nameColor || '#000000') : '#000000';
   };
 
-  // Generate specialist schedule for printing/export
   const generateSpecialistSchedule = () => {
     if (!selectedSpecialist) {
       toast.error('Please select a specialist first');
@@ -192,7 +184,6 @@ const CalendarPage = () => {
       session.supportingSpecialist2 === selectedSpecialist
     ).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-    // Create printable schedule
     const scheduleWindow = window.open('', '_blank');
     const scheduleHTML = `
       <html>
@@ -202,7 +193,7 @@ const CalendarPage = () => {
             body { font-family: Arial, sans-serif; margin: 20px; }
             h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-left; }
             th { background-color: #f5f5f5; font-weight: bold; }
             tr:nth-child(even) { background-color: #f9f9f9; }
             .role { font-weight: bold; color: #666; }
@@ -238,7 +229,7 @@ const CalendarPage = () => {
                   <tr>
                     <td>${formattedDateTime}</td>
                     <td>${session.sessionTitle}</td>
-                    <td>${getTopicName(session.topic)}</td>
+                    <td>${getTopicName(session.topic || session.presentationTitle)}</td>
                     <td>${getParticipantGroupName(session.participantGroup)}</td>
                     <td class="role">${role}</td>
                     <td class="notes">${session.notes || ''}</td>
@@ -263,10 +254,8 @@ const CalendarPage = () => {
   const handlePrint = (option) => {
     console.log(`Printing option: ${option}`);
     
-    // For semester-based reports, we need all data, not just current week
-    if (option.includes("Semester") || option.includes("by Semester")) {
+    if (option.includes("Semester") || option.includes("by Semester") || option.includes("Presentation Title")) {
       console.log("Semester-based report detected, fetching all data...");
-      // Pass null dates to get all sessions for the semester
       Meteor.call("exportExcelByOption", option, null, null, (error, base64) => {
         if (error) {
           console.error("Error exporting Excel:", error);
@@ -277,7 +266,6 @@ const CalendarPage = () => {
         }
       });
     } else {
-      // For weekly reports, use date range
       console.log("Weekly-based report detected, using date range...");
       const today = new Date();
       const firstDayOfWeek = new Date(today);
@@ -301,7 +289,6 @@ const CalendarPage = () => {
   const downloadExcelFile = (base64, filename) => {
     try {
       console.log(`Downloading file: ${filename}.xlsx`);
-      // Convert the base64 string back to a binary ArrayBuffer
       const binaryString = window.atob(base64);
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
@@ -326,7 +313,6 @@ const CalendarPage = () => {
     }
   };
  
-  // When clicking to create new event, populate date field with selected
   const handleDateClick = (info) => {
     setSelectedDate(info.start);
     setIsModalOpen(true);
@@ -341,7 +327,6 @@ const CalendarPage = () => {
     }
   };
 
-  // Handle dragging event to a new day
   const handleEventDrop = (info) => {
     const sessionId = info.event.extendedProps.sessionId;
     const session = sessions.find(s => s._id === sessionId)
@@ -351,7 +336,6 @@ const CalendarPage = () => {
     const oldDate = new Date(session.dateTime);
     const newDateFromDrop = info.event.start;
 
-    // Create a new Date with the new day, but same time
     const updatedDateTime = new Date(
       newDateFromDrop.getFullYear(),
       newDateFromDrop.getMonth(),
@@ -359,9 +343,6 @@ const CalendarPage = () => {
       newDateFromDrop.getHours(),
       newDateFromDrop.getMinutes(),
       newDateFromDrop.getSeconds()
-      // oldDate.getHours(),
-      // oldDate.getMinutes(),
-      // oldDate.getSeconds()
     );
     session.dateTime = updatedDateTime
     handleSubmit(session, sessionId);
@@ -369,7 +350,6 @@ const CalendarPage = () => {
   
   const handleSubmit = (formData, sessionId) => {
     if (sessionId) {
-      // Update existing session
       Meteor.call('sessions.update', sessionId, formData, (error) => {
         if (error) {
           toast.error(error.reason || 'An error occurred');
@@ -378,7 +358,6 @@ const CalendarPage = () => {
         }
       });
     } else {
-      // Create new session
       Meteor.call('sessions.insert', formData, (error) => {
         if (error) {
           toast.error(error.reason || 'An error occurred');
@@ -410,14 +389,13 @@ const CalendarPage = () => {
             "Schedules by Participant Groups",
             "Participant Groups by Semester",
             "Specialists by Semester",
-            "Topics by Semester",
+            "Presentation Title, Topic, Category",
             "Semesters by Agency",
             "Topics by Participant Groups",
           ]}
         />
 
         <main className="flex-1 p-4 flex gap-4">
-          {/* Calendar Section */}
           <div className={`${showSessionsList ? 'w-3/5' : 'w-full'} rounded-lg shadow-full-border`}>
             <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-300">
                 <h1 className="text-3xl">Sessions Calendar</h1>
@@ -427,6 +405,7 @@ const CalendarPage = () => {
               <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
+                firstDay={1}
                 headerToolbar={{
                   left: 'prev,next today',
                   center: 'title',
@@ -443,7 +422,7 @@ const CalendarPage = () => {
                   const end = new Date(start);
                   end.setHours(end.getHours() + 1);
                   return {
-                    title: session.sessionTitle,
+                    title: session.sessionNumber ? `#${session.sessionNumber} ${session.sessionTitle}` : session.sessionTitle,
                     start: start.toISOString(),
                     end:   end.toISOString(),
                     backgroundColor: session.color,
@@ -460,7 +439,6 @@ const CalendarPage = () => {
                   };
                 })}
 
-                // Build tooltip on Hover
                 eventDidMount={({ el, event }) => {
                   tippy(el, {
                     allowHTML: true,
@@ -486,7 +464,6 @@ const CalendarPage = () => {
             </div>
           </div>
 
-          {/* Sessions List Section */}
           {showSessionsList && (
             <div className="w-2/5 bg-white rounded-lg shadow-full-border border border-gray-300">
               <div className="bg-white rounded-t-lg border-b border-gray-300 p-4">
@@ -500,7 +477,6 @@ const CalendarPage = () => {
                   </button>
                 </div>
                 
-                {/* Timeframe Filter */}
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Time Period
@@ -518,7 +494,6 @@ const CalendarPage = () => {
                     <option value="all">All Sessions</option>
                   </select>
 
-                  {/* Custom date range inputs */}
                   {timeframeFilter === 'custom' && (
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div>
@@ -543,7 +518,6 @@ const CalendarPage = () => {
                   )}
                 </div>
                 
-                {/* Existing Filters */}
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -555,7 +529,7 @@ const CalendarPage = () => {
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">All Specialists</option>
-                      {specialists.map(specialist => (
+                      {sortedSpecialists.map(specialist => (
                         <option key={specialist._id} value={specialist._id}>
                           {specialist.firstName} {specialist.lastName}
                         </option>
@@ -573,7 +547,7 @@ const CalendarPage = () => {
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">All Topics</option>
-                      {topics.map(topic => (
+                      {sortedTopics.map(topic => (
                         <option key={topic._id} value={topic._id}>
                           {topic.title}
                         </option>
@@ -591,7 +565,7 @@ const CalendarPage = () => {
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">All Groups</option>
-                      {participantGroups.map(group => (
+                      {sortedParticipantGroups.map(group => (
                         <option key={group._id} value={group._id}>
                           {group.name}
                         </option>
@@ -628,15 +602,10 @@ const CalendarPage = () => {
                 </div>
               </div>
 
-              {/* Sessions List */}
               <div className="p-4 h-[calc(100vh-500px)] overflow-y-auto">
                 <div className="mb-3 text-sm text-gray-600">
                   Showing {paginatedSessions.length} of {sortedFilteredSessions.length} sessions
                   {sortedFilteredSessions.length !== sessions.length && ` (${sessions.length} total)`}
-                  {/* Debug info - remove this later */}
-                  <div className="text-xs text-gray-400 mt-1">
-                    Topics loaded: {topics.length} | Specialists: {specialists.length} | Groups: {participantGroups.length}
-                  </div>
                 </div>
                 
                 <div className="space-y-3">
@@ -657,11 +626,11 @@ const CalendarPage = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900 mb-1">
-                              {session.sessionTitle}
+                              {session.sessionNumber && `#${session.sessionNumber} `}{session.sessionTitle}
                             </h3>
                             <div className="text-sm text-gray-600 space-y-1">
                               <div>📅 {formattedDate} at {formattedTime}</div>
-                              <div>📚 {session.topic ? getTopicName(session.topic) : 'No topic assigned'}</div>
+                              <div>📚 {session.presentationTitle ? getTopicName(session.presentationTitle) : (session.topic ? getTopicName(session.topic) : 'No topic assigned')}</div>
                               <div>
                                 👥 <span style={{ color: getParticipantGroupColor(session.participantGroup), fontWeight: '500' }}>
                                   {session.participantGroup ? getParticipantGroupName(session.participantGroup) : 'No group assigned'}
@@ -672,7 +641,6 @@ const CalendarPage = () => {
                                   {session.presentingSpecialist ? getSpecialistName(session.presentingSpecialist) : 'No specialist assigned'}
                                 </span>
                               </div>
-                              {/* Show supporting specialists if they exist */}
                               {session.supportingSpecialist1 && (
                                 <div>
                                   🤝 <span style={{ color: getSpecialistColor(session.supportingSpecialist1), fontWeight: '500' }}>
@@ -705,7 +673,6 @@ const CalendarPage = () => {
                   </div>
                 )}
 
-                {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
                     <div className="text-sm text-gray-600">
@@ -724,7 +691,6 @@ const CalendarPage = () => {
                         Previous
                       </button>
                       
-                      {/* Page numbers */}
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -770,7 +736,6 @@ const CalendarPage = () => {
             </div>
           )}
 
-          {/* Toggle button when sessions list is hidden */}
           {!showSessionsList && (
             <button
               onClick={() => setShowSessionsList(true)}
