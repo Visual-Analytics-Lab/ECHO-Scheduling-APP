@@ -23,7 +23,6 @@ const getSectionConfig = (collections, colData, rowData) => ({
       const fields = [
         { name: "username", label: "Username", type: "text" },
         { name: "email",    label: "Email",    type: "email" },
-        // { name: "specialist_id",    label: "Specialist",    type: "multiSelect" },
         { name: "role_id",  label: "Role",     parentCollection: collections.roles },
       ]
       return fields;
@@ -34,7 +33,6 @@ const getSectionConfig = (collections, colData, rowData) => ({
         { name: "lastName", label: "Last Name", required: true },
         { name: "username", label: "Username", required: true },
         { name: "email",    label: "Email",    required: true },
-        // { name: "specialist_id", label: "Specialist", required: true, inputType: "multiSelect" },
       ];
       // Show roles as long as user isn't editting their own
       if (Meteor.user() && rowData._id !== Meteor.user()._id)
@@ -131,7 +129,9 @@ const getSectionConfig = (collections, colData, rowData) => ({
       series_ids: colData.series,
       focus: [
         { _id: "Education", title: "Education" },
-        { _id: "Social Work", title: "Social Services" },
+        { _id: "Social Services", title: "Social Services" },
+        { _id: "Family Focus", title: "Family Focus" },
+        { _id: "Other", title: "Other" },
       ],
       famOrPro: [
         { _id: "Families", title: "Families" },
@@ -174,8 +174,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
     fieldContext: {},
   },
 
-  // TODO: Specialists aren't being displayed on table properly
-  Topics: {
+  "Presentation Titles": {
     collectionName: "topics",
     collectionData: colData.topics,
     tableFields: () => [
@@ -190,9 +189,24 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "specialists_ids", label: "Preferred Specialists", inputType: "multiSelect" },
       { name: "description",     label: "Description",           inputType: "textArea" },
     ],
-    fieldContext: { specialists_ids: colData.specialists,
-      categories_ids:colData.categories,
+    fieldContext: { 
+      specialists_ids: colData.specialists,
+      categories_ids: colData.categories,
     },
+  },
+
+  Topics: {
+    collectionName: "simpleTopics",
+    collectionData: colData.simpleTopics,
+    tableFields: () => [
+      { name: "title",       label: "Topic" },
+      { name: "description", label: "Description" },
+    ],
+    popupFields: () => [
+      { name: "title",       label: "Topic", required: true },
+      { name: "description", label: "Description", inputType: "textArea" },
+    ],
+    fieldContext: {},
   },
 
   Categories: {
@@ -213,7 +227,7 @@ const getSectionConfig = (collections, colData, rowData) => ({
       focus: [
         { _id: "Education", title: "Education" },
         { _id: "Family Focus", title: "Family Focus" },
-        { _id: "Social Service", title: "Social Service" },
+        { _id: "Social Services", title: "Social Services" },
         { _id: "Other", title: "Other" },
       ]
     },

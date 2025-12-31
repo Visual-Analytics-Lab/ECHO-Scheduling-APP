@@ -539,14 +539,14 @@ const CalendarPage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Topic
+                      Presentation Title
                     </label>
                     <select
                       value={selectedTopic}
                       onChange={(e) => setSelectedTopic(e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="">All Topics</option>
+                      <option value="">All Presentation Titles</option>
                       {sortedTopics.map(topic => (
                         <option key={topic._id} value={topic._id}>
                           {topic.title}

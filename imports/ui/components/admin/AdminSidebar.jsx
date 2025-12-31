@@ -8,7 +8,8 @@ const AdminSidebar = ({ activeSection, setActiveSection }) => {
     { label: "Participant Groups", value: "Participant Groups" },
     { label: "Semesters", value: "Semesters" },
     { label: "Series", value: "Series" },
-    { label: "Presentation Titles", value: "Topics" }, 
+    { label: "Presentation Titles", value: "Presentation Titles" }, 
+    { label: "Topics", value: "Topics" },
     { label: "Categories", value: "Categories" },
   ];
 

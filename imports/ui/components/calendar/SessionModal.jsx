@@ -5,6 +5,7 @@ import {
   SpecialistsCollection,
   ParticipantGroupsCollection,
   TopicsCollection,
+  SimpleTopicsCollection,
   RolesCollection,
   SemesterCollection,
   SeriesCollection,
@@ -25,6 +26,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       Meteor.subscribe("semesters"),
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
+      Meteor.subscribe("simpleTopics"),
       Meteor.subscribe("categories"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
@@ -40,6 +42,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   const semesters = useTracker(() => SemesterCollection.find().fetch());
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
+  const simpleTopics = useTracker(() => SimpleTopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
   const categories = useTracker(() => CategoriesCollection.find().fetch());
 
@@ -369,6 +372,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   const specialistTopics = formData.presentingSpecialist ? getSpecialistTopics(formData.presentingSpecialist) : [];
   const filteredTopics = getFilteredTopics();
   const showCreateNewTopic = presentationTitleSearchQuery && (filteredTopics.length === 0 || !filteredTopics.some(t => t.title.toLowerCase() === presentationTitleSearchQuery.toLowerCase()));
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl p-6 relative max-h-[90vh] overflow-y-auto">
@@ -552,7 +556,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Supporting Specialist 3 */}
+            {/* Empty space in second row */}
+            <div className="form-group md:col-span-2"></div>
+            {/* Supporting Specialist 3 - under Supporting Specialist 1 */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Supporting Specialist 3</label>
               <select
@@ -573,7 +579,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Supporting Specialist 4 */}
+            {/* Supporting Specialist 4 - under Supporting Specialist 2 */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Supporting Specialist 4</label>
               <select
@@ -732,7 +738,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 className={defaultInputStyle}
               >
                 <option value="">Select Topic</option>
-                {topics?.map(topic => (
+                {simpleTopics?.map(topic => (
                   <option key={topic._id} value={topic._id}>
                     {topic.title}
                   </option>

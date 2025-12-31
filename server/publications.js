@@ -6,6 +6,7 @@ import {
     SeriesCollection,
     SessionsCollection,
     TopicsCollection,
+    SimpleTopicsCollection,
     RolesCollection,
     CategoriesCollection
 } from '../imports/api/collections';
@@ -27,6 +28,7 @@ Meteor.publish('users', async function () {
   }
   return this.ready();
 });
+
 Meteor.publish('currentUser', function () {
   if (!this.userId) return this.ready();
   return Meteor.users.find({ _id: this.userId }, {
@@ -45,24 +47,35 @@ Meteor.publish('currentUser', function () {
 Meteor.publish('specialists', function () {
     return SpecialistsCollection.find();
 });
+
 Meteor.publish('participantGroups', function() {
     return ParticipantGroupsCollection.find();
 });
+
 Meteor.publish('semesters', function() {
     return SemesterCollection.find();
 });
+
 Meteor.publish('series', function() {
     return SeriesCollection.find();
 });
+
 Meteor.publish('topics', function() {
     return TopicsCollection.find();
 });
+
+Meteor.publish('simpleTopics', function() {
+    return SimpleTopicsCollection.find();
+});
+
 Meteor.publish('sessions', function() {
   return SessionsCollection.find();
 });
+
 Meteor.publish('roles', function() {
   return RolesCollection.find();
 });
+
 Meteor.publish('categories', function() {
   return CategoriesCollection.find();
 });

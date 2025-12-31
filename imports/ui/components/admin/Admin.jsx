@@ -15,6 +15,7 @@ import {
   SemesterCollection,
   SeriesCollection,
   TopicsCollection,
+  SimpleTopicsCollection,
   RolesCollection,
   CategoriesCollection
 } from "../../../api/collections";
@@ -40,6 +41,7 @@ const Admin = () => {
       Meteor.subscribe("semesters"),
       Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
+      Meteor.subscribe("simpleTopics"),
       Meteor.subscribe("roles"),
       Meteor.subscribe("categories"),
     ];
@@ -79,12 +81,12 @@ const Admin = () => {
       lastName: user.lastName || '', 
     }))
   );
-  //console.log(users);
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const semesters = useTracker(() => SemesterCollection.find().fetch());
   const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
+  const simpleTopics = useTracker(() => SimpleTopicsCollection.find().fetch());
   const roles = useTracker(() => RolesCollection.find().fetch());
   const categories = useTracker(() => CategoriesCollection.find().fetch());
   const collections = { 
@@ -93,11 +95,12 @@ const Admin = () => {
     participantGroups: ParticipantGroupsCollection, 
     semesters: SemesterCollection, 
     series: SeriesCollection, 
-    topics: TopicsCollection, 
+    topics: TopicsCollection,
+    simpleTopics: SimpleTopicsCollection,
     roles: RolesCollection,
     categories: CategoriesCollection
   };
-  const colData = { users, specialists, participantGroups, semesters, series, topics, roles, categories};
+  const colData = { users, specialists, participantGroups, semesters, series, topics, simpleTopics, roles, categories};
 
 
 
@@ -136,8 +139,10 @@ const Admin = () => {
       return `${start} ${section}`;
     } else if (section === 'Categories') {
       return `${start} Category`;
-    } else if (section === 'Topics') {
+    } else if (section === 'Presentation Titles') {
       return `${start} Presentation Title`;
+    } else if (section === 'Topics') {
+      return `${start} Topic`;
     } else {
       // Default: remove 's' from the end
       return `${start} ${section.slice(0, -1)}`;
@@ -156,7 +161,8 @@ const Admin = () => {
     "Participant Groups": "Participant Groups",
     Semesters: "Semesters",
     Series: "Series",
-    Topics: "Presentation Titles", 
+    "Presentation Titles": "Presentation Titles",
+    Topics: "Topics", 
     Categories: "Categories",
   };
 
