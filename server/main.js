@@ -12,6 +12,7 @@ import './CollectionMethods/UsersMethods';
 import './CollectionMethods/SessionsMethods';
 import './CollectionMethods/RolesMethods';
 import './CollectionMethods/Accounts';
+import './CollectionMethods/SimpleTopicsMethods';
 // import './CollectionMethods/backfill.js';
 import '../imports/api/export';
 import './passwordMethods.js';
