@@ -5,11 +5,13 @@ import { GreenButton, GrayButton, Button } from '../shadecn-components/button';
 import { MultiSelect } from 'primereact/multiselect';
 import { Dropdown } from 'primereact/dropdown';
 import { MdEdit } from 'react-icons/md';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaUpload, FaTrash, FaDownload } from 'react-icons/fa';
 import CreatableSelect from 'react-select/creatable';
 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import { HeadshotsCollection, ResumesCollection } from '../../../api/fileCollections';
 
 
 const PopupForm = ({ 
@@ -26,6 +28,7 @@ const PopupForm = ({
 }) => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +51,83 @@ const PopupForm = ({
       ...prev,
       [name]: e.value // PrimeReact MultiSelect provides `e.value` as the selected array
     }));
+  };
+
+  const handleFileUpload = (e, fieldName, fileType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    console.log('Starting upload for:', file.name, 'Size:', file.size, 'bytes');
+
+    const uploadCollection = fileType === 'image' ? HeadshotsCollection : ResumesCollection;
+    
+    setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
+
+    const upload = uploadCollection.insert({
+      file: file,
+      chunkSize: 'dynamic'
+    }, false);
+
+    upload.on('start', function () {
+      console.log('Upload started');
+    });
+
+    upload.on('uploaded', function (error, fileObj) {
+      console.log('Upload completed event fired');
+    });
+
+    upload.on('error', function (error) {
+      console.error('Upload error:', error);
+      setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+      toast.error('Upload error: ' + error.reason);
+    });
+
+    upload.on('end', function (error, fileObj) {
+      console.log('Upload end event - Error:', error, 'FileObj:', fileObj);
+      setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+      
+      if (error) {
+        console.error('Error during upload:', error);
+        toast.error('Upload failed: ' + error.reason);
+      } else {
+        console.log('File uploaded successfully:', fileObj);
+        
+        // Update formData with file info
+        setFormData(prev => ({
+          ...prev,
+          [fieldName]: fileObj._id,
+          [`${fieldName}Name`]: fileObj.name,
+          [`${fieldName}Link`]: uploadCollection.link(fileObj)
+        }));
+        
+        toast.success('File uploaded successfully!');
+      }
+    });
+
+    upload.start();
+    console.log('Upload.start() called');
+  };
+
+  const handleFileDelete = (fieldName, fileType) => {
+    const fileId = formData[fieldName];
+    if (!fileId) return;
+
+    const uploadCollection = fileType === 'image' ? HeadshotsCollection : ResumesCollection;
+    
+    uploadCollection.remove(fileId, (error) => {
+      if (error) {
+        console.error('Error deleting file:', error);
+        toast.error('Failed to delete file');
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [fieldName]: null,
+          [`${fieldName}Name`]: null,
+          [`${fieldName}Link`]: null
+        }));
+        toast.success('File deleted successfully!');
+      }
+    });
   };
 
   // Helper function to format date in local time for <input type="datetime-local">
@@ -125,6 +205,7 @@ const PopupForm = ({
     setFormData({});
     setErrors({});
     setShowPassword(false);
+    setUploadingFiles({});
     setIsOpen(false);
   }
   const getDisplayValue = (fieldName, value) => {
@@ -159,7 +240,7 @@ const PopupForm = ({
         <form onSubmit={handleSubmit}>
           {/* Use grid layout with dynamic column span */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-            {fields.map(({ name, label, inputType, colSpan, required }) => {
+            {fields.map(({ name, label, inputType, colSpan, required, fileType }) => {
               
               const hasError = errors[name];
               // Dynamically set the column span
@@ -187,6 +268,21 @@ const PopupForm = ({
               let inputElement;
               if(isReadOnly) {
                 switch (inputType) {
+                  case "fileUpload":
+                    const fileName = formData[`${name}Name`];
+                    const fileLink = formData[`${name}Link`];
+                    inputElement = (
+                      <div className="text-gray-800 p-2 border border-gray-200 rounded bg-gray-50">
+                        {fileName ? (
+                          <a href={fileLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-2">
+                            <FaDownload /> {fileName}
+                          </a>
+                        ) : (
+                          'No file uploaded'
+                        )}
+                      </div>
+                    );
+                    break;
                   case "multiSelect":
                   case "select":
                     inputElement = (
@@ -237,6 +333,46 @@ const PopupForm = ({
                 }
               } else {
               switch (inputType) {
+                case "fileUpload":
+                  const isUploading = uploadingFiles[name];
+                  const hasFile = formData[name];
+                  const fileName = formData[`${name}Name`];
+                  
+                  inputElement = (
+                    <div className="space-y-2">
+                      {hasFile ? (
+                        <div className="flex items-center gap-2 p-2 border border-gray-300 rounded bg-gray-50">
+                          <span className="flex-1 text-sm truncate">{fileName}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleFileDelete(name, fileType)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete file"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded cursor-pointer hover:border-echo-teal hover:bg-gray-50 transition-colors">
+                          <FaUpload className="text-gray-500" />
+                          <span className="text-sm text-gray-600">
+                            {isUploading ? 'Uploading...' : `Upload ${fileType === 'image' ? 'Image' : 'Document'}`}
+                          </span>
+                          <input
+                            type="file"
+                            accept={fileType === 'image' ? 'image/png,image/jpeg,image/jpg' : '.pdf,.doc,.docx'}
+                            onChange={(e) => handleFileUpload(e, name, fileType)}
+                            className="hidden"
+                            disabled={isUploading}
+                          />
+                        </label>
+                      )}
+                      {isUploading && (
+                        <div className="text-xs text-blue-600 text-center">Uploading...</div>
+                      )}
+                    </div>
+                  );
+                  break;
                 case "multiCreatable":
                   const selectOptions = processedOptions.map(opt => ({
                     label: opt.processedName,
