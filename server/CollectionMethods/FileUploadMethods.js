@@ -36,41 +36,37 @@ Meteor.methods({
     return fileId;
   },
 
-  'files.deleteHeadshot'(specialistId, fileId) {
-    check(specialistId, String);
+  async 'files.deleteHeadshot'(fileId) {
     check(fileId, String);
 
     if (!this.userId) {
       throw new Meteor.Error('not-authorized');
     }
 
-    // Remove the file
-    HeadshotsCollection.remove(fileId);
-
-    // Update specialist
-    SpecialistsCollection.update(specialistId, {
-      $set: { headshotFileId: null, hasHeadShot: false }
-    });
-
-    return true;
+    try {
+      // Remove the file using collection's remove method
+      await HeadshotsCollection.collection.removeAsync({ _id: fileId });
+      return true;
+    } catch (error) {
+      console.error('Error deleting headshot:', error);
+      throw new Meteor.Error('delete-failed', 'Failed to delete headshot file');
+    }
   },
 
-  'files.deleteResume'(specialistId, fileId) {
-    check(specialistId, String);
+  async 'files.deleteResume'(fileId) {
     check(fileId, String);
 
     if (!this.userId) {
       throw new Meteor.Error('not-authorized');
     }
 
-    // Remove the file
-    ResumesCollection.remove(fileId);
-
-    // Update specialist
-    SpecialistsCollection.update(specialistId, {
-      $set: { resumeFileId: null, hasResume: false }
-    });
-
-    return true;
+    try {
+      // Remove the file using collection's remove method
+      await ResumesCollection.collection.removeAsync({ _id: fileId });
+      return true;
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      throw new Meteor.Error('delete-failed', 'Failed to delete resume file');
+    }
   },
 });
