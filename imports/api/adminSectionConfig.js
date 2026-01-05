@@ -86,9 +86,9 @@ const getSectionConfig = (collections, colData, rowData) => ({
       { name: "institute",            label: "Institute/Employer",                                        colSpan: 1 },
       { name: "topics_ids",           label: "Presentation Titles",             inputType: "multiSelect"             },
       { name: "categories_ids",       label: "Areas of Expertise",              inputType: "multiSelect"             },
-      { name: "hasHeadShot",          label: "Head Shot",                       inputType: "checkbox",    colSpan: 1 },
-      { name: "hasBio",               label: "Bio",                             inputType: "checkbox",    colSpan: 1 },
-      { name: "hasResume",            label: "Resume",                          inputType: "checkbox",    colSpan: 1 },
+      { name: "hasHeadShot",          label: "Head Shot",                       inputType: "fileUpload",  colSpan: 1, fileType: "image" },
+      { name: "bio",                  label: "Bio",                             inputType: "textArea",    colSpan: 2 },
+      { name: "hasResume",            label: "Resume",                          inputType: "fileUpload",  colSpan: 1, fileType: "document" },
     ],
     fieldContext: { 
       participantGroups_id: colData.participantGroups,

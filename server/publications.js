@@ -10,6 +10,7 @@ import {
     RolesCollection,
     CategoriesCollection
 } from '../imports/api/collections';
+import { HeadshotsCollection, ResumesCollection } from '../imports/api/fileCollections';
 
 Meteor.publish('users', async function () {
   const currentUser = await Meteor.users.findOneAsync(this.userId);
@@ -78,4 +79,12 @@ Meteor.publish('roles', function() {
 
 Meteor.publish('categories', function() {
   return CategoriesCollection.find();
+});
+
+Meteor.publish('headshots', function () {
+  return HeadshotsCollection.find().cursor;
+});
+
+Meteor.publish('resumes', function () {
+  return ResumesCollection.find().cursor;
 });
