@@ -112,12 +112,12 @@ const PopupForm = ({
     const fileId = formData[fieldName];
     if (!fileId) return;
 
-    const uploadCollection = fileType === 'image' ? HeadshotsCollection : ResumesCollection;
+    const methodName = fileType === 'image' ? 'files.deleteHeadshot' : 'files.deleteResume';
     
-    uploadCollection.remove(fileId, (error) => {
+    Meteor.call(methodName, fileId, (error) => {
       if (error) {
         console.error('Error deleting file:', error);
-        toast.error('Failed to delete file');
+        toast.error('Failed to delete file: ' + error.reason);
       } else {
         setFormData(prev => ({
           ...prev,
