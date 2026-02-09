@@ -25,6 +25,13 @@ Meteor.methods({
     return await SessionsCollection.removeAsync(sessionsId);
   },
 
+  // Remove all sessions in a recurring group
+  async 'sessions.removeRecurringGroup'(recurringGroupId) {
+    check(recurringGroupId, String);
+    const result = await SessionsCollection.removeAsync({ recurringGroupId });
+    return result;
+  },
+
   // Update a session
   async 'sessions.update'(sessionsId, data) {
     check(sessionsId, String);
@@ -36,6 +43,21 @@ Meteor.methods({
     return await SessionsCollection.updateAsync(sessionsId, {
       $set: data
     });
+  },
+
+  // Update all sessions in a recurring group
+  async 'sessions.updateRecurringGroup'(recurringGroupId, data) {
+    check(recurringGroupId, String);
+    check(data, Object);
+    
+    // Remove dateTime and presentationsDue from group updates as they should be unique per session
+    const { dateTime, presentationsDue, ...updateData } = data;
+    
+    return await SessionsCollection.updateAsync(
+      { recurringGroupId },
+      { $set: updateData },
+      { multi: true }
+    );
   },
 
   // Export sessions for the current user

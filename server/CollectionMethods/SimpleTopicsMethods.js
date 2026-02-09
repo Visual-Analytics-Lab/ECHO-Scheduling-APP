@@ -3,7 +3,7 @@ import { check } from 'meteor/check';
 import { SimpleTopicsCollection } from '../../imports/api/collections';
 
 Meteor.methods({
-  'simpleTopics.insert'(topicData) {
+  async 'simpleTopics.insert'(topicData) {
     check(topicData, Object);
 
     if (!this.userId) {
@@ -15,7 +15,7 @@ Meteor.methods({
       throw new Meteor.Error('validation-error', 'Topic title is required');
     }
 
-    return SimpleTopicsCollection.insert({
+    return await SimpleTopicsCollection.insertAsync({
       title: topicData.title,
       description: topicData.description || '',
       createdAt: new Date(),
@@ -23,7 +23,7 @@ Meteor.methods({
     });
   },
 
-  'simpleTopics.update'(topicId, topicData) {
+  async 'simpleTopics.update'(topicId, topicData) {
     check(topicId, String);
     check(topicData, Object);
 
@@ -31,7 +31,7 @@ Meteor.methods({
       throw new Meteor.Error('not-authorized', 'You must be logged in to update a topic');
     }
 
-    const topic = SimpleTopicsCollection.findOne(topicId);
+    const topic = await SimpleTopicsCollection.findOneAsync(topicId);
     if (!topic) {
       throw new Meteor.Error('not-found', 'Topic not found');
     }
@@ -41,7 +41,7 @@ Meteor.methods({
       throw new Meteor.Error('validation-error', 'Topic title is required');
     }
 
-    return SimpleTopicsCollection.update(topicId, {
+    return await SimpleTopicsCollection.updateAsync(topicId, {
       $set: {
         title: topicData.title,
         description: topicData.description || '',
@@ -51,18 +51,18 @@ Meteor.methods({
     });
   },
 
-  'simpleTopics.remove'(topicId) {
+  async 'simpleTopics.remove'(topicId) {
     check(topicId, String);
 
     if (!this.userId) {
       throw new Meteor.Error('not-authorized', 'You must be logged in to delete a topic');
     }
 
-    const topic = SimpleTopicsCollection.findOne(topicId);
+    const topic = await SimpleTopicsCollection.findOneAsync(topicId);
     if (!topic) {
       throw new Meteor.Error('not-found', 'Topic not found');
     }
 
-    return SimpleTopicsCollection.remove(topicId);
+    return await SimpleTopicsCollection.removeAsync(topicId);
   },
 });

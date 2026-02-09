@@ -218,6 +218,13 @@ const PopupForm = ({
       return value.map(val => {
         const option = options.find(opt => opt._id === val);
         if (!option) return val;
+        
+        // For categories, include focus
+        if (fieldName === 'category' || fieldName === 'categories_ids') {
+          const display = option.title || option.name;
+          return option.focus ? `${display} (${option.focus})` : display;
+        }
+        
         return option.firstName && option.lastName 
           ? `${option.firstName} ${option.lastName}` 
           : option.title || option.name;
@@ -250,11 +257,28 @@ const PopupForm = ({
               // Preprocess options to show correct label given name, title, firstName + lastName
               const rawOptions = fieldData?.[name];
               const processedOptions = Array.isArray(rawOptions)
-                ? rawOptions.map((s) => ({
-                    ...s,
-                    key: s._id,
-                    processedName: s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.title || s.name,
-                  }))
+                ? rawOptions.map((s) => {
+                    let processedName;
+                    
+                    // For categories, include focus in the display name
+                    if (name === 'category' || name === 'categories_ids') {
+                      processedName = s.focus 
+                        ? `${s.title} (${s.focus})` 
+                        : s.title;
+                    }
+                    // For specialists/other items
+                    else {
+                      processedName = s.firstName && s.lastName 
+                        ? `${s.firstName} ${s.lastName}` 
+                        : s.title || s.name;
+                    }
+                    
+                    return {
+                      ...s,
+                      key: s._id,
+                      processedName: processedName,
+                    };
+                  })
                 : typeof rawOptions === 'object' && rawOptions !== null
                   ? [{
                       ...rawOptions,
