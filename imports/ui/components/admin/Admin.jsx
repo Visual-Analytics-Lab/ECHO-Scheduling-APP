@@ -31,6 +31,7 @@ const Admin = () => {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [rowData, setRowData] = useState({});
   const [popupSectionOverride, setPopupSectionOverride] = useState(null);
+  const [selectedSpecialistFilter, setSelectedSpecialistFilter] = useState("");
 
   // Subscribe to collections
   useEffect(() => {
@@ -47,6 +48,11 @@ const Admin = () => {
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
+
+  // Reset specialist filter when changing sections
+  useEffect(() => {
+    setSelectedSpecialistFilter("");
+  }, [activeSection]);
 
   useEffect(() => {
   const handleOpenAddUser = (e) => {
@@ -102,11 +108,31 @@ const Admin = () => {
   };
   const colData = { users, specialists, participantGroups, semesters, series, topics, simpleTopics, roles, categories};
 
+  // Filter topics by selected specialist
+  const filteredTopics = selectedSpecialistFilter 
+    ? topics.filter(topic => 
+        topic.specialists_ids && topic.specialists_ids.includes(selectedSpecialistFilter)
+      )
+    : topics;
 
+  // Sort specialists alphabetically
+  const sortedSpecialists = [...specialists].sort((a, b) => {
+    const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 
   // Fetch current section config dynamically
   const sectionConfig = getSectionConfig(collections, colData, rowData);
   const currentSection = sectionConfig[popupSectionOverride || activeSection] || {};
+
+  // Override collectionData for Presentation Titles when filter is active
+  const getCurrentSectionData = () => {
+    if (activeSection === "Presentation Titles" && selectedSpecialistFilter) {
+      return filteredTopics;
+    }
+    return currentSection.collectionData;
+  };
 
   // Return "(collectionName).(operation)""
   const getMethodName = (operation) => `${currentSection.collectionName}.${operation}`;
@@ -181,8 +207,52 @@ const Admin = () => {
             </button>
           </header>
 
+          {/* Specialist Filter - Only show for Presentation Titles */}
+          {activeSection === "Presentation Titles" && (
+            <div className="mb-4 bg-white border border-gray-300 rounded-lg shadow-sm p-4">
+              <div className="flex items-center gap-4">
+                <label className="font-medium text-gray-700 whitespace-nowrap">
+                  Filter by Specialist:
+                </label>
+                <select
+                  value={selectedSpecialistFilter}
+                  onChange={(e) => setSelectedSpecialistFilter(e.target.value)}
+                  className="flex-1 p-2 border border-gray-400 rounded focus:border-echo-teal focus:ring-echo-teal"
+                >
+                  <option value="">All Specialists</option>
+                  {sortedSpecialists.map(specialist => (
+                    <option 
+                      key={specialist._id} 
+                      value={specialist._id}
+                      style={{ color: specialist.nameColor || '#000000' }}
+                    >
+                      {specialist.firstName} {specialist.lastName}
+                    </option>
+                  ))}
+                </select>
+                {selectedSpecialistFilter && (
+                  <button
+                    onClick={() => setSelectedSpecialistFilter("")}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded transition-colors whitespace-nowrap"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+              {selectedSpecialistFilter && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Showing {filteredTopics.length} presentation title{filteredTopics.length !== 1 ? 's' : ''} for {
+                    sortedSpecialists.find(s => s._id === selectedSpecialistFilter)?.firstName
+                  } {
+                    sortedSpecialists.find(s => s._id === selectedSpecialistFilter)?.lastName
+                  }
+                </div>
+              )}
+            </div>
+          )}
+
           <AdminTable
-            data={currentSection.collectionData}
+            data={getCurrentSectionData()}
             sectionTitle={activeSection}
             fields={currentSection.tableFields() || []}
             onEdit={openEditPopUp}
