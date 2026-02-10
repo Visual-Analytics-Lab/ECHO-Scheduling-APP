@@ -30,9 +30,31 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
     return fullName.includes(filterValue.toLowerCase());
   };
 
+  // Custom filter function for specialists in Presentation Titles
+  const specialistsFilterFn = (row, columnId, filterValue) => {
+    const specialists_ids = row.original.specialists_ids;
+    if (!specialists_ids || !Array.isArray(specialists_ids)) return false;
+    
+    // Get the parent collection from the field
+    const field = fields?.find(f => f.name === columnId);
+    if (!field || !field.parentCollection) return false;
+    
+    const relatedDocs = field.parentCollection.find({ _id: { $in: specialists_ids } }).fetch();
+    const specialistNames = relatedDocs.map(doc => 
+      `${doc.firstName || ''} ${doc.lastName || ''}`.toLowerCase()
+    ).join(' ');
+    
+    return specialistNames.includes(filterValue.toLowerCase());
+  };
+
 
   // Define the column header and data displayed. Fields with a parent collection will map ._id to .title or .name
   const columns = useMemo(() => {
+    // Safety check - return empty array if fields is not defined
+    if (!fields || !Array.isArray(fields)) {
+      return [];
+    }
+    
     return fields.map((field) => {
       const { name, label, parentCollection } = field;
   
@@ -86,11 +108,21 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
           return {
             header: label,
             accessorKey: name,
-            cell: ({ row }) => (
-              <span style={{ color: row.original.nameColor }}>
-                {row.original[name]}
-              </span>
-            ),
+            cell: ({ row }) => {
+              // For categories, show title with focus
+              if (sectionTitle === "Categories" && row.original.focus) {
+                return (
+                  <span style={{ color: row.original.nameColor }}>
+                    {row.original[name]} ({row.original.focus})
+                  </span>
+                );
+              }
+              return (
+                <span style={{ color: row.original.nameColor }}>
+                  {row.original[name]}
+                </span>
+              );
+            },
           };
         default:
           // Handle date fields
@@ -113,6 +145,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
   
                 const ids = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
                 const relatedDocs = parentCollection.find({ _id: { $in: ids } }).fetch();
+                
                 // Place any id fields inside this array with related docs with colored .firstName and .lastName
                 if (["specialists_ids"].includes(name)) {
                   return (
@@ -125,6 +158,14 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
                     </>
                   );
                 }
+                // For categories_ids, show title with focus
+                if (["categories_ids"].includes(name)) {
+                  return relatedDocs.map((doc) => (
+                    <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
+                      {doc.title}{doc.focus ? ` (${doc.focus})` : ""}
+                    </span>
+                  ));
+                }
                 // Return titles/names/roles of related doc to id uncolored
                 return relatedDocs.map((doc) => (
                   <span key={doc._id} style={{ display: 'block', marginBottom: "5px" }}>
@@ -132,6 +173,8 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
                   </span>
                 ));
               },
+              // Add custom filter function for specialists_ids
+              filterFn: name === "specialists_ids" ? specialistsFilterFn : undefined,
             };
           }
           return {
@@ -156,7 +199,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
           };
       }
     });
-  }, [fields]);
+  }, [fields, sectionTitle]);
 
   const table = useReactTable({
     data,
@@ -167,6 +210,7 @@ const AdminTable = ({ data, sectionTitle, fields, onEdit, onDelete, onShow }) =>
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    globalFilterFn: 'auto',
   });
 
   const validateField = (value, field) => {

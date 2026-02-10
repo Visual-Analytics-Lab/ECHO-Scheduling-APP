@@ -9,7 +9,8 @@ import {
   RolesCollection,
   SemesterCollection,
   SeriesCollection,
-  CategoriesCollection
+  CategoriesCollection,
+  SessionsCollection
 } from '../../../api/collections';
 import { Meteor } from 'meteor/meteor';
 import { MdEdit } from 'react-icons/md';
@@ -28,6 +29,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       Meteor.subscribe("topics"),
       Meteor.subscribe("simpleTopics"),
       Meteor.subscribe("categories"),
+      Meteor.subscribe("sessions"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -74,6 +76,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     blankFieldsOnRecurrence: false
   });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isPartOfRecurringGroup, setIsPartOfRecurringGroup] = useState(false);
+  const [recurringGroupCount, setRecurringGroupCount] = useState(0);
+  const [showDeleteOptions, setShowDeleteOptions] = useState(false);
+  const [showEditRecurringOptions, setShowEditRecurringOptions] = useState(false);
   const [presentationTitleSearchQuery, setPresentationTitleSearchQuery] = useState('');
   const [showPresentationTitleDropdown, setShowPresentationTitleDropdown] = useState(false);
   const presentationTitleDropdownRef = useRef(null);
@@ -91,6 +97,18 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   useEffect(() => {
     if (existingSession) {
+      // Check if this session is part of a recurring group
+      const isRecurring = !!existingSession.recurringGroupId;
+      setIsPartOfRecurringGroup(isRecurring);
+      
+      if (isRecurring) {
+        // Count how many sessions are in this recurring group
+        const groupSessions = SessionsCollection.find({ 
+          recurringGroupId: existingSession.recurringGroupId 
+        }).fetch();
+        setRecurringGroupCount(groupSessions.length);
+      }
+
       setFormData({
         sessionNumber: existingSession.sessionNumber || '',
         sessionTitle: existingSession.sessionTitle || '',
@@ -123,6 +141,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         setPresentationTitleSearchQuery(selectedTopic.title);
       }
     } else {
+      setIsPartOfRecurringGroup(false);
+      setRecurringGroupCount(0);
       setFormData({
         sessionNumber: '',
         sessionTitle: '',
@@ -253,10 +273,50 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (editAllOccurrences = false) => {
+    // If editing all occurrences of a recurring group
+    if (editAllOccurrences && existingSession?.recurringGroupId) {
+      const dataToUpdate = {
+        sessionNumber: formData.sessionNumber,
+        sessionTitle: formData.sessionTitle,
+        casePresenter: formData.casePresenter,
+        facilitator: formData.facilitator,
+        supportingFacilitator: formData.supportingFacilitator,
+        presentingSpecialist: formData.presentingSpecialist,
+        supportingSpecialist1: formData.supportingSpecialist1,
+        supportingSpecialist2: formData.supportingSpecialist2,
+        supportingSpecialist3: formData.supportingSpecialist3,
+        supportingSpecialist4: formData.supportingSpecialist4,
+        participantGroup: formData.participantGroup,
+        newMaterial: formData.newMaterial,
+        color: formData.color,
+        presentationTitle: formData.presentationTitle,
+        topicSimple: formData.topicSimple,
+        category: formData.category,
+        notes: formData.notes,
+        semester: formData.semester,
+        series: formData.series,
+      };
+
+      Meteor.call('sessions.updateRecurringGroup', existingSession.recurringGroupId, dataToUpdate, (error) => {
+        if (error) {
+          alert('Error updating recurring sessions: ' + (error.reason || error.message));
+        } else {
+          alert(`Successfully updated all ${recurringGroupCount} sessions in this recurring group!`);
+          setFormData({});
+          setPresentationTitleSearchQuery('');
+          setShowEditRecurringOptions(false);
+          onClose();
+        }
+      });
+      return;
+    }
+
+    // Creating new recurring sessions
     if (formData.isRecurring && formData.recurrenceCount > 1) {
       const baseDate = new Date(formData.dateTime);
       const basePresentationsDue = formData.presentationsDue ? new Date(formData.presentationsDue) : null;
+      const recurringGroupId = `recurring-${Date.now()}`; // Unique ID for this group
 
       for (let i = 0; i < formData.recurrenceCount; i++) {
         const sessionDate = new Date(baseDate);
@@ -281,6 +341,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           presentationsDue: presentationsDueDate,
           participantGroup: formData.participantGroup,
           color: formData.color,
+          semester: formData.semester,
+          series: formData.series,
+          recurringGroupId: recurringGroupId, // Add the recurring group ID
           ...(i === 0 || !formData.blankFieldsOnRecurrence ? {
             sessionNumber: formData.sessionNumber,
             sessionTitle: formData.sessionTitle,
@@ -297,8 +360,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             topicSimple: formData.topicSimple,
             category: formData.category,
             notes: formData.notes,
-            semester: formData.semester,
-            series: formData.series,
           } : {
             sessionNumber: '',
             sessionTitle: '',
@@ -315,8 +376,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             topicSimple: '',
             category: '',
             notes: '',
-            semester: '',
-            series: '',
           })
         };
 
@@ -327,6 +386,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         }
       }
     } else {
+      // Single session (not recurring)
       const dataToSubmit = {
         sessionNumber: formData.sessionNumber,
         sessionTitle: formData.sessionTitle,
@@ -361,7 +421,25 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   const handleDelete = () => {
     onDelete(existingSession._id);
+    setIsDeleteModalOpen(false);
     onClose();
+  }
+
+  const handleDeleteAllOccurrences = () => {
+    if (!existingSession?.recurringGroupId) return;
+
+    if (window.confirm(`Are you sure you want to delete all ${recurringGroupCount} sessions in this recurring group?`)) {
+      Meteor.call('sessions.removeRecurringGroup', existingSession.recurringGroupId, (error) => {
+        if (error) {
+          alert('Error deleting recurring sessions: ' + (error.reason || error.message));
+        } else {
+          alert(`Successfully deleted all ${recurringGroupCount} sessions!`);
+          setIsDeleteModalOpen(false);
+          setShowDeleteOptions(false);
+          onClose();
+        }
+      });
+    }
   }
 
   if (!isOpen) return null;
@@ -385,6 +463,11 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         </button>
         <h2 className="text-xl font-bold mb-4">
           {existingSession ? 'Edit Session' : 'Create Session'}
+          {isPartOfRecurringGroup && (
+            <span className="ml-2 text-sm font-normal text-blue-600">
+              (Part of {recurringGroupCount} recurring sessions)
+            </span>
+          )}
         </h2>
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -757,7 +840,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 <option value="">Select Category</option>
                 {categories?.map(category => (
                   <option key={category._id} value={category._id}>
-                    {category.title}
+                    {category.title}{category.focus ? ` (${category.focus})` : ''}
                   </option>
                 ))}
               </select>
@@ -872,7 +955,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               
               {formData.isRecurring && formData.blankFieldsOnRecurrence && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
-                  <strong>Note:</strong> Only Participant Group and Color will be copied to future sessions. All other fields will be blank.
+                  <strong>Note:</strong> Only Participant Group, Color, Semester, and Series will be copied to future sessions. All other fields will be blank.
                 </div>
               )}
             </div>
@@ -891,8 +974,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           </div>
           
           <div className="flex justify-between gap-4 mt-6">
-            <div>
-              {existingSession && (
+            <div className="flex gap-2">
+              {existingSession && !isPartOfRecurringGroup && (
                 <button
                   type="button"
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
@@ -900,6 +983,25 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 >
                   Delete Session
                 </button>
+              )}
+              
+              {existingSession && isPartOfRecurringGroup && (
+                <>
+                  <button
+                    type="button"
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                  >
+                    Delete This Session
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-red-700 hover:bg-red-900 text-white font-bold py-2 px-4 rounded"
+                    onClick={handleDeleteAllOccurrences}
+                  >
+                    Delete All {recurringGroupCount} Occurrences
+                  </button>
+                </>
               )}
             </div>
             <div className="flex gap-4">
@@ -910,13 +1012,48 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition duration-200"
-                onClick={handleSubmit}
-              >
-                {existingSession ? 'Save Changes' : (formData.isRecurring ? `Create ${formData.recurrenceCount} Sessions` : 'Create')}
-              </button>
+              
+              {existingSession && isPartOfRecurringGroup && !showEditRecurringOptions && (
+                <button
+                  type="button"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={() => setShowEditRecurringOptions(true)}
+                >
+                  Edit Options
+                </button>
+              )}
+
+              {existingSession && isPartOfRecurringGroup && showEditRecurringOptions && (
+                <>
+                  <button
+                    type="button"
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                    onClick={() => {
+                      handleSubmit(false);
+                      setShowEditRecurringOptions(false);
+                    }}
+                  >
+                    Save This Session Only
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
+                    onClick={() => handleSubmit(true)}
+                  >
+                    Save All {recurringGroupCount} Occurrences
+                  </button>
+                </>
+              )}
+
+              {(!existingSession || (existingSession && !isPartOfRecurringGroup) || (existingSession && isPartOfRecurringGroup && !showEditRecurringOptions)) && (
+                <button
+                  type="button"
+                  className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition duration-200"
+                  onClick={() => handleSubmit(false)}
+                >
+                  {existingSession ? 'Save Changes' : (formData.isRecurring ? `Create ${formData.recurrenceCount} Sessions` : 'Create')}
+                </button>
+              )}
             </div>
           </div>
         </form>

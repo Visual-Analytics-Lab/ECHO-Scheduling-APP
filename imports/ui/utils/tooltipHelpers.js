@@ -18,24 +18,38 @@ export const buildSessionTooltip = ({ event }) => {
     presentingSpecialist,
     supportingSpecialist1,
     supportingSpecialist2,
+    supportingSpecialist3,
+    supportingSpecialist4,
     participantGroup,
     topic,
   } = event.extendedProps;
 
   // Helper to get name + color wrapped in a styled span
-  const getStyledSpecialist = (id) => {
+  const getStyledSpecialist = (id, role = "") => {
+    if (!id) return null; // Don't show anything if no ID
     const name = getSpecialistName(id);
     const color = getSpecialistColor(id);
-    return name ? `<div style="color: ${color || 'black'};">${name}</div>` : "";
+    
+    // If name is still showing as an ID or "No specialist", don't display it
+    if (!name || name.includes("Specialist ID:") || name === "No specialist") {
+      return null;
+    }
+    
+    const roleLabel = role ? ` (${role})` : "";
+    return `<div style="color: ${color || 'black'};">${name}${roleLabel}</div>`;
   };
 
-  const specialistsHTML = [
-    getStyledSpecialist(presentingSpecialist),
-    getStyledSpecialist(supportingSpecialist1),
-    getStyledSpecialist(supportingSpecialist2),
-  ]
-    .filter(Boolean)
-    .join("") || "<div>TBD</div>";
+  const specialists = [
+    getStyledSpecialist(presentingSpecialist, "Presenting"),
+    getStyledSpecialist(supportingSpecialist1, "Support 1"),
+    getStyledSpecialist(supportingSpecialist2, "Support 2"),
+    getStyledSpecialist(supportingSpecialist3, "Support 3"),
+    getStyledSpecialist(supportingSpecialist4, "Support 4"),
+  ].filter(Boolean);
+
+  const specialistsHTML = specialists.length > 0 
+    ? specialists.join("") 
+    : "<div>No specialist assigned</div>";
 
   const groupName = getParticipantGroupName(participantGroup);
   const groupColor = getParticipantGroupColor(participantGroup);

@@ -92,7 +92,12 @@ const getSectionConfig = (collections, colData, rowData) => ({
     ],
     fieldContext: { 
       participantGroups_id: colData.participantGroups,
-      topics_ids: colData.topics,
+      // Filter topics to only show ones assigned to this specialist
+      topics_ids: rowData._id 
+        ? colData.topics.filter(topic => 
+            topic.specialists_ids && topic.specialists_ids.includes(rowData._id)
+          )
+        : colData.topics, // Show all topics when adding new specialist
       categories_ids: colData.categories,
       sessionPreferrence: [
         { _id: "Inactive", title: "Inactive" },

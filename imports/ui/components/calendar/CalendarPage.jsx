@@ -349,6 +349,15 @@ const CalendarPage = () => {
   };
   
   const handleSubmit = (formData, sessionId) => {
+    // If there's a presentation title and presenting specialist, link them
+    if (formData.presentationTitle && formData.presentingSpecialist) {
+      Meteor.call('topics.addSpecialist', formData.presentationTitle, formData.presentingSpecialist, (error) => {
+        if (error) {
+          console.error('Error linking specialist to topic:', error);
+        }
+      });
+    }
+
     if (sessionId) {
       Meteor.call('sessions.update', sessionId, formData, (error) => {
         if (error) {
@@ -433,6 +442,8 @@ const CalendarPage = () => {
                       presentingSpecialist: session.presentingSpecialist,
                       supportingSpecialist1: session.supportingSpecialist1,
                       supportingSpecialist2: session.supportingSpecialist2,
+                      supportingSpecialist3: session.supportingSpecialist3,
+                      supportingSpecialist4: session.supportingSpecialist4,
                       participantGroup: session.participantGroup,
                       topic: session.topic,
                     },

@@ -47,5 +47,25 @@ Meteor.methods({
         return await TopicsCollection.updateAsync(topicsId, {
             $set: data
         });
+    },
+    
+    // Add a specialist to a topic's specialists_ids if not already present
+    async 'topics.addSpecialist'(topicId, specialistId) {
+        check(topicId, String);
+        check(specialistId, String);
+
+        if (!specialistId) return; // Don't add empty specialist
+
+        const topic = await TopicsCollection.findOneAsync(topicId);
+        if (!topic) {
+            throw new Meteor.Error('not-found', 'Topic not found');
+        }
+
+        // Only add if not already in the array
+        if (!topic.specialists_ids || !topic.specialists_ids.includes(specialistId)) {
+            return await TopicsCollection.updateAsync(topicId, {
+                $addToSet: { specialists_ids: specialistId }
+            });
+        }
     }
 });
