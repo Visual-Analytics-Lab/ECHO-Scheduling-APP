@@ -19,7 +19,6 @@ import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/border.css';
 
-// Import jsPDF for PDF generation
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
@@ -28,10 +27,8 @@ const MySessions = () => {
   const [timePeriodFilter, setTimePeriodFilter] = useState("upcoming");
   const calendarRef = useRef(null);
 
-  // Get current user
   const currentUser = useTracker(() => Meteor.user());
   
-  // Subscribe to collections
   useEffect(() => {
     const subscriptions = [
       Meteor.subscribe('sessions'),
@@ -42,13 +39,15 @@ const MySessions = () => {
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
 
-  // Get current specialist info
   const currentSpecialist = useTracker(() => {
     if (!currentUser) return null;
+    const userEmail = currentUser.emails?.[0]?.address;
+    if (userEmail) {
+      return SpecialistsCollection.findOne({ email: userEmail });
+    }
     return SpecialistsCollection.findOne({ userId: currentUser._id });
   });
 
-  // Get all sessions where this specialist is involved
   const allSpecialistSessions = useTracker(() => {
     if (!currentSpecialist) return [];
     
@@ -56,7 +55,9 @@ const MySessions = () => {
       $or: [
         { presentingSpecialist: currentSpecialist._id },
         { supportingSpecialist1: currentSpecialist._id },
-        { supportingSpecialist2: currentSpecialist._id }
+        { supportingSpecialist2: currentSpecialist._id },
+        { supportingSpecialist3: currentSpecialist._id },
+        { supportingSpecialist4: currentSpecialist._id },
       ]
     }).fetch();
   });
@@ -64,12 +65,10 @@ const MySessions = () => {
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
-  // Handle calendar view changes
   const handleDatesSet = (arg) => {
     setCurrentViewDate(new Date(arg.start));
   };
 
-  // Filter sessions based on time period
   const getFilteredSessions = () => {
     const now = new Date();
     
@@ -94,49 +93,51 @@ const MySessions = () => {
 
   const filteredSessions = getFilteredSessions();
 
-  // Helper function to get specialist role in session
   const getSpecialistRole = (session, specialistId) => {
     if (session.presentingSpecialist === specialistId) return "Presenting";
     if (session.supportingSpecialist1 === specialistId) return "Supporting 1";
     if (session.supportingSpecialist2 === specialistId) return "Supporting 2";
+    if (session.supportingSpecialist3 === specialistId) return "Supporting 3";
+    if (session.supportingSpecialist4 === specialistId) return "Supporting 4";
     return "Unknown";
   };
 
-  // Get time period display text
   const getTimePeriodText = () => {
     switch (timePeriodFilter) {
-      case "past":
-        return "Past Sessions";
-      case "upcoming":
-        return "Upcoming Sessions";
-      case "all":
-      default:
-        return "All Sessions";
+      case "past": return "Past Sessions";
+      case "upcoming": return "Upcoming Sessions";
+      case "all": default: return "All Sessions";
     }
   };
 
-  // Download PDF function
+  const getTopicName = (session) => {
+    const topicId = session.presentationTitle || session.topic;
+    if (!topicId) return 'No topic assigned';
+    const topic = topics.find(t => t._id === topicId);
+    return topic?.title || 'No topic assigned';
+  };
+
   const downloadSessionsPDF = () => {
     try {
-      console.log("Starting PDF generation...");
-      console.log("Filtered sessions:", filteredSessions);
+      if (!currentSpecialist) {
+        alert("Specialist profile not found.");
+        return;
+      }
+
+      // Use landscape for more space
+      const doc = new jsPDF({ orientation: 'landscape' });
       
-      const doc = new jsPDF();
-      
-      // Add title
       doc.setFontSize(18);
-      doc.setTextColor(114, 29, 53); // ECHO maroon color
+      doc.setTextColor(114, 29, 53);
       doc.text(`My Sessions - ${currentSpecialist.firstName} ${currentSpecialist.lastName}`, 14, 20);
       
-      // Add subtitle
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
       doc.text(`${getTimePeriodText()} (${filteredSessions.length} total)`, 14, 28);
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
       
-      // Prepare table data
       const tableData = filteredSessions.map((session) => {
-        const topic = topics.find(t => t._id === session.topic);
+        const topicName = getTopicName(session);
         const group = participantGroups.find(pg => pg._id === session.participantGroup);
         const role = getSpecialistRole(session, currentSpecialist._id);
         const isPast = new Date(session.dateTime) < new Date();
@@ -145,17 +146,15 @@ const MySessions = () => {
           session.sessionTitle || "Untitled Session",
           new Date(session.dateTime).toLocaleString(),
           role,
-          topic?.name || "N/A",
+          topicName,
           group?.name || "N/A",
+          session.notes || "No objectives listed",
           isPast ? "Past" : "Upcoming"
         ];
       });
       
-      console.log("Table data prepared:", tableData);
-      
-      // Add table
       doc.autoTable({
-        head: [['Session Title', 'Date & Time', 'My Role', 'Topic', 'Group', 'Status']],
+        head: [['Session Title', 'Date & Time', 'My Role', 'Topic', 'Group', 'Notes/Objectives', 'Status']],
         body: tableData,
         startY: 40,
         theme: 'striped',
@@ -165,24 +164,23 @@ const MySessions = () => {
           fontSize: 10,
           fontStyle: 'bold'
         },
-        bodyStyles: {
-          fontSize: 9
+        bodyStyles: { 
+          fontSize: 9,
+          valign: 'top'
         },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
         columnStyles: {
           0: { cellWidth: 40 },
           1: { cellWidth: 35 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 30 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 35 },
           4: { cellWidth: 35 },
-          5: { cellWidth: 20 }
+          5: { cellWidth: 70 }, // Notes column extra wide
+          6: { cellWidth: 18 }
         },
         margin: { top: 40 }
       });
       
-      // Add footer
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -196,12 +194,9 @@ const MySessions = () => {
         );
       }
       
-      // Save the PDF
-      const fileName = `MySessions_${currentSpecialist.firstName}_${currentSpecialist.lastName}_${getTimePeriodText().replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      console.log("Saving PDF as:", fileName);
+      const fileName = `MySessions_${currentSpecialist.firstName}_${currentSpecialist.lastName}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       
-      console.log("PDF download initiated successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Error generating PDF. Please check the console for details.");
@@ -219,14 +214,13 @@ const MySessions = () => {
   if (!currentSpecialist) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Specialist profile not found.</div>
+        <div className="text-xl">No specialist profile linked to your account.</div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Header */}
       <header className="bg-gray-200 text-center py-4">
         <h1 className="text-3xl font-bold text-[#721D35]">
           My Sessions - {currentSpecialist.firstName} {currentSpecialist.lastName}
@@ -234,14 +228,11 @@ const MySessions = () => {
       </header>
 
       <div className="flex flex-1">
-        {/* Left Sidebar */}
         <aside className="w-80 bg-white text-black m-4 border border-gray-300 rounded-lg shadow-full-border flex flex-col">
-          {/* Sidebar Header */}
           <div className="py-3 px-4 bg-echo-maroon rounded-t-lg -m-[1px]">
             <h2 className="text-xl text-white">My Sessions</h2>
           </div>
           
-          {/* Time Period Filter */}
           <div className="p-4 border-b border-gray-200">
             <label htmlFor="timePeriod" className="block text-sm font-medium text-gray-700 mb-2">
               Time Period
@@ -258,32 +249,19 @@ const MySessions = () => {
             </select>
           </div>
 
-          {/* Download PDF Button */}
           <div className="px-4 pt-3 pb-2">
             <button
               onClick={downloadSessionsPDF}
               className="w-full px-4 py-2 bg-[#721D35] text-white rounded-md hover:bg-[#5a1729] transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={filteredSessions.length === 0}
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Download PDF
             </button>
           </div>
 
-          {/* Sessions List */}
           <div className="p-4 flex-1 overflow-y-auto">
             <h3 className="font-semibold text-lg mb-3 text-gray-700">
               {getTimePeriodText()} ({filteredSessions.length})
@@ -301,9 +279,7 @@ const MySessions = () => {
                   return (
                     <div 
                       key={session._id}
-                      className={`border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow ${
-                        isPast ? 'opacity-70' : ''
-                      }`}
+                      className={`border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow ${isPast ? 'opacity-70' : ''}`}
                       style={{ borderLeft: `4px solid ${session.color || '#721D35'}` }}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -311,30 +287,32 @@ const MySessions = () => {
                           {session.sessionTitle || "Untitled Session"}
                         </div>
                         {isPast && (
-                          <span className="ml-2 px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">
-                            Past
-                          </span>
+                          <span className="ml-2 px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">Past</span>
                         )}
                       </div>
                       
                       <div className="text-sm text-gray-600 space-y-1">
-                        <div>
-                          <strong>Date & Time:</strong> {new Date(session.dateTime).toLocaleString()}
-                        </div>
+                        <div><strong>Date & Time:</strong> {new Date(session.dateTime).toLocaleString()}</div>
                         <div>
                           <strong>My Role:</strong> 
                           <span className="ml-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                             {getSpecialistRole(session, currentSpecialist._id)}
                           </span>
                         </div>
-                        {session.topic && (
-                          <div>
-                            <strong>Topic:</strong> {topics.find(t => t._id === session.topic)?.name || 'Unknown'}
-                          </div>
-                        )}
+                        <div>
+                          <strong>Topic:</strong> {getTopicName(session)}
+                        </div>
                         {session.participantGroup && (
                           <div>
                             <strong>Group:</strong> {participantGroups.find(pg => pg._id === session.participantGroup)?.name || 'Unknown'}
+                          </div>
+                        )}
+                        {session.notes && (
+                          <div>
+                            <strong>Notes/Objectives:</strong>
+                            <div className="mt-1 text-gray-500 text-xs whitespace-pre-wrap">
+                              {session.notes}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -346,7 +324,6 @@ const MySessions = () => {
           </div>
         </aside>
 
-        {/* Main calendar area */}
         <main className="flex-1 p-4">
           <div className="bg-white border border-gray-300 rounded-lg shadow-full-border">
             <div className="text-center text-black py-3 px-4 rounded-t-lg">
@@ -357,13 +334,16 @@ const MySessions = () => {
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
-                firstDay={1}  // ADDED THIS LINE - Makes Monday the first day of the week
+                firstDay={1}
                 headerToolbar={{
                   left: "prev,next today",
                   center: "title",
                   right: "dayGridMonth,timeGridWeek,timeGridDay",
                 }}
                 height="100%"
+                slotMinTime="07:00:00"
+                slotMaxTime="19:00:00"
+                scrollTime="08:00:00"
                 events={filteredSessions?.map(session => {
                   const start = new Date(session.dateTime);
                   const end = new Date(start);
@@ -381,9 +361,10 @@ const MySessions = () => {
                       presentingSpecialist: session.presentingSpecialist,
                       supportingSpecialist1: session.supportingSpecialist1,
                       supportingSpecialist2: session.supportingSpecialist2,
+                      supportingSpecialist3: session.supportingSpecialist3,
+                      supportingSpecialist4: session.supportingSpecialist4,
                       participantGroup: session.participantGroup,
-                      topic: session.topic,
-                      specialistRole: getSpecialistRole(session, currentSpecialist._id),
+                      topic: session.presentationTitle || session.topic || '',
                     },
                   };
                 })}

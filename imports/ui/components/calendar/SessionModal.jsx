@@ -80,6 +80,8 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
   const [recurringGroupCount, setRecurringGroupCount] = useState(0);
   const [showDeleteOptions, setShowDeleteOptions] = useState(false);
   const [showEditRecurringOptions, setShowEditRecurringOptions] = useState(false);
+  const [showRescheduleOptions, setShowRescheduleOptions] = useState(false);
+  const [newRescheduleInterval, setNewRescheduleInterval] = useState('weekly');
   const [presentationTitleSearchQuery, setPresentationTitleSearchQuery] = useState('');
   const [showPresentationTitleDropdown, setShowPresentationTitleDropdown] = useState(false);
   const presentationTitleDropdownRef = useRef(null);
@@ -97,12 +99,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   useEffect(() => {
     if (existingSession) {
-      // Check if this session is part of a recurring group
       const isRecurring = !!existingSession.recurringGroupId;
       setIsPartOfRecurringGroup(isRecurring);
       
       if (isRecurring) {
-        // Count how many sessions are in this recurring group
         const groupSessions = SessionsCollection.find({ 
           recurringGroupId: existingSession.recurringGroupId 
         }).fetch();
@@ -143,6 +143,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     } else {
       setIsPartOfRecurringGroup(false);
       setRecurringGroupCount(0);
+      setShowRescheduleOptions(false);
       setFormData({
         sessionNumber: '',
         sessionTitle: '',
@@ -206,7 +207,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
@@ -214,7 +214,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     const date = new Date(dateString);
     let businessDaysToSubtract = 2;
     let currentDate = new Date(date);
-
     while (businessDaysToSubtract > 0) {
       currentDate.setDate(currentDate.getDate() - 1);
       const dayOfWeek = currentDate.getDay();
@@ -222,7 +221,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         businessDaysToSubtract--;
       }
     }
-
     return currentDate;
   };
 
@@ -258,7 +256,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   const handleCreateNewPresentationTitle = () => {
     if (!presentationTitleSearchQuery.trim()) return;
-
     Meteor.call('topics.insert', { 
       title: presentationTitleSearchQuery.trim(),
       specialists_ids: formData.presentingSpecialist ? [formData.presentingSpecialist] : []
@@ -273,8 +270,63 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
     });
   };
 
+  // Reschedule all FUTURE sessions in the recurring group with a new interval
+  const handleRescheduleFutureOccurrences = () => {
+    if (!existingSession?.recurringGroupId) return;
+
+    const now = new Date();
+
+    // Get all sessions in the group, sorted by date
+    const allGroupSessions = SessionsCollection.find(
+      { recurringGroupId: existingSession.recurringGroupId },
+      { sort: { dateTime: 1 } }
+    ).fetch();
+
+    // Split into past and future
+    const futureSessions = allGroupSessions.filter(s => new Date(s.dateTime) >= now);
+
+    if (futureSessions.length === 0) {
+      alert('No future sessions to reschedule!');
+      return;
+    }
+
+    if (!window.confirm(`This will reschedule ${futureSessions.length} future sessions to repeat every ${newRescheduleInterval}. Past sessions will not be changed. Continue?`)) {
+      return;
+    }
+
+    // Use the first future session as the anchor date
+    const anchorDate = new Date(futureSessions[0].dateTime);
+
+    // Calculate new dates for each future session
+    futureSessions.forEach((session, index) => {
+      const newDate = new Date(anchorDate);
+
+      if (newRescheduleInterval === 'daily') {
+        newDate.setDate(anchorDate.getDate() + index);
+      } else if (newRescheduleInterval === 'weekly') {
+        newDate.setDate(anchorDate.getDate() + (index * 7));
+      } else if (newRescheduleInterval === 'biweekly') {
+        newDate.setDate(anchorDate.getDate() + (index * 14));
+      } else if (newRescheduleInterval === 'monthly') {
+        newDate.setMonth(anchorDate.getMonth() + index);
+      }
+
+      Meteor.call('sessions.update', session._id, { 
+        ...session,
+        dateTime: newDate 
+      }, (error) => {
+        if (error) {
+          console.error('Error rescheduling session:', error);
+        }
+      });
+    });
+
+    alert(`Successfully rescheduled ${futureSessions.length} future sessions!`);
+    setShowRescheduleOptions(false);
+    onClose();
+  };
+
   const handleSubmit = (editAllOccurrences = false) => {
-    // If editing all occurrences of a recurring group
     if (editAllOccurrences && existingSession?.recurringGroupId) {
       const dataToUpdate = {
         sessionNumber: formData.sessionNumber,
@@ -312,11 +364,10 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
       return;
     }
 
-    // Creating new recurring sessions
     if (formData.isRecurring && formData.recurrenceCount > 1) {
       const baseDate = new Date(formData.dateTime);
       const basePresentationsDue = formData.presentationsDue ? new Date(formData.presentationsDue) : null;
-      const recurringGroupId = `recurring-${Date.now()}`; // Unique ID for this group
+      const recurringGroupId = `recurring-${Date.now()}`;
 
       for (let i = 0; i < formData.recurrenceCount; i++) {
         const sessionDate = new Date(baseDate);
@@ -343,7 +394,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
           color: formData.color,
           semester: formData.semester,
           series: formData.series,
-          recurringGroupId: recurringGroupId, // Add the recurring group ID
+          recurringGroupId: recurringGroupId,
           ...(i === 0 || !formData.blankFieldsOnRecurrence ? {
             sessionNumber: formData.sessionNumber,
             sessionTitle: formData.sessionTitle,
@@ -386,7 +437,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         }
       }
     } else {
-      // Single session (not recurring)
       const dataToSubmit = {
         sessionNumber: formData.sessionNumber,
         sessionTitle: formData.sessionTitle,
@@ -427,7 +477,6 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
 
   const handleDeleteAllOccurrences = () => {
     if (!existingSession?.recurringGroupId) return;
-
     if (window.confirm(`Are you sure you want to delete all ${recurringGroupCount} sessions in this recurring group?`)) {
       Meteor.call('sessions.removeRecurringGroup', existingSession.recurringGroupId, (error) => {
         if (error) {
@@ -585,8 +634,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 required
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    specialists.find(g => g._id === formData.presentingSpecialist)?.nameColor || '#000000'
+                  color: specialists.find(g => g._id === formData.presentingSpecialist)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Presenting Specialist</option>
@@ -606,8 +654,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 onChange={handleChange}
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    specialists.find(g => g._id === formData.supportingSpecialist1)?.nameColor || '#000000'
+                  color: specialists.find(g => g._id === formData.supportingSpecialist1)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Supporting Specialist 1</option>
@@ -627,8 +674,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 onChange={handleChange}
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    specialists.find(g => g._id === formData.supportingSpecialist2)?.nameColor || '#000000'
+                  color: specialists.find(g => g._id === formData.supportingSpecialist2)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Supporting Specialist 2</option>
@@ -639,9 +685,9 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Empty space in second row */}
+            {/* Empty space */}
             <div className="form-group md:col-span-2"></div>
-            {/* Supporting Specialist 3 - under Supporting Specialist 1 */}
+            {/* Supporting Specialist 3 */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Supporting Specialist 3</label>
               <select
@@ -650,8 +696,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 onChange={handleChange}
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    specialists.find(g => g._id === formData.supportingSpecialist3)?.nameColor || '#000000'
+                  color: specialists.find(g => g._id === formData.supportingSpecialist3)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Supporting Specialist 3</option>
@@ -662,7 +707,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 ))}
               </select>
             </div>
-            {/* Supporting Specialist 4 - under Supporting Specialist 2 */}
+            {/* Supporting Specialist 4 */}
             <div className="form-group md:col-span-2">
               <label className="block font-medium mb-1">Supporting Specialist 4</label>
               <select
@@ -671,8 +716,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 onChange={handleChange}
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    specialists.find(g => g._id === formData.supportingSpecialist4)?.nameColor || '#000000'
+                  color: specialists.find(g => g._id === formData.supportingSpecialist4)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Supporting Specialist 4</option>
@@ -716,8 +760,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
                 required
                 className={defaultInputStyle}
                 style={{
-                  color:
-                    participantGroups.find(g => g._id === formData.participantGroup)?.nameColor || '#000000'
+                  color: participantGroups.find(g => g._id === formData.participantGroup)?.nameColor || '#000000'
                 }}
               >
                 <option value="" style={{color: '#000000'}}>Select Participant Group</option>
@@ -894,7 +937,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
             </div>
           </div>
 
-          {/* Recurring Session Options */}
+          {/* Recurring Session Options - only when creating */}
           {!existingSession && (
             <div className="mt-6 p-4 border-2 border-gray-200 rounded-lg bg-gray-50">
               <div className="flex items-center gap-3">
@@ -956,6 +999,52 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
               {formData.isRecurring && formData.blankFieldsOnRecurrence && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
                   <strong>Note:</strong> Only Participant Group, Color, Semester, and Series will be copied to future sessions. All other fields will be blank.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reschedule Future Occurrences - only when editing a recurring session */}
+          {existingSession && isPartOfRecurringGroup && (
+            <div className="mt-6 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-lg text-orange-800">Reschedule Future Occurrences</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowRescheduleOptions(!showRescheduleOptions)}
+                  className="text-orange-600 hover:text-orange-800 text-sm underline"
+                >
+                  {showRescheduleOptions ? 'Hide' : 'Show'}
+                </button>
+              </div>
+
+              {showRescheduleOptions && (
+                <div className="mt-4">
+                  <p className="text-sm text-orange-700 mb-3">
+                    Change the repeat interval for all <strong>future</strong> sessions in this group. Past sessions will not be affected.
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="block font-medium text-sm mb-1">New Repeat Interval</label>
+                      <select
+                        value={newRescheduleInterval}
+                        onChange={(e) => setNewRescheduleInterval(e.target.value)}
+                        className={defaultInputStyle}
+                      >
+                        <option value="daily">Every Day</option>
+                        <option value="weekly">Every Week</option>
+                        <option value="biweekly">Every 2 Weeks</option>
+                        <option value="monthly">Every Month</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRescheduleFutureOccurrences}
+                      className="mt-5 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Apply New Schedule
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1065,9 +1154,7 @@ const SessionModal = ({ isOpen, onClose, onSubmit, onDelete, selectedDate, exist
         onDelete={handleDelete}
         itemType="Session"
       />
-
     </div>
-
   );
 };
 

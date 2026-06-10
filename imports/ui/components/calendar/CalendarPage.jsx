@@ -60,7 +60,6 @@ const CalendarPage = () => {
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
 
-  // Sort specialists, topics, and participant groups alphabetically
   const sortedSpecialists = [...specialists].sort((a, b) => {
     const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
     const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
@@ -229,7 +228,7 @@ const CalendarPage = () => {
                   <tr>
                     <td>${formattedDateTime}</td>
                     <td>${session.sessionTitle}</td>
-                    <td>${getTopicName(session.topic || session.presentationTitle)}</td>
+                    <td>${getTopicName(session.presentationTitle || session.topic)}</td>
                     <td>${getParticipantGroupName(session.participantGroup)}</td>
                     <td class="role">${role}</td>
                     <td class="notes">${session.notes || ''}</td>
@@ -255,18 +254,15 @@ const CalendarPage = () => {
     console.log(`Printing option: ${option}`);
     
     if (option.includes("Semester") || option.includes("by Semester") || option.includes("Presentation Title")) {
-      console.log("Semester-based report detected, fetching all data...");
       Meteor.call("exportExcelByOption", option, null, null, (error, base64) => {
         if (error) {
           console.error("Error exporting Excel:", error);
           toast.error(`Failed to export ${option}: ${error.reason || error.message}`);
         } else {
-          console.log("Export successful, downloading file...");
           downloadExcelFile(base64, option);
         }
       });
     } else {
-      console.log("Weekly-based report detected, using date range...");
       const today = new Date();
       const firstDayOfWeek = new Date(today);
       firstDayOfWeek.setDate(today.getDate() - today.getDay());
@@ -288,7 +284,6 @@ const CalendarPage = () => {
 
   const downloadExcelFile = (base64, filename) => {
     try {
-      console.log(`Downloading file: ${filename}.xlsx`);
       const binaryString = window.atob(base64);
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
@@ -329,13 +324,10 @@ const CalendarPage = () => {
 
   const handleEventDrop = (info) => {
     const sessionId = info.event.extendedProps.sessionId;
-    const session = sessions.find(s => s._id === sessionId)
-
+    const session = sessions.find(s => s._id === sessionId);
     if (!session) return;
 
-    const oldDate = new Date(session.dateTime);
     const newDateFromDrop = info.event.start;
-
     const updatedDateTime = new Date(
       newDateFromDrop.getFullYear(),
       newDateFromDrop.getMonth(),
@@ -344,12 +336,11 @@ const CalendarPage = () => {
       newDateFromDrop.getMinutes(),
       newDateFromDrop.getSeconds()
     );
-    session.dateTime = updatedDateTime
+    session.dateTime = updatedDateTime;
     handleSubmit(session, sessionId);
   };
   
   const handleSubmit = (formData, sessionId) => {
-    // If there's a presentation title and presenting specialist, link them
     if (formData.presentationTitle && formData.presentingSpecialist) {
       Meteor.call('topics.addSpecialist', formData.presentationTitle, formData.presentingSpecialist, (error) => {
         if (error) {
@@ -407,10 +398,9 @@ const CalendarPage = () => {
         <main className="flex-1 p-4 flex gap-4">
           <div className={`${showSessionsList ? 'w-3/5' : 'w-full'} rounded-lg shadow-full-border`}>
             <header className="bg-white text-grey text-center py-3 rounded-t-lg border border-b-0 border-gray-300">
-                <h1 className="text-3xl">Sessions Calendar</h1>
+              <h1 className="text-3xl">Sessions Calendar</h1>
             </header>
             <div className="bg-white rounded-b-lg border border-gray-300 p-2 h-[calc(100vh-145px)]">
-
               <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
@@ -430,12 +420,15 @@ const CalendarPage = () => {
                   const start = new Date(session.dateTime);
                   const end = new Date(start);
                   end.setHours(end.getHours() + 1);
+                  // Use participant group color, fall back to session color
+                  const group = participantGroups.find(g => g._id === session.participantGroup);
+                  const eventColor = group?.nameColor || session.color || '#0ea6b2';
                   return {
                     title: session.sessionNumber ? `#${session.sessionNumber} ${session.sessionTitle}` : session.sessionTitle,
                     start: start.toISOString(),
-                    end:   end.toISOString(),
-                    backgroundColor: session.color,
-                    borderColor:     session.color,
+                    end: end.toISOString(),
+                    backgroundColor: eventColor,
+                    borderColor: eventColor,
                     extendedProps: {
                       sessionId: session._id,
                       color: session.color,
@@ -445,7 +438,7 @@ const CalendarPage = () => {
                       supportingSpecialist3: session.supportingSpecialist3,
                       supportingSpecialist4: session.supportingSpecialist4,
                       participantGroup: session.participantGroup,
-                      topic: session.topic,
+                      topic: session.presentationTitle || session.topic || '',
                     },
                   };
                 })}
@@ -670,7 +663,7 @@ const CalendarPage = () => {
                           </div>
                           <div
                             className="w-4 h-4 rounded-full ml-2 mt-1"
-                            style={{ backgroundColor: session.color }}
+                            style={{ backgroundColor: getParticipantGroupColor(session.participantGroup) || session.color }}
                           ></div>
                         </div>
                       </div>

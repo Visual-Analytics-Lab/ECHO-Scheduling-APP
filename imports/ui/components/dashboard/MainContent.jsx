@@ -24,27 +24,21 @@ import {
 import { buildSessionTooltip } from "../../utils/tooltipHelpers";
 
 import tippy from 'tippy.js';
-import 'tippy.js/dist/tippy.css'; // ensure styles are bundled
+import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/border.css';
 import "react-toastify/dist/ReactToastify.css";
 
 const MainContent = () => {
-  // State to track the currently viewed week/date
   const [currentViewDate, setCurrentViewDate] = useState(new Date());
   const calendarRef = useRef(null);
 
-  // Subscribe to collections
   useEffect(() => {
     const subscriptions = [
       Meteor.subscribe('sessions'),
-      // Meteor.subscribe("users"),
       Meteor.subscribe("specialists"),
       Meteor.subscribe("participantGroups"),
-      // Meteor.subscribe("semesters"),
-      // Meteor.subscribe("series"),
       Meteor.subscribe("topics"),
       Meteor.subscribe("categories"),
-      // Meteor.subscribe("roles"),
     ];
     return () => subscriptions.forEach(sub => sub.stop());
   }, []);
@@ -52,21 +46,15 @@ const MainContent = () => {
   const sessions = useTracker(() => SessionsCollection.find().fetch());
   const specialists = useTracker(() => SpecialistsCollection.find().fetch());
   const participantGroups = useTracker(() => ParticipantGroupsCollection.find().fetch());
-  // const semesters = useTracker(() => SemesterCollection.find().fetch());
-  // const series = useTracker(() => SeriesCollection.find().fetch());
   const topics = useTracker(() => TopicsCollection.find().fetch());
   const categories = useTracker(() => CategoriesCollection.find().fetch());
-  // const roles = useTracker(() => RolesCollection.find().fetch());
 
-  // Handle calendar view changes (when user navigates to different weeks/dates)
   const handleDatesSet = (arg) => {
-    // arg.start is the start date of the current view
     setCurrentViewDate(new Date(arg.start));
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 shadow-full-border">
-
       <header className="bg-gray-200 text-center py-4">
         <h1 className="text-3xl font-bold text-[#721D35]">Dashboard</h1>
       </header>
@@ -82,36 +70,42 @@ const MainContent = () => {
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
-                firstDay={1}  // ADDED THIS LINE - Makes Monday the first day of the week
+                firstDay={1}
                 headerToolbar={{
                   left: "prev,next today",
                   center: "title",
                   right: "dayGridMonth,timeGridWeek,timeGridDay",
                 }}
                 height="100%"
-                events={ sessions?.map(session => {
+                // Show 8 hours: 7am to 7pm
+                slotMinTime="07:00:00"
+                slotMaxTime="19:00:00"
+                scrollTime="08:00:00"
+                events={sessions?.map(session => {
                   const start = new Date(session.dateTime);
                   const end = new Date(start);
                   end.setHours(end.getHours() + 1);
                   return {
                     title: session.sessionTitle,
                     start: start.toISOString(),
-                    end:   end.toISOString(),
+                    end: end.toISOString(),
                     backgroundColor: session.color,
-                    borderColor:     session.color,
+                    borderColor: session.color,
                     extendedProps: {
                       sessionId: session._id,
                       color: session.color,
                       presentingSpecialist: session.presentingSpecialist,
                       supportingSpecialist1: session.supportingSpecialist1,
                       supportingSpecialist2: session.supportingSpecialist2,
+                      supportingSpecialist3: session.supportingSpecialist3,
+                      supportingSpecialist4: session.supportingSpecialist4,
                       participantGroup: session.participantGroup,
-                      topic: session.topic,
+                      // Pass BOTH topic and presentationTitle so tooltip can find it
+                      topic: session.presentationTitle || session.topic || '',
                     },
                   };
                 })}
                   
-                // Build tooltip on Hover
                 eventDidMount={({ el, event }) => {
                   tippy(el, {
                     allowHTML: true,
@@ -122,7 +116,6 @@ const MainContent = () => {
                   });
                 }}
 
-                // Track when the user navigates to different dates/weeks
                 datesSet={handleDatesSet}
               />
             </div>
